@@ -6,7 +6,7 @@ import subprocess
 import threading
 import time
 
-def control_sg(setup_file, on_file, off_file, rate, signal_format="awgn", output_mode="exp", seed=None, run_duration=10.0, executable="ks_lanio", test_mode=True, graphics=False):
+def control_sg(setup_file, on_file, off_file, rate, signal_format="awgn", output_mode="exp", seed=None, run_duration=10.0, executable="ks_lanio", instr="echo_client.py", test_mode=True, graphics=False):
 
     # Set a new seed for the randomness (in functions that use it) each time the
     # program is run. Defaults to the system time
@@ -49,21 +49,35 @@ def control_sg(setup_file, on_file, off_file, rate, signal_format="awgn", output
     elif signal_format == "carrier":
         pass
 
+    dummy_USRP_on_args = ("./{0} {1}".format(instr, "Started fake USRP"))
+    dummy_USRP_on_split = dummy_USRP_on_args.split()
+    dummy_USRP_off_args = ("./{0} {1}".format(instr, "Stopped fake USRP"))
+    dummy_USRP_off_split = dummy_USRP_off_args.split()
+
     on_args = ("./{0} {1} {2}".format(executable, sg_ip, rf_on_command))
     on_args_split = on_args.split()
     off_args = ("./{0} {1} {2}".format(executable, sg_ip, rf_off_command))
     off_args_split = off_args.split()
 
     while(True):
+        popen = subprocess.Popen(dummy_USRP_on_split, stdout=subprocess.PIPE)
+        popen.wait()
+        print(on_args)
+        time.sleep(on_time)
         popen = subprocess.Popen(on_args_split, stdout=subprocess.PIPE)
         popen.wait()
         print(on_args)
         time.sleep(on_time)
 
+
         popen = subprocess.Popen(off_args_split, stdout=subprocess.PIPE)
         popen.wait()
         print(off_args)
         time.sleep(off_time)
+    popen = subprocess.Popen(dummy_USRP_off_split, stdout=subprocess.PIPE)
+    popen.wait()
+    print(on_args)
+    time.sleep(on_time)
 
 
     #output = popen.stdout.read()
