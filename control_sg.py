@@ -42,15 +42,16 @@ def control_sg(setup_file, on_file, off_file, rate, signal_format="awgn", output
 
     signal=""
     if signal_format == "awgn":
-        setup_args = ("../{0} {1} {2}".format(executable, sg_ip, arb_on_command)).split()
+        #setup_args = ("../{0} {1} {2}".format(executable, sg_ip, arb_on_command)).split()
+        setup_args = ("./{0} {1} {2}".format(executable, sg_ip, arb_on_command)).split()
         popen = subprocess.Popen(setup_args, stdout=subprocess.PIPE)
         popen.wait()
     elif signal_format == "carrier":
         pass
 
-    on_args = ("../{0} {1} {2}".format(executable, sg_ip, rf_on_command))
+    on_args = ("./{0} {1} {2}".format(executable, sg_ip, rf_on_command))
     on_args_split = on_args.split()
-    off_args = ("../{0} {1} {2}".format(executable, sg_ip, rf_off_command))
+    off_args = ("./{0} {1} {2}".format(executable, sg_ip, rf_off_command))
     off_args_split = off_args.split()
 
     while(True):
@@ -69,4 +70,5 @@ def control_sg(setup_file, on_file, off_file, rate, signal_format="awgn", output
     #print(output)
 
 if __name__ == '__main__':
-    control_sg("test/control_sequences/awgn_setup.txt", "test/control_sequences/awgn_on.txt", "test/control_sequences/awgn_off.txt", rate = 2)
+    #control_sg("test/control_sequences/awgn_setup.txt", "test/control_sequences/awgn_on.txt", "test/control_sequences/awgn_off.txt", rate = 2)
+    control_sg("awgn_setup.txt", "awgn_on.txt", "awgn_off.txt", rate = 2)
