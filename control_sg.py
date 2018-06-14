@@ -1,9 +1,12 @@
-import subprocess as sbp
+#!/bin/python3
+
+from tkinter import filedialog
 import random as rnd
-import threading as thrd
+import subprocess
+import threading
 import time
 
-def control_sg(setup_file, on_file, off_file, rate, signal_format="awgn", output_mode="exp", seed=None, run_duration=10.0, executable="sg_sequence", test_mode=True):
+def control_sg(setup_file, on_file, off_file, rate, signal_format="awgn", output_mode="exp", seed=None, run_duration=10.0, executable="ks_lanio", test_mode=True, graphics=False):
 
     # Set a new seed for the randomness (in functions that use it) each time the
     # program is run. Defaults to the system time
@@ -12,7 +15,7 @@ def control_sg(setup_file, on_file, off_file, rate, signal_format="awgn", output
     # Define the IP to connect to based on whether or not the test_mode flag
     # was set. It must explicitly be set to False in order to connect to an
     # actual external device. Note that the executables should point to
-    # port 5025
+    # port 5025 (matches the port that the E4438C uses)
     sg_ip = ""
     if test_mode == True:
         sg_ip = "0.0.0.0"
@@ -40,7 +43,7 @@ def control_sg(setup_file, on_file, off_file, rate, signal_format="awgn", output
     signal=""
     if signal_format == "awgn":
         setup_args = ("../{0} {1} {2}".format(executable, sg_ip, arb_on_command)).split()
-        popen = sbp.Popen(setup_args, stdout=sbp.PIPE)
+        popen = subprocess.Popen(setup_args, stdout=subprocess.PIPE)
         popen.wait()
     elif signal_format == "carrier":
         pass
@@ -51,12 +54,12 @@ def control_sg(setup_file, on_file, off_file, rate, signal_format="awgn", output
     off_args_split = off_args.split()
 
     while(True):
-        popen = sbp.Popen(on_args_split, stdout=sbp.PIPE)
+        popen = subprocess.Popen(on_args_split, stdout=subprocess.PIPE)
         popen.wait()
         print(on_args)
         time.sleep(on_time)
 
-        popen = sbp.Popen(off_args_split, stdout=sbp.PIPE)
+        popen = subprocess.Popen(off_args_split, stdout=subprocess.PIPE)
         popen.wait()
         print(off_args)
         time.sleep(off_time)
@@ -66,4 +69,4 @@ def control_sg(setup_file, on_file, off_file, rate, signal_format="awgn", output
     #print(output)
 
 if __name__ == '__main__':
-    control_sg("test/control_sequences/awgn_setup.txt", "test/control_sequences/awgn_on.txt", "test/control_sequences/awgn_off.txt", executable="ks_lanio")
+    control_sg("test/control_sequences/awgn_setup.txt", "test/control_sequences/awgn_on.txt", "test/control_sequences/awgn_off.txt", rate = 2)
