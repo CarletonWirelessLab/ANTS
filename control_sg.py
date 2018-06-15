@@ -6,7 +6,11 @@ import subprocess
 import threading
 import time
 
-def control_sg(setup_file, on_file, off_file, rnd_scale=5, signal_format="awgn", output_mode="scaled", seed=None, run_duration=10.0, executable="ks_lanio", instr="echo_client.py", test_mode=True, graphics=False):
+def control_sg(setup_file, on_file, off_file, rnd_scale=5, lower_bound=0.01, \
+               upper_bound=2, signal_format="awgn", output_mode="scaled", \
+               seed=None, initial_delay=2.0, run_duration=10.0, \
+               executable="ks_lanio", instr="echo_client.py", test_mode=True, \
+               graphics=False):
 
     # Set a new seed for the randomness (in functions that use it) each time the
     # program is run. Defaults to the system time
@@ -67,14 +71,21 @@ def control_sg(setup_file, on_file, off_file, rnd_scale=5, signal_format="awgn",
     print("Started recording\n")
     on_time = 0
     off_time = 0
-    while(total_time < run_duration):
+    while(total_time + initial_delay < run_duration):
+
+        time.sleep(initial_delay)
 
         # Check to see which output mode was set. Generates random on times
         # between 0 and a number specified by rnd_scale; otherwise defaults to
         # numbers between 0 and 1
         if output_mode == "scaled":
             on_time = rnd.random()*rnd_scale
+            print(on_time)
             off_time = rnd_scale - on_time
+            print(off_time)
+        elif output_mode == "uniform":
+            on_time = rnd.uniform(lower_bound, upper_bound)
+            off_time = upper_bound - on_time
         else:
             on_time = rnd.random()
             off_time = 1 - on_time
@@ -105,4 +116,4 @@ def control_sg(setup_file, on_file, off_file, rnd_scale=5, signal_format="awgn",
 
 if __name__ == '__main__':
     #control_sg("test/control_sequences/awgn_setup.txt", "test/control_sequences/awgn_on.txt", "test/control_sequences/awgn_off.txt", rate = 2)
-    control_sg("awgn_setup.txt", "awgn_on.txt", "awgn_off.txt")
+    control_sg("awgn_setup.txt", "awgn_on.txt", "awgn_off.txt", rnd_scale=2, run_duration=20.0, output_mode="uniform", test_mode=False, upper_bound = 4.0)
