@@ -23,4 +23,6 @@ def echo_to_server(message="default output message", port=5025):
         sock.close()
 
 if __name__ == '__main__':
+    #echo_to_server(sys.argv[1])
+    #print(sys.argv[1])
     echo_to_server(sys.argv[1])

@@ -13,15 +13,16 @@ sock.bind(server_address)
 sock.listen(5)
 
 while True:
-    print("\n\n")
+    print("\n")
     #print('waiting for a connection')
     connection, client_address = sock.accept()
     try:
         #print('connection from', client_address)
 
         while True:
-            data = connection.recv(80)
-            print("received \"{0}\"".format(data.decode()))
+            data = connection.recv(255)
+            print("Received \"{0}\"".format(data))
+            #print("received \"{0}\"".format(data.decode()))
 
             if data:
                 pass

@@ -1,6 +1,7 @@
 #!/bin/python3
 
 from tkinter import filedialog
+from echo_client import echo_to_server
 import random as rnd
 import subprocess
 import threading
@@ -56,10 +57,12 @@ def control_sg(setup_file, on_file, off_file, rnd_scale=5, lower_bound=0.01, \
     started_fake_usrp = "Started fake USRP"
     stopped_fake_usrp = "Stopped fake USRP"
 
-    dummy_USRP_on_args = ("./{0} {1}".format(instr, started_fake_usrp))
-    dummy_USRP_on_split = dummy_USRP_on_args.split()
-    dummy_USRP_off_args = ("./{0} {1}".format(instr, stopped_fake_usrp))
-    dummy_USRP_off_split = dummy_USRP_off_args.split()
+    #dummy_USRP_on_args = ("./{0} {1}".format(instr, started_fake_usrp))
+    #dummy_USRP_on_split = dummy_USRP_on_args.split()
+    dummy_USRP_on = ["./echo_client.py", "Started fake USRP"]
+    #dummy_USRP_off_args = ("./{0} {1}".format(instr, stopped_fake_usrp))
+    #dummy_USRP_off_split = dummy_USRP_off_args.split()
+    dummy_USRP_off = ["./echo_client.py", "Stopped fake USRP"]
 
     on_args = ("./{0} {1} {2}".format(executable, sg_ip, rf_on_command))
     on_args_split = on_args.split()
@@ -71,6 +74,10 @@ def control_sg(setup_file, on_file, off_file, rnd_scale=5, lower_bound=0.01, \
     print("Started recording\n")
     on_time = 0
     off_time = 0
+
+    popen = subprocess.Popen(dummy_USRP_on, stdout=subprocess.PIPE)
+    popen.wait()
+
     while(total_time + initial_delay < run_duration):
 
         time.sleep(initial_delay)
@@ -87,11 +94,9 @@ def control_sg(setup_file, on_file, off_file, rnd_scale=5, lower_bound=0.01, \
             on_time = rnd.uniform(lower_bound, upper_bound)
             off_time = upper_bound - on_time
         else:
-            on_time = rnd.random()
+            on_time = rnd.random(dummy_USRP_on_split)
             off_time = 1 - on_time
 
-        popen = subprocess.Popen(dummy_USRP_on_split, stdout=subprocess.PIPE)
-        popen.wait()
 
         popen = subprocess.Popen(on_args_split, stdout=subprocess.PIPE)
         popen.wait()
@@ -105,7 +110,7 @@ def control_sg(setup_file, on_file, off_file, rnd_scale=5, lower_bound=0.01, \
         time.sleep(off_time)
 
         total_time = total_time + on_time + off_time
-    popen = subprocess.Popen(dummy_USRP_off_split, stdout=subprocess.PIPE)
+    popen = subprocess.Popen(dummy_USRP_off, stdout=subprocess.PIPE)
     popen.wait()
     print("Stopped recording\n")
     print("Ran for {0} seconds\n".format(time.time() - start_time))
@@ -116,4 +121,4 @@ def control_sg(setup_file, on_file, off_file, rnd_scale=5, lower_bound=0.01, \
 
 if __name__ == '__main__':
     #control_sg("test/control_sequences/awgn_setup.txt", "test/control_sequences/awgn_on.txt", "test/control_sequences/awgn_off.txt", rate = 2)
-    control_sg("awgn_setup.txt", "awgn_on.txt", "awgn_off.txt", rnd_scale=2, run_duration=20.0, output_mode="uniform", test_mode=False, upper_bound = 4.0)
+    control_sg("awgn_setup.txt", "awgn_on.txt", "awgn_off.txt", rnd_scale=2, run_duration=20.0, output_mode="uniform", test_mode=True, upper_bound = 4.0)
