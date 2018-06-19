@@ -7,9 +7,9 @@ import subprocess
 import threading
 import time
 
-def control_sg(setup_file, on_file, off_file, rnd_scale=5, lower_bound=0.01, \
-               upper_bound=2, signal_format="awgn", output_mode="scaled", \
-               seed=None, initial_delay=2.0, run_duration=10.0, \
+def control_sg(setup_file, on_file, off_file, lower_bound=0.01, \
+               upper_bound=2, \
+               seed=None, initial_delay=0, run_duration=10.0, \
                executable="ks_lanio", instr="echo_client.py", test_mode=True, \
                graphics=False):
 
@@ -34,91 +34,75 @@ def control_sg(setup_file, on_file, off_file, rnd_scale=5, lower_bound=0.01, \
     rf_on_command = "OUTP:STAT 1"
     rf_off_command = "OUTP:STAT 0"
 
-    # Check to see which output mode was set. Defaults to using the exponential
-    # distribution from the Python random module
-    # on_time = 0
-    # if output_mode == "exp":
-    #     on_time = rnd.expovariate(rate)
-    # elif output_mode == "const":
-    #     on_time = rate
-    # else:
-    #     on_time = rnd.expovariate(rate)
-    # off_time = 1 - on_time
+    # Run any SCPI setup file first, for doing things such as turning the AWGN
+    # subsystem on before beginning to toggle the RF output
+    setup_args = ("./{0} {1} {2}".format(executable, sg_ip, arb_on_command)).split()
+    popen = subprocess.Popen(setup_args, stdout=subprocess.PIPE)
+    popen.wait()
 
-    signal=""
-    if signal_format == "awgn":
-        #setup_args = ("../{0} {1} {2}".format(executable, sg_ip, arb_on_command)).split()
-        setup_args = ("./{0} {1} {2}".format(executable, sg_ip, arb_on_command)).split()
-        popen = subprocess.Popen(setup_args, stdout=subprocess.PIPE)
-        popen.wait()
-    elif signal_format == "carrier":
-        pass
-
+    # Dummy variables for when in test mode and the USRP is unavailable
     started_fake_usrp = "Started fake USRP"
     stopped_fake_usrp = "Stopped fake USRP"
-
-    #dummy_USRP_on_args = ("./{0} {1}".format(instr, started_fake_usrp))
-    #dummy_USRP_on_split = dummy_USRP_on_args.split()
     dummy_USRP_on = ["./echo_client.py", "Started fake USRP"]
-    #dummy_USRP_off_args = ("./{0} {1}".format(instr, stopped_fake_usrp))
-    #dummy_USRP_off_split = dummy_USRP_off_args.split()
     dummy_USRP_off = ["./echo_client.py", "Stopped fake USRP"]
 
+    # Split the command and argument for running the tool (either the E4438C
+    # controller itself, or the echo_client in test mode) up so that they can
+    # be passed as arguments to Popen() within the while loop
     on_args = ("./{0} {1} {2}".format(executable, sg_ip, rf_on_command))
     on_args_split = on_args.split()
     off_args = ("./{0} {1} {2}".format(executable, sg_ip, rf_off_command))
     off_args_split = off_args.split()
 
+    # The actual "control" block begins here
     total_time = 0
     start_time = time.time()
     print("Started recording\n")
     on_time = 0
     off_time = 0
 
+    # Turn on the USRP for sensing the medium
     popen = subprocess.Popen(dummy_USRP_on, stdout=subprocess.PIPE)
     popen.wait()
 
+    # While time measured is less than specified run duration, toggle the
+    # signal generator's RF output on and off periodically with an on
+    # time specified by the on_time parameter. This includes an optional
+    # initial delay which can be added to every cycle if it is desired
     while(total_time + initial_delay < run_duration):
 
+        # initial delay
         time.sleep(initial_delay)
 
-        # Check to see which output mode was set. Generates random on times
-        # between 0 and a number specified by rnd_scale; otherwise defaults to
-        # numbers between 0 and 1
-        if output_mode == "scaled":
-            on_time = rnd.random()*rnd_scale
-            print(on_time)
-            off_time = rnd_scale - on_time
-            print(off_time)
-        elif output_mode == "uniform":
-            on_time = rnd.uniform(lower_bound, upper_bound)
-            off_time = upper_bound - on_time
-        else:
-            on_time = rnd.random(dummy_USRP_on_split)
-            off_time = 1 - on_time
+        # Generate a random number between the bounds specified to use as the
+        # on time of the pulse, then calculate its corresponding off time
+        on_time = rnd.uniform(lower_bound, upper_bound)
+        off_time = upper_bound - on_time
 
-
+        # Turn on the RF output, and then wait for the on part of the cycle
+        # to end
         popen = subprocess.Popen(on_args_split, stdout=subprocess.PIPE)
         popen.wait()
         print(on_args)
         time.sleep(on_time)
 
-
+        # Turn off the RF output, and then wait for the off part of the cycle
+        # to end
         popen = subprocess.Popen(off_args_split, stdout=subprocess.PIPE)
         popen.wait()
         print(off_args)
         time.sleep(off_time)
 
-        total_time = total_time + on_time + off_time
+        # add the time elapsed to the total_time variable to keep track of
+        # run time
+        total_time = time.time() - start_time
+
+    # Turn off the USRP once the test run is finished
     popen = subprocess.Popen(dummy_USRP_off, stdout=subprocess.PIPE)
     popen.wait()
     print("Stopped recording\n")
     print("Ran for {0} seconds\n".format(time.time() - start_time))
 
-
-    #output = popen.stdout.read()
-    #print(output)
-
+# What to do if this script is called externally
 if __name__ == '__main__':
-    #control_sg("test/control_sequences/awgn_setup.txt", "test/control_sequences/awgn_on.txt", "test/control_sequences/awgn_off.txt", rate = 2)
-    control_sg("awgn_setup.txt", "awgn_on.txt", "awgn_off.txt", rnd_scale=2, run_duration=20.0, output_mode="uniform", test_mode=True, upper_bound = 4.0)
+    control_sg("awgn_setup.txt", "awgn_on.txt", "awgn_off.txt", run_duration=20.0, test_mode=True, upper_bound = 4.0)
