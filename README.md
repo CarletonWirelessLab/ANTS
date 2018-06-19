@@ -13,6 +13,6 @@ but they'll get improvements to be object-oriented as I go.
 
 ## Intended Usage
 
-1. Run the echo_server.py script
-2. Pass arguments to the control_sg.py tool as necessary
+1. Run the echo_server.py script in one window
+2. Pass arguments to the const_control.py script as necessary
 3. Watch the fireworks
