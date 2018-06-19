@@ -16,3 +16,8 @@ but they'll get improvements to be object-oriented as I go.
 1. Run the echo_server.py script in one window
 2. Pass arguments to the const_control.py script as necessary
 3. Watch the fireworks
+
+Currently both const_control.py and rnd_control.py are designed to be run by Python3 directly as executables, and have 
+arguments hard-coded into their default operation modes. Therefore, the scripts must be modified manually to support
+changes to settings such as run time or duty cycle. Later on, these options will be specified via command-line interface
+and/or by GUI.
