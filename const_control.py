@@ -62,8 +62,9 @@ def control_sg(setup_file, on_file, off_file, on_percent = 0.2, \
     off_time = cycle_duration - on_time
 
     # Turn on the USRP for sensing the medium
-    popen = subprocess.Popen(dummy_USRP_on, stdout=subprocess.PIPE)
-    popen.wait()
+    #popen = subprocess.Popen(dummy_USRP_on, stdout=subprocess.PIPE)
+    popen = subprocess.Popen(["nohup", "./echo_client.py", "USRP Recording"])
+    #popen.wait()
 
     # While time measured is less than specified run duration, toggle the
     # signal generator's RF output on and off periodically with a period

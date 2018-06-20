@@ -2,8 +2,9 @@
 
 import socket
 import sys
+import time
 
-def echo_to_server(message="default output message", port=5025):
+def echo_to_server(message="default output message", port=5026):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -12,15 +13,23 @@ def echo_to_server(message="default output message", port=5025):
     print("Connecting to {0}:{1}".format(*server_address))
     sock.connect(server_address)
 
-    try:
+    cur_val = 0
 
-        echo_message = message
-        print("Sending {0}".format(echo_message))
-        sock.sendall(echo_message.encode())
+    while (cur_val < 10):
+        sock.sendall(message.encode())
+        time.sleep(1)
+        cur_val = cur_val + 1
 
-    finally:
-        print("Closing socket\n")
-        sock.close()
+    # try:
+    #
+    #     echo_message = message
+    #     print("Sending {0}".format(echo_message))
+    #     sock.sendall(echo_message.encode())
+    #
+    # finally:
+    #     print("Closing socket\n")
+    #     sock.close()
+    sock.close()
 
 if __name__ == '__main__':
     #echo_to_server(sys.argv[1])
