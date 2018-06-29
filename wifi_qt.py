@@ -4,27 +4,43 @@ from PyQt5.QtWidgets import QWidget, QCheckBox, QApplication, QComboBox, QMessag
 from PyQt5.QtCore import Qt
 import sys
 import subprocess
+import threading
 import time
+import queue
 
 class WiFiQt(QWidget):
 
     def __init__(self):
         super().__init__()
 
-        self.run_usrp = False
-        self.run_controller = False
-        self.run_converter = False
-        self.run_plotter = False
+        self.usrp_state = False
+        self.controller_state = False
+        self.converter_state = False
+        self.plotter_state = False
+
+        self.usrp_proc = None
+        self.controller_proc = None
+        self.converter_proc = None
+        self.plotter_proc = None
+
+        self.usrp_buffer = []
+        self.controller_buffer = []
+        self.converter_buffer = []
+        self.plotter_buffer = []
+
+        self.usrp_queue = queue.Queue()
+        self.controller_queue = queue.Queue()
+        self.converter_queue = queue.Queue()
+        self.plotter_queue = queue.Queue()
+
+        self.usrp_thread = None
+        self.controller_thread = None
 
         self.init_UI()
 
 
     def init_UI(self):
 
-        # self.usrp_control_args = ["gnome-terminal", "-x", "python3", "fake_USRP_control.py"]
-        # self.sg_controller_args = ["gnome-terminal", "-x", "python3", "fake_SG_control.py"]
-        # self.matlab_converter_args = ["gnome-terminal", "-x", "python3", "fake_matlab_converter.py"]
-        # self.matlab_plotter_args = ["gnome-terminal", "-x", "python3", "fake_matlab_plotter.py"]
         self.usrp_control_args = ["python3", "./fake_USRP_control.py"]
         self.sg_controller_args = ["python3", "./fake_SG_control.py"]
         self.matlab_converter_args = ["python3", "./fake_matlab_converter.py"]
@@ -32,22 +48,18 @@ class WiFiQt(QWidget):
 
         usrp_checkbox = QCheckBox('Run USRP', self)
         usrp_checkbox.move(20, 20)
-        #usrp_checkbox.toggle()
         usrp_checkbox.stateChanged.connect(self.usrp_check)
 
         controller_checkbox = QCheckBox('Run Signal Generator', self)
         controller_checkbox.move(20, 80)
-        #controller_checkbox.toggle()
-        usrp_checkbox.stateChanged.connect(self.controller_check)
+        controller_checkbox.stateChanged.connect(self.controller_check)
 
         converter_checkbox = QCheckBox('Run Converter', self)
         converter_checkbox.move(20, 140)
-        #converter_checkbox.toggle()
         converter_checkbox.stateChanged.connect(self.converter_check)
 
         plotter_checkbox = QCheckBox('Run Plotter', self)
         plotter_checkbox.move(20, 200)
-        #plotter_checkbox.toggle()
         plotter_checkbox.stateChanged.connect(self.plotter_check)
 
         run_btn = QPushButton('Run', self)
@@ -77,149 +89,197 @@ class WiFiQt(QWidget):
     def usrp_check(self, state):
 
         if state == Qt.Checked:
-            self.run_usrp = True
+            self.usrp_state = True
         else:
-            self.run_usrp = False
+            self.usrp_state = False
 
     def controller_check(self, state):
 
         if state == Qt.Checked:
-            self.run_controller = True
+            self.controller_state = True
         else:
-            self.run_controller = False
+            self.controller_state = False
 
     def converter_check(self, state):
 
         if state == Qt.Checked:
-            self.run_converter = True
+            self.converter_state = True
         else:
-            self.run_converter = False
+            self.converter_state = False
 
     def plotter_check(self, state):
 
         if state == Qt.Checked:
-            self.run_plotter = True
+            self.plotter_state = True
         else:
-            self.run_plotter = False
+            self.plotter_state = False
 
-    def run_button_clicked(self):
+    def start_usrp(self, args):
+        print("Running USRP...\n")
+        self.usrp_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+        while self.usrp_proc.poll() is None:
+            continue
+        print("Done sensing medium\n")
+
+        return
+
+    def start_controller(self, args):
+        print("Running interference...\n")
+        self.controller_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+        while self.controller_proc.poll() is None:
+            continue
+        print("Done injecting interference\n")
+
+        return
+
+    def start_usrp_controller(self, usrp_args, controller_args):
+        print("Running USRP with interference injected...\n")
+        self.usrp_proc = subprocess.Popen(usrp_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+        self.controller_proc = subprocess.Popen(controller_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+
+        self.usrp_thread = threading.Thread(target=self.read_pipe_output, args=(self.usrp_proc.stdout, self.usrp_queue))
+        self.controller_thread = threading.Thread(target=self.read_pipe_output, args=(self.controller_proc.stdout, self.controller_queue))
+        self.usrp_thread.daemon = True
+        self.controller_thread.daemon = True
+        self.usrp_thread.start()
+        self.controller_thread.start()
+
+        while True:
+
+            self.usrp_proc.poll()
+            self.controller_proc.poll()
+
+            if self.usrp_proc.returncode is not None or self.controller_proc.returncode is not None:
+                break
+
+            # try:
+            #     line = self.usrp_queue.get(False)
+            #     sys.stdout.write("USRP control output: ")
+            #     sys.stdout.write(str(line))
+            # except queue.Empty:
+            #     pass
+            #
+            # try:
+            #     line = self.controller_queue.get(False)
+            #     sys.stdout.write("SGControl control output: ")
+            #     sys.stdout.write(str(line))
+            # except queue.Empty:
+            #     pass
+
+        print("Done sensing with added interference\n")
+        return
+
+
+
+    def start_converter(self, args):
+        print("Running converter tool...\n")
+        self.converter_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+        while self.converter_proc.poll() is None:
+            continue
+        print("Done conversion\n")
+
+        return
+
+    def start_plotter(self, args):
+        print("Running plotter...\n")
+        self.plotter_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+        while self.plotter_proc.poll() is None:
+            continue
+        print("Done plotting\n")
+
+        return
+
+    def run_button_clicked(self, options):
         sender = self.sender()
-        print("Run button pressed\n")
 
         # All options checked
-        if self.run_usrp and self.run_controller and self.run_converter and self.run_plotter:
-            print("{0} {1} {2} {3}\n".format(str(self.run_usrp), str(self.run_controller), str(self.run_converter), str(self.run_plotter)))
-            print("Running USRP...\n")
-            usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = usrp_proc.communicate()
+        if (self.usrp_state and self.controller_state and self.converter_state and self.plotter_state):
+            print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
 
-            print("Running SGControl...\n")
-            controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = controller_proc.communicate()
-            while controller_proc.poll() is None:
-                continue
-            print("Done sensing medium\n")
+            self.start_usrp_controller(self.usrp_control_args, self.sg_controller_args)
 
-            print("Running converter tool...\n")
-            converter_proc = subprocess.Popen(self.matlab_converter_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = converter_proc.communicate()
-            #proc.wait()
-            while converter_proc.poll() is None:
-                continue
-            print("Done conversion\n")
+            self.start_converter(self.matlab_converter_args)
 
-            print("Running plotter...\n")
-            plotter_proc = subprocess.Popen(self.matlab_plotter_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            while plotter_proc.poll() is None:
-                continue
-            print("Done plotting\n")
-            #outs, errs = plotter_proc.communicate()
+            self.start_plotter(self.matlab_plotter_args)
 
         # USRP, SGControl, Converter
-        elif self.run_usrp and self.run_controller and self.run_converter:
-            print("{0} {1} {2} {3}\n".format(str(self.run_usrp), str(self.run_controller), str(self.run_converter), str(self.run_plotter)))
-            usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+        elif (self.usrp_state and self.controller_state and self.converter_state and not self.plotter_state):
 
-            controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #controller_proc.communicate()
+            print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
 
-            converter_proc = subprocess.Popen(self.matlab_converter_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = converter_proc.communicate()
+            self.start_usrp_controller(self.usrp_control_args, self.sg_controller_args)
+
+            self.start_converter(self.matlab_converter_args)
 
         # Controller, Converter, Plotter
-        elif self.run_controller and self.run_converter and self.run_plotter:
-            print("{0} {1} {2} {3}\n".format(str(self.run_usrp), str(self.run_controller), str(self.run_converter), str(self.run_plotter)))
-            controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = controller_proc.communicate()
+        elif (self.controller_state and self.converter_state and self.plotter_state and not self.usrp_state):
 
-            converter_proc = subprocess.Popen(self.matlab_converter_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = converter_proc.communicate()
-            #proc.wait()
+            print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
 
-            plotter_proc = subprocess.Popen(self.matlab_plotter_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = plotter_proc.communicate()
+            self.start_controller(self.sg_controller_args)
+
+            self.start_converter(self.matlab_converter_args)
+
+            self.start_plotter(self.matlab_plotter_args)
 
         # USRP, Converter, Plotter
-        elif self.run_usrp and self.run_converter and self.run_plotter:
-            print("{0} {1} {2} {3}\n".format(str(self.run_usrp), str(self.run_controller), str(self.run_converter), str(self.run_plotter)))
-            usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = usrp_proc.communicate()
+        elif (self.usrp_state and self.converter_state and self.plotter_state and not self.controller_state):
 
-            converter_proc = subprocess.Popen(self.matlab_converter_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = converter_proc.communicate()
-            #proc.wait()
+            print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
 
-            plotter_proc = subprocess.Popen(self.matlab_plotter_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = plotter_proc.communicate()
+            self.start_usrp(self.usrp_control_args)
+
+            self.start_converter(self.matlab_converter_args)
+
+            self.start_plotter(self.matlab_plotter_args)
 
         # USRP, SGControl
-        elif self.run_usrp and self.run_controller:
-            print("{0} {1} {2} {3}\n".format(str(self.run_usrp), str(self.run_controller), str(self.run_converter), str(self.run_plotter)))
-            usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = proc.communicate()
+        elif (self.usrp_state and self.controller_state and not self.converter_state and not self.plotter_state):
 
-            controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            controller_proc.communicate()
-            #outs, errs = proc.communicate()
+            print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
+
+            self.start_usrp_controller(self.usrp_control_args, self.sg_controller_args)
 
         # USRP only
-        elif self.run_usrp:
-            print("{0} {1} {2} {3}\n".format(str(self.run_usrp), str(self.run_controller), str(self.run_converter), str(self.run_plotter)))
-            usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = usrp_proc.communicate()
+        elif (self.usrp_state and not self.controller_state and not self.converter_sate and not self.plotter_state):
+
+            print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
+
+            self.start_usrp(self.usrp_control_args)
 
         # SGControl only
-        elif self.run_controller:
-            print("{0} {1} {2} {3}\n".format(str(self.run_usrp), str(self.run_controller), str(self.run_converter), str(self.run_plotter)))
-            controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = controller_proc.communicate()
+        elif (self.controller_state and not self.usrp_state and not self.converter_state and not self.plotter_state):
+
+            print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
+
+            self.start_controller(self.sg_controller_args)
 
         # Converter and Plotter
-        elif self.run_converter and self.run_plotter:
-            print("{0} {1} {2} {3}\n".format(str(self.run_usrp), str(self.run_controller), str(self.run_converter), str(self.run_plotter)))
-            converter_proc = subprocess.Popen(self.matlab_converter_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = converter_proc.communicate()
-            #proc.wait()
+        elif (self.converter_state and self.plotter_state and not self.usrp_state and not self.controller_state):
 
-            plotter_proc = subprocess.Popen(self.matlab_plotter_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = plotter_proc.communicate()
+            print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
+
+            self.start_converter(self.matlab_converter_args)
+
+            self.start_plotter(self.matlab_plotter_args)
 
         # Converter only
-        elif self.run_converter:
-            print("{0} {1} {2} {3}\n".format(str(self.run_usrp), str(self.run_controller), str(self.run_converter), str(self.run_plotter)))
-            converter_proc = subprocess.Popen(self.matlab_converter_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = converter_proc.communicate()
+        elif (self.converter_state and not self.usrp_state and not self.plotter_state and not self.controller_state):
+
+            print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
+
+            self.start_converter(self.matlab_converter_args)
 
         # Plotter only
-        elif self.run_plotter:
-            print("{0} {1} {2} {3}\n".format(str(self.run_usrp), str(self.run_controller), str(self.run_converter), str(self.run_plotter)))
-            plotter_proc = subprocess.Popen(self.matlab_plotter_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            #outs, errs = plotter_proc.communicate()
+        elif (self.plotter_state and not self.converter_state and not self.usrp_state and not self.controller_state):
+
+            print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
+
+            self.start_plotter(self.matlab_plotter_args)
 
         # What did you select?
         else:
             print("No options or bad options given\n")
-            print("{0} {1} {2} {3}\n".format(str(self.run_usrp), str(self.run_controller), str(self.run_converter), str(self.run_plotter)))
 
 
     def controller_button_clicked(self):
@@ -229,6 +289,12 @@ class WiFiQt(QWidget):
     def test_button_clicked(self):
         sender = self.sender()
         print("Test button pressed\n")
+
+    def read_pipe_output(self, pipe, queue):
+
+        while True:
+            line = pipe.readline()
+            queue.put(line)
 
     def closeEvent(self, event):
 
