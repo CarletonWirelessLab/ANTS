@@ -41,8 +41,10 @@ class WiFiQt(QWidget):
 
     def init_UI(self):
 
-        self.usrp_control_args = ["python3", "./fake_USRP_control.py"]
-        self.sg_controller_args = ["python3", "./fake_SG_control.py"]
+        #self.usrp_control_args = ["python3", "./fake_USRP_control.py"]
+        self.usrp_control_args = ["python", "./writeIQ.py"]
+        #self.sg_controller_args = ["python3", "./fake_SG_control.py"]
+        self.sg_controller_args = ["python3", "./rnd_control.py"]
         self.matlab_converter_args = ["python3", "./fake_matlab_converter.py"]
         self.matlab_plotter_args = ["python3", "./fake_matlab_plotter.py"]
 
@@ -116,7 +118,7 @@ class WiFiQt(QWidget):
 
     def start_usrp(self, args):
         print("Running USRP...\n")
-        self.usrp_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+        self.usrp_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.usrp_proc.poll() is None:
             continue
         print("Done sensing medium\n")
@@ -125,7 +127,7 @@ class WiFiQt(QWidget):
 
     def start_controller(self, args):
         print("Running interference...\n")
-        self.controller_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+        self.controller_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.controller_proc.poll() is None:
             continue
         print("Done injecting interference\n")
@@ -134,15 +136,15 @@ class WiFiQt(QWidget):
 
     def start_usrp_controller(self, usrp_args, controller_args):
         print("Running USRP with interference injected...\n")
-        self.usrp_proc = subprocess.Popen(usrp_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-        self.controller_proc = subprocess.Popen(controller_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+        self.usrp_proc = subprocess.Popen(usrp_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.controller_proc = subprocess.Popen(controller_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
-        self.usrp_thread = threading.Thread(target=self.read_pipe_output, args=(self.usrp_proc.stdout, self.usrp_queue))
-        self.controller_thread = threading.Thread(target=self.read_pipe_output, args=(self.controller_proc.stdout, self.controller_queue))
-        self.usrp_thread.daemon = True
-        self.controller_thread.daemon = True
-        self.usrp_thread.start()
-        self.controller_thread.start()
+        #self.usrp_thread = threading.Thread(target=self.read_pipe_output, args=(self.usrp_proc.stdout, self.usrp_queue))
+        #self.controller_thread = threading.Thread(target=self.read_pipe_output, args=(self.controller_proc.stdout, self.controller_queue))
+        #self.usrp_thread.daemon = True
+        #self.controller_thread.daemon = True
+        #self.usrp_thread.start()
+        #self.controller_thread.start()
 
         while True:
 
@@ -152,18 +154,18 @@ class WiFiQt(QWidget):
             if self.usrp_proc.returncode is not None or self.controller_proc.returncode is not None:
                 break
 
-            # try:
+            #try:
             #     line = self.usrp_queue.get(False)
             #     sys.stdout.write("USRP control output: ")
             #     sys.stdout.write(str(line))
-            # except queue.Empty:
+            #except queue.Empty:
             #     pass
             #
-            # try:
+            #try:
             #     line = self.controller_queue.get(False)
             #     sys.stdout.write("SGControl control output: ")
             #     sys.stdout.write(str(line))
-            # except queue.Empty:
+            #except queue.Empty:
             #     pass
 
         print("Done sensing with added interference\n")
@@ -241,7 +243,7 @@ class WiFiQt(QWidget):
             self.start_usrp_controller(self.usrp_control_args, self.sg_controller_args)
 
         # USRP only
-        elif (self.usrp_state and not self.controller_state and not self.converter_sate and not self.plotter_state):
+        elif (self.usrp_state and not self.controller_state and not self.converter_state and not self.plotter_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
 

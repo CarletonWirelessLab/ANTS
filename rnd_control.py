@@ -1,6 +1,5 @@
 #!/bin/python3
 
-from tkinter import filedialog
 from echo_client import echo_to_server
 import random as rnd
 import subprocess
@@ -8,9 +7,9 @@ import threading
 import time
 
 def control_sg(setup_file, on_file, off_file, lower_bound=0.01, \
-               upper_bound=2, \
-               seed=None, initial_delay=0, run_duration=10.0, \
-               executable="ks_lanio", instr="echo_client.py", test_mode=True, \
+               upper_bound=0.6, \
+               seed=None, initial_delay=0, run_duration=2.5, \
+               executable="ks_lanio", test_mode=True, \
                graphics=False):
 
     # Set a new seed for the randomness (in functions that use it) each time the
@@ -49,9 +48,9 @@ def control_sg(setup_file, on_file, off_file, lower_bound=0.01, \
     # Split the command and argument for running the tool (either the E4438C
     # controller itself, or the echo_client in test mode) up so that they can
     # be passed as arguments to Popen() within the while loop
-    on_args = ("./{0} {1} {2}".format(executable, sg_ip, rf_on_command))
+    on_args = ("\n./{0} {1} {2}".format(executable, sg_ip, rf_on_command))
     on_args_split = on_args.split()
-    off_args = ("./{0} {1} {2}".format(executable, sg_ip, rf_off_command))
+    off_args = ("\n./{0} {1} {2}".format(executable, sg_ip, rf_off_command))
     off_args_split = off_args.split()
 
     # The actual "control" block begins here
@@ -62,17 +61,15 @@ def control_sg(setup_file, on_file, off_file, lower_bound=0.01, \
     off_time = 0
 
     # Turn on the USRP for sensing the medium
-    popen = subprocess.Popen(dummy_USRP_on, stdout=subprocess.PIPE)
-    popen.wait()
-
+    #popen = subprocess.Popen(dummy_USRP_on, stdout=subprocess.PIPE)
+    #popen.wait()
+    
+    # initial delay
+    time.sleep(initial_delay)
     # While time measured is less than specified run duration, toggle the
     # signal generator's RF output on and off periodically with an on
-    # time specified by the on_time parameter. This includes an optional
-    # initial delay which can be added to every cycle if it is desired
+    # time specified by the on_time parameter.
     while(total_time + initial_delay < run_duration):
-
-        # initial delay
-        time.sleep(initial_delay)
 
         # Generate a random number between the bounds specified to use as the
         # on time of the pulse, then calculate its corresponding off time
@@ -95,14 +92,14 @@ def control_sg(setup_file, on_file, off_file, lower_bound=0.01, \
 
         # add the time elapsed to the total_time variable to keep track of
         # run time
-        total_time = time.time() - start_time
+        total_time = total_time + time.time() - start_time
 
     # Turn off the USRP once the test run is finished
-    popen = subprocess.Popen(dummy_USRP_off, stdout=subprocess.PIPE)
-    popen.wait()
-    print("Stopped recording\n")
-    print("Ran for {0} seconds\n".format(time.time() - start_time))
+    #popen = subprocess.Popen(dummy_USRP_off, stdout=subprocess.PIPE)
+    #popen.wait()
+    print("Stopped injection\n")
+    print("Ran for {0} seconds\n".format(total_time))
 
 # What to do if this script is called externally
 if __name__ == '__main__':
-    control_sg("awgn_setup.txt", "awgn_on.txt", "awgn_off.txt", run_duration=20.0, test_mode=True, upper_bound = 4.0)
+    control_sg("awgn_setup.txt", "awgn_on.txt", "awgn_off.txt", run_duration=2.5, test_mode=False, upper_bound = 4.0, seed=3.775, initial_delay=2)
