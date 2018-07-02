@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from PyQt5.QtWidgets import QWidget, QCheckBox, QApplication, QComboBox, QMessageBox, QPushButton
+from PyQt5.QtWidgets import QWidget, QCheckBox, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow
 from PyQt5.QtCore import Qt
 import sys
 import subprocess
@@ -8,7 +8,7 @@ import threading
 import time
 import queue
 
-class WiFiQt(QWidget):
+class WiFiQt(QMainWindow):
 
     def __init__(self):
         super().__init__()
@@ -17,36 +17,49 @@ class WiFiQt(QWidget):
         self.controller_state = False
         self.converter_state = False
         self.plotter_state = False
+        self.iperf_state = False
 
         self.usrp_proc = None
         self.controller_proc = None
         self.converter_proc = None
         self.plotter_proc = None
+        self.iperf_proc = None
 
         self.usrp_buffer = []
         self.controller_buffer = []
         self.converter_buffer = []
         self.plotter_buffer = []
+        self.iperf_buffer = []
 
         self.usrp_queue = queue.Queue()
         self.controller_queue = queue.Queue()
         self.converter_queue = queue.Queue()
         self.plotter_queue = queue.Queue()
+        self.iperf_queue = queue.Queue()
 
         self.usrp_thread = None
         self.controller_thread = None
+
+        self.iperf_client_thread = None
+        self.iperf_server_thread = None
+        self.iperf_ip_addr = None
+        self.iperf_rate = None
+        self.iperf_mem_addr = None
 
         self.init_UI()
 
 
     def init_UI(self):
 
+        self.statusBar().showMessage('Idle')
         #self.usrp_control_args = ["python3", "./fake_USRP_control.py"]
         self.usrp_control_args = ["python", "./writeIQ.py"]
         #self.sg_controller_args = ["python3", "./fake_SG_control.py"]
         self.sg_controller_args = ["python3", "./rnd_control.py"]
         self.matlab_converter_args = ["python3", "./fake_matlab_converter.py"]
         self.matlab_plotter_args = ["python3", "./fake_matlab_plotter.py"]
+        self.iperf_client_args = ["iperf", "-c", str(self.iperf_ip_addr), "-u", "-b"+str(self.iperf_rate)+"M", "-S", str(self.iperf_mem_addr), "-t10000000000"]
+        self.iperf_server_args = ["iperf", "-s", "-u", "-t100000000000000"]
 
         usrp_checkbox = QCheckBox('Run USRP', self)
         usrp_checkbox.move(20, 20)
@@ -63,6 +76,10 @@ class WiFiQt(QWidget):
         plotter_checkbox = QCheckBox('Run Plotter', self)
         plotter_checkbox.move(20, 200)
         plotter_checkbox.stateChanged.connect(self.plotter_check)
+
+        iperf_checkbox = QCheckBox('Run iperf', self)
+        iperf_checkbox.move(20, 260)
+        iperf_checkbox.stateChanged.connect(self.iperf_check)
 
         run_btn = QPushButton('Run', self)
         run_btn.setToolTip('Run the test sequences selected')
@@ -83,7 +100,7 @@ class WiFiQt(QWidget):
         controller_setup_btn.clicked.connect(self.controller_button_clicked)
         test_setup_btn.clicked.connect(self.test_button_clicked)
 
-        self.setGeometry(300, 600, 500, 300)
+        self.setGeometry(300, 600, 500, 500)
         self.setWindowTitle('SYSC WiFi Control Panel')
         self.show()
 
@@ -115,6 +132,13 @@ class WiFiQt(QWidget):
             self.plotter_state = True
         else:
             self.plotter_state = False
+
+    def iperf_check(self, state):
+
+        if state == Qt.Checked:
+            self.iperf_state = True
+        else:
+            self.iperf_state = False
 
     def start_usrp(self, args):
         print("Running USRP...\n")
@@ -193,6 +217,7 @@ class WiFiQt(QWidget):
 
     def run_button_clicked(self, options):
         sender = self.sender()
+        self.statusBar().showMessage('Running...')
 
         # All options checked
         if (self.usrp_state and self.controller_state and self.converter_state and self.plotter_state):
@@ -282,6 +307,8 @@ class WiFiQt(QWidget):
         # What did you select?
         else:
             print("No options or bad options given\n")
+
+        self.statusBar().showMessage('Idle')
 
 
     def controller_button_clicked(self):
