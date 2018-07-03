@@ -8,10 +8,11 @@ import subprocess
 import threading
 import time
 import queue
+import matlab.engine as matlab
 
 class WiFiQt(QMainWindow):
 
-    def __init__(self):
+    def __init__(self, test_mode=False):
         super().__init__()
 
         self.usrp_state = False
@@ -63,12 +64,15 @@ class WiFiQt(QMainWindow):
 
         self.statusBar().showMessage('Idle')
 
-        #self.usrp_control_args = ["python3", "./fake_USRP_control.py"]
-        self.usrp_control_args = ["python", "./writeIQ.py"]
-        #self.sg_controller_args = ["python3", "./fake_SG_control.py"]
-        self.sg_controller_args = ["python3", "./rnd_control.py"]
-        self.matlab_converter_args = ["python3", "./fake_matlab_converter.py"]
-        self.matlab_plotter_args = ["python3", "./fake_matlab_plotter.py"]
+        if test_mode == True:
+            self.usrp_control_args = ["python3", "./fake_USRP_control.py"]
+            self.sg_controller_args = ["python3", "./fake_SG_control.py"]
+            self.matlab_converter_args = ["python3", "./fake_matlab_converter.py"]
+            self.matlab_plotter_args = ["python3", "./fake_matlab_plotter.py"]
+        else:
+            self.usrp_control_args = ["python", "./writeIQ.py"]
+            self.sg_controller_args = ["python3", "./rnd_control.py"]
+
         self.iperf_client_args = ["iperf", "-c", str(self.iperf_client_addr), "-u", "-b"+str(self.iperf_rate)+"M", "-S", str(self.iperf_mem_addr), "-t10000000000"]
         self.iperf_server_args = ["iperf", "-s", "-u", "-t100000000000000"]
 
