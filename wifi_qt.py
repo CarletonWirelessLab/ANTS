@@ -8,7 +8,8 @@ import subprocess
 import threading
 import time
 import queue
-import matlab.engine as matlab
+import os
+import matlab.engine
 
 class WiFiQt(QMainWindow):
 
@@ -57,6 +58,16 @@ class WiFiQt(QMainWindow):
         # Default run time length
         self.run_time = 0.5
 
+        self.test_mode = test_mode
+
+        print("Starting Matlab engine for Python... ")
+        self.engine = matlab.engine.start_matlab()
+        print("Done\n")
+        print("Setting up Matlab engine workspace...")
+        cur_dir = os.getcwd()
+        self.engine.addpath(self.engine.genpath(cur_dir))
+        print("Done\n")
+
         self.init_UI()
 
 
@@ -64,7 +75,7 @@ class WiFiQt(QMainWindow):
 
         self.statusBar().showMessage('Idle')
 
-        if test_mode == True:
+        if self.test_mode == True:
             self.usrp_control_args = ["python3", "./fake_USRP_control.py"]
             self.sg_controller_args = ["python3", "./fake_SG_control.py"]
             self.matlab_converter_args = ["python3", "./fake_matlab_converter.py"]
