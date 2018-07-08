@@ -10,14 +10,14 @@ import sys
 import threading
 import time
 
-global name 
+global name
 global runFor #sec
 
 class writeIQ(gr.top_block):
 
 	def __init__(self):
 		gr.top_block.__init__(self)
-		
+
 		global name, runFor
 
 		# Define variables and their default values
@@ -26,7 +26,9 @@ class writeIQ(gr.top_block):
 		self.gain = 60
 		self.cfreq = 5.765e9 #2.412e9
 		self.antenna = "RX2"
-		self.file_name = 'FgTeast_' + name +'.bin'
+		self.file_name = name + '.bin'
+		print(self.file_name)
+		#self.file_name = 'FgTest_' + name +'.bin'
 
 		# Define blocks
 		# 1) USRP Block
@@ -37,7 +39,7 @@ class writeIQ(gr.top_block):
         			channels=range(1),
         		),
         	)
-		
+
 		# 2) Set default parameters
 		self.usrpSource.set_samp_rate(self.samp_rate)
         	self.usrpSource.set_center_freq(self.cfreq, 0)
@@ -96,14 +98,12 @@ def main():
 		runFor = float(sys.argv[2]) #sec
 
 	t = threading.Thread(target=dowork)
-	t.daemon = True 
+	t.daemon = True
 	t.start()
-	#time.sleep(1.9828)   #to initiate the device on HP laptop 
+	#time.sleep(1.9828)   #to initiate the device on HP laptop
 	time.sleep(runFor)
 	print '## END READING ## Duration =',runFor,' s'
 	quit()
 
 if __name__  == '__main__':
 	main()
-
-

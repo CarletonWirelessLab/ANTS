@@ -17,7 +17,7 @@ import matlab.engine
 # aspects need to be separated for modularity purposes
 class WiFiQt(QMainWindow):
 
-    def __init__(self, test_mode=True):
+    def __init__(self, test_mode=False):
         super().__init__()
 
         # Class variables that are set by toggling the checkboxes. Used to
@@ -75,6 +75,9 @@ class WiFiQt(QMainWindow):
         # Default run time length
         self.run_time = 0.5
 
+        # Output/conversion file name
+        self.file_name = ""
+
         # Flag used to tell the program that it's in test mode or not
         self.test_mode = test_mode
 
@@ -83,6 +86,11 @@ class WiFiQt(QMainWindow):
         # to the workspace to ensure that the converter and plotter tools work
         print("Starting Matlab engine for Python... ")
         self.engine = matlab.engine.start_matlab()
+        print("Done\n")
+
+        print("Pre-cleaning workspace...")
+        self.engine.close('all', nargout=0)
+        self.engine.clear('all', nargout=0)
         print("Done\n")
         print("Setting up Matlab engine workspace...")
         cur_dir = os.getcwd()
@@ -112,7 +120,7 @@ class WiFiQt(QMainWindow):
         # subprocess.Popen() Note that writeIQ still needs to have support for
         # variable run time added before the slider in the GUI has any effect
         else:
-            self.usrp_control_args = ["python", "./writeIQ.py", str(self.run_time)]
+            self.usrp_control_args = ["python", "./writeIQ.py", "123", str(self.run_time)]
             self.sg_controller_args = ["python3", "./rnd_control.py", str(self.run_time)]
 
         # The arguments to give to subprocess.Popen() to run iperf
@@ -145,9 +153,9 @@ class WiFiQt(QMainWindow):
         iperf_checkbox.stateChanged.connect(self.iperf_check)
 
         # Labels for the iperf IP address boxes
-        iperf_client_label = QLabel("Client IP Address", self)
+        iperf_client_label = QLabel("Client IP", self)
         iperf_client_label.move(20, 300)
-        iperf_server_label = QLabel("Server IP Address", self)
+        iperf_server_label = QLabel("Server IP", self)
         iperf_server_label.move(20, 360)
 
         # Create text boxes that use the regex rules and ip_validator from
@@ -160,6 +168,20 @@ class WiFiQt(QMainWindow):
         self.iperf_server_lineedit.setValidator(self.ip_validator)
         self.iperf_server_lineedit.textChanged[str].connect(self.on_server_ip)
         self.iperf_server_lineedit.move(20, 385)
+
+        # Create a text box to take the filename used by the USRP and converter
+        # tools
+        self.file_name_lineedit = QLineEdit(self)
+        self.file_name_lineedit.textChanged[str].connect(self.on_name_change)
+        self.file_name_lineedit.move(380, 125)
+        self.file_name_text = "Filename"
+        self.file_name_label = QLabel(self.file_name_text, self)
+        self.file_name_label.move(380, 100)
+        # self.file_name_set_button = QPushButton('Set', self)
+        # self.file_name_set_button.setToolTip('Set the target filename')
+        # self.file_name_set_button.resize(self.file_name_set_button.sizeHint())
+        # self.file_name_set_button.move(380, 160)
+
 
 
         # Run time slider set up. Currently does nothing until the writeIQ
@@ -268,11 +290,17 @@ class WiFiQt(QMainWindow):
         if self.iperf_server_lineedit.hasAcceptableInput():
             self.iperf_server_addr = text
 
+    # Set file name based on what's in the box
+    def on_name_change(self, text):
+
+        self.file_name = text
+
 
     # Runs a subprocess for the USRP based on the usrp_control_args variable
-    def start_usrp(self, args):
+    def start_usrp(self):
         print("Running USRP...\n")
-        self.usrp_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.usrp_control_args = ["python", "./writeIQ.py", self.file_name, str(self.run_time)]
+        self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.usrp_proc.poll() is None:
             continue
         print("Done sensing medium\n")
@@ -282,7 +310,7 @@ class WiFiQt(QMainWindow):
     # variable
     def start_controller(self, args):
         print("Running interference...\n")
-        self.controller_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.controller_proc.poll() is None:
             continue
         print("Done injecting interference\n")
@@ -291,10 +319,11 @@ class WiFiQt(QMainWindow):
 
     # Runs the USRP and SGControl tools simultaneously if and only if both boxes
     # are checked
-    def start_usrp_controller(self, usrp_args, controller_args):
+    def start_usrp_controller(self):
         print("Running USRP with interference injected...\n")
-        self.usrp_proc = subprocess.Popen(usrp_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        self.controller_proc = subprocess.Popen(controller_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.usrp_control_args = ["python", "./writeIQ.py", self.file_name, str(self.run_time)]
+        self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
         while True:
 
@@ -310,11 +339,12 @@ class WiFiQt(QMainWindow):
 
     # Runs the USRP and iperf tools simultaneously if and only if both boxes
     # are checked
-    def start_usrp_iperf(self, usrp_args, iperf_client_args, iperf_server_args):
+    def start_usrp_iperf(self):
         print("Running USRP with interference injected...\n")
-        self.usrp_proc = subprocess.Popen(usrp_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        self.iperf_client_proc = subprocess.Popen(iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        self.iperf_server_proc = subprocess.Popen(iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.usrp_control_args = ["python", "./writeIQ.py", self.file_name, str(self.run_time)]
+        self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
         while True:
 
@@ -331,36 +361,48 @@ class WiFiQt(QMainWindow):
 
 
     # Run the matlab function to convert the collected data
-    def start_converter(self, args):
+    # def start_converter(self, args):
+    #     print("Running converter tool...\n")
+    #     if self.test_mode == True:
+    #         self.converter_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+    #         while self.converter_proc.poll() is None:
+    #             continue
+    #     else:
+    #         matlab.engine.displayTimingInformation()
+    #     print("Done conversion\n")
+    #
+    #     return
+
+    def start_converter(self):
         print("Running converter tool...\n")
-        if self.test_mode == True:
-            self.converter_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            while self.converter_proc.poll() is None:
-                continue
-        else:
-            matlab.engine.displayTimingInformation()
+        print(self.file_name)
+        self.engine.workspace['fileName'] = self.file_name + ".bin"
+        self.engine.displayTimingInformation(nargout=0)
+        #self.engine.run('displayTimingInformation.m', nargout=0)
         print("Done conversion\n")
 
-        return
-
     # Run the matlab function to plot the converted data
-    def start_plotter(self, args):
+    # def start_plotter(self, args):
+    #     print("Running plotter...\n")
+    #     if self.test_mode == True:
+    #         self.plotter_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
+    #         while self.plotter_proc.poll() is None:
+    #             continue
+    #     else:
+    #         matlab.engine.Load_and_Eval()
+    #     print("Done plotting\n")
+    #
+    #     return
+    def start_plotter(self):
         print("Running plotter...\n")
-        if self.test_mode == True:
-            self.plotter_proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None, shell=False)
-            while self.plotter_proc.poll() is None:
-                continue
-        else:
-            matlab.engine.Load_and_Eval()
+        self.engine.Load_and_Eval(nargout=0)
         print("Done plotting\n")
 
-        return
-
     # Runs the iperf client and server processes
-    def start_iperf(self, iperf_client_args, iperf_server_args):
+    def start_iperf(self):
         print("Running iperf...\n")
-        self.iperf_client_proc = subprocess.Popen(iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        self.iperf_server_proc = subprocess.Popen(iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
         while True:
 
@@ -388,79 +430,84 @@ class WiFiQt(QMainWindow):
         if (self.usrp_state and self.iperf_state and self.converter_state and self.plotter_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.iperf_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_usrp_iperf(self.usrp_control_args, self.iperf_client_args, self.iperf_server_args)
-            self.start_converter(self.matlab_converter_args)
-            self.start_plotter(self.matlab_plotter_args)
+            self.start_usrp_iperf()
+            self.start_converter()
+            self.start_plotter()
 
         # USRP, SGControl, Converter
         elif (self.usrp_state and self.controller_state and self.converter_state and not self.plotter_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_usrp_controller(self.usrp_control_args, self.sg_controller_args)
-            self.start_converter(self.matlab_converter_args)
+            self.start_usrp_controller()
+            self.start_converter()
 
         # USRP, iperf, Converter
         elif (self.usrp_state and self.iperf_state and self.converter_state and not self.plotter_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_usrp_iperf(self.usrp_control_args, self.iperf_client_args, self.iperf_server_args)
-            self.start_converter(self.matlab_converter_args)
+            self.start_usrp_iperf()
+            self.start_converter()
 
         # USRP, Converter, Plotter
         elif (self.usrp_state and self.converter_state and self.plotter_state and not self.controller_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_usrp(self.usrp_control_args)
-            self.start_converter(self.matlab_converter_args)
-            self.start_plotter(self.matlab_plotter_args)
+            self.start_usrp()
+            self.start_converter()
+            self.start_plotter()
 
         # USRP, SGControl
         elif (self.usrp_state and self.controller_state and not self.converter_state and not self.plotter_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_usrp_controller(self.usrp_control_args, self.sg_controller_args)
+            self.start_usrp_controller()
 
         # USRP, iperf
         elif (self.usrp_state and self.iperf_state and not self.converter_state and not self.plotter_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_usrp_iperf(self.usrp_control_args, self.iperf_client_args, self.iperf_server_args)
+            self.start_usrp_iperf()
 
         # USRP only
         elif (self.usrp_state and not self.controller_state and not self.converter_state and not self.plotter_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_usrp(self.usrp_control_args)
+            self.start_usrp()
 
         # SGControl only
         elif (self.controller_state and not self.usrp_state and not self.converter_state and not self.plotter_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_controller(self.sg_controller_args)
+            self.start_controller()
 
+        elif (self.usrp_state and self.converter_state and not self.plotter_state and not self.controller_state and not self.iperf_state):
+
+            self.start_usrp()
+            self.start_converter()
+            
         # Converter and Plotter
         elif (self.converter_state and self.plotter_state and not self.usrp_state and not self.controller_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_converter(self.matlab_converter_args)
-            self.start_plotter(self.matlab_plotter_args)
+            self.start_converter()
+            self.start_plotter()
 
         # Converter only
         elif (self.converter_state and not self.usrp_state and not self.plotter_state and not self.controller_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_converter(self.matlab_converter_args)
+            self.start_converter()
 
         # Plotter only
         elif (self.plotter_state and not self.converter_state and not self.usrp_state and not self.controller_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.controller_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_plotter(self.matlab_plotter_args)
+            self.start_plotter()
 
         elif (self.iperf_state and not self.converter_state and not self.usrp_state and not self.controller_state and not self.plotter_state):
 
             print("{0} {1} {2} {3}\n".format(str(self.usrp_state), str(self.iperf_state), str(self.converter_state), str(self.plotter_state)))
-            self.start_iperf(self.iperf_client_args, self.iperf_server_args)
+            self.start_iperf()
 
         # What did you select?
         else:
