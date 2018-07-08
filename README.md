@@ -43,6 +43,13 @@ Note that in order to use the MATLAB Engine for Python, it **must** be activated
 2. Navigate to /usr/local/MATLAB/R20XXX/extern/engines/python and run ``` sudo python3 setup.py install ```
 3. ```git clone https://github.com/threexc/SiGPyC```
 
+## To-Do List
+
+1. Clean up the GUI and add more user-friendly features
+2. Modularize the code (currently just one approximately 500-line script)
+3. Add in original MATLAB code
+4. Windows support
+
 ## Authors
 
 * **Trevor Gamblin** - [threexc](https://github.com/threexc)
