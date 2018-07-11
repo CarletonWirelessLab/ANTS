@@ -15,7 +15,7 @@ import matlab.engine
 # other high-frequency I/O devices. The GUI is written entirely using PyQt5.
 # Once everything is in a working, deployable state, the GUI and functional
 # aspects need to be separated for modularity purposes
-class WiFiQt(QMainWindow):
+class SiGPyC(QMainWindow):
 
     def __init__(self, test_mode=False):
         super().__init__()
@@ -484,7 +484,7 @@ class WiFiQt(QMainWindow):
 
             self.start_usrp()
             self.start_converter()
-            
+
         # Converter and Plotter
         elif (self.converter_state and self.plotter_state and not self.usrp_state and not self.controller_state):
 
@@ -548,5 +548,5 @@ class WiFiQt(QMainWindow):
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
-    ex = WiFiQt()
+    ex = SiGPyC()
     sys.exit(app.exec_())
