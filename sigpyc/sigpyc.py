@@ -111,17 +111,17 @@ class SiGPyC(QMainWindow):
         # self-identification message, then runs time.sleep() for a certain
         # amount of seconds
         if self.test_mode == True:
-            self.usrp_control_args = ["python3", "./fake_USRP_control.py"]
-            self.sg_controller_args = ["python3", "./fake_SG_control.py"]
-            self.matlab_converter_args = ["python3", "./fake_matlab_converter.py"]
-            self.matlab_plotter_args = ["python3", "./fake_matlab_plotter.py"]
+            self.usrp_control_args = ["python3", "../tests/fake_USRP_control.py"]
+            self.sg_controller_args = ["python3", "../tests/fake_SG_control.py"]
+            self.matlab_converter_args = ["python3", "../tests/fake_matlab_converter.py"]
+            self.matlab_plotter_args = ["python3", "../tests/fake_matlab_plotter.py"]
 
         # Run the real arguments in the intended environment. using
         # subprocess.Popen() Note that writeIQ still needs to have support for
         # variable run time added before the slider in the GUI has any effect
         else:
-            self.usrp_control_args = ["python", "./writeIQ.py", "123", str(self.run_time)]
-            self.sg_controller_args = ["python3", "./rnd_control.py", str(self.run_time)]
+            self.usrp_control_args = ["python", "../utils/writeIQ.py", "123", str(self.run_time)]
+            self.sg_controller_args = ["python3", "./utils/rnd_control.py", str(self.run_time)]
 
         # The arguments to give to subprocess.Popen() to run iperf
         self.iperf_client_args = ["iperf", "-c", str(self.iperf_client_addr), "-u", "-b"+str(self.iperf_rate)+"M", "-S", str(self.iperf_mem_addr), "-t10000000000"]
@@ -299,7 +299,7 @@ class SiGPyC(QMainWindow):
     # Runs a subprocess for the USRP based on the usrp_control_args variable
     def start_usrp(self):
         print("Running USRP...\n")
-        self.usrp_control_args = ["python", "./writeIQ.py", self.file_name, str(self.run_time)]
+        self.usrp_control_args = ["python", "../utils/writeIQ.py", self.file_name, str(self.run_time)]
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.usrp_proc.poll() is None:
             continue
@@ -321,7 +321,7 @@ class SiGPyC(QMainWindow):
     # are checked
     def start_usrp_controller(self):
         print("Running USRP with interference injected...\n")
-        self.usrp_control_args = ["python", "./writeIQ.py", self.file_name, str(self.run_time)]
+        self.usrp_control_args = ["python", "../utils/writeIQ.py", self.file_name, str(self.run_time)]
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
@@ -341,7 +341,7 @@ class SiGPyC(QMainWindow):
     # are checked
     def start_usrp_iperf(self):
         print("Running USRP with interference injected...\n")
-        self.usrp_control_args = ["python", "./writeIQ.py", self.file_name, str(self.run_time)]
+        self.usrp_control_args = ["python", "../utils/writeIQ.py", self.file_name, str(self.run_time)]
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
