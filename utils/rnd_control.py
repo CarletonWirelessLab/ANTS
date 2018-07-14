@@ -1,15 +1,15 @@
 #!/bin/python3
 
-from echo_client import echo_to_server
+#from echo_client import echo_to_server
 import random as rnd
 import subprocess
 import threading
 import time
 
-def control_sg(setup_file, on_file, off_file, lower_bound=0.01, \
+def control_sg(setup_file, on_file, off_file, lower_bound=0.5, \
                upper_bound=0.6, \
                seed=None, initial_delay=0, run_duration=2.5, \
-               executable="ks_lanio", test_mode=True, \
+               executable="utils/ks_lanio", test_mode=True, \
                graphics=False):
 
     # Set a new seed for the randomness (in functions that use it) each time the
@@ -32,6 +32,8 @@ def control_sg(setup_file, on_file, off_file, lower_bound=0.01, \
     arb_off_command = ":RAD:AWGN:ARB:STAT 0"
     rf_on_command = "OUTP:STAT 1"
     rf_off_command = "OUTP:STAT 0"
+    amp_up_cmd = "POW:LEV 0.0DBM"
+    amp_down_cmd = "POW:LEV -136.0DBM"
 
     # Run any SCPI setup file first, for doing things such as turning the AWGN
     # subsystem on before beginning to toggle the RF output
@@ -53,9 +55,17 @@ def control_sg(setup_file, on_file, off_file, lower_bound=0.01, \
     off_args = ("\n./{0} {1} {2}".format(executable, sg_ip, rf_off_command))
     off_args_split = off_args.split()
 
+    # rf_on = ("\n./{0} {1} {2}".format(executable, sg_ip, rf_on_command))
+    # rf_on_split = rf_on.split()
+    # rf_off = ("\n./{0} {1} {2}".format(executable, sg_ip, rf_off_command))
+    # rf_off_split = rf_off.split()
+    # on_args = ("\n./{0} {1} {2}".format(executable, sg_ip, amp_up_cmd))
+    # on_args_split = on_args.split()
+    # off_args = ("\n./{0} {1} {2}".format(executable, sg_ip, amp_down_cmd))
+    # off_args_split = off_args.split()
+
     # The actual "control" block begins here
-    total_time = 0
-    start_time = time.time()
+    run_time = 0
     print("Started recording\n")
     on_time = 0
     off_time = 0
@@ -63,13 +73,15 @@ def control_sg(setup_file, on_file, off_file, lower_bound=0.01, \
     # Turn on the USRP for sensing the medium
     #popen = subprocess.Popen(dummy_USRP_on, stdout=subprocess.PIPE)
     #popen.wait()
-    
+
     # initial delay
     time.sleep(initial_delay)
+
+    start_time = time.time()
     # While time measured is less than specified run duration, toggle the
     # signal generator's RF output on and off periodically with an on
     # time specified by the on_time parameter.
-    while(total_time + initial_delay < run_duration):
+    while(run_time < run_duration):
 
         # Generate a random number between the bounds specified to use as the
         # on time of the pulse, then calculate its corresponding off time
@@ -78,6 +90,7 @@ def control_sg(setup_file, on_file, off_file, lower_bound=0.01, \
 
         # Turn on the RF output, and then wait for the on part of the cycle
         # to end
+        #popen = subprocess.Popen(rf_on_split, stdout=subprocess.PIPE)
         popen = subprocess.Popen(on_args_split, stdout=subprocess.PIPE)
         popen.wait()
         print(on_args)
@@ -92,14 +105,16 @@ def control_sg(setup_file, on_file, off_file, lower_bound=0.01, \
 
         # add the time elapsed to the total_time variable to keep track of
         # run time
-        total_time = total_time + time.time() - start_time
+        run_time = run_time + time.time() - start_time
 
     # Turn off the USRP once the test run is finished
     #popen = subprocess.Popen(dummy_USRP_off, stdout=subprocess.PIPE)
     #popen.wait()
+    #total_time = run_time + initial_delay
     print("Stopped injection\n")
-    print("Ran for {0} seconds\n".format(total_time))
+    print("Ran for {0} seconds\n".format(run_time))
+    #popen = subprocess.Popen(rf_off_split, stdout=subprocess.PIPE)
 
 # What to do if this script is called externally
 if __name__ == '__main__':
-    control_sg("awgn_setup.txt", "awgn_on.txt", "awgn_off.txt", run_duration=2.5, test_mode=False, upper_bound = 4.0, seed=3.775, initial_delay=2)
+    control_sg("awgn_setup.txt", "awgn_on.txt", "awgn_off.txt", run_duration=6, test_mode=False, lower_bound = 0.05, upper_bound = 0.1, seed=2.2, initial_delay=3)
