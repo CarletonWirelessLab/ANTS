@@ -36,20 +36,23 @@ class SiGPyC_Controller():
         # Output/conversion file name
         self.file_name = ""
 
+        # Path of project directory for use in calls to scripts in utils/
+        self.working_dir = os.getcwd()
+
         # Each of these targets a local test script that prints a
         # self-identification message, then runs time.sleep() for a certain
         # amount of seconds
         if test_mode == True:
-            self.usrp_control_args = ["python3", "../tests/fake_USRP_control.py"]
-            self.sg_controller_args = ["python3", "../tests/fake_SG_control.py"]
-            self.matlab_converter_args = ["python3", "../tests/fake_matlab_converter.py"]
-            self.matlab_plotter_args = ["python3", "../tests/fake_matlab_plotter.py"]
+            self.usrp_control_args = ["python3", self.working_dir + "/tests/fake_USRP_control.py"]
+            self.sg_controller_args = ["python3", self.working_dir + "/tests/fake_SG_control.py"]
+            self.matlab_converter_args = ["python3", self.working_dir + "/tests/fake_matlab_converter.py"]
+            self.matlab_plotter_args = ["python3", self.working_dir + "/tests/fake_matlab_plotter.py"]
 
         # Run the real arguments in the intended environment using
         # subprocess.Popen()
         else:
-            self.usrp_control_args = ["python", "../utils/writeIQ.py", "123", str(self.run_time)]
-            self.sg_controller_args = ["python3", "./utils/rnd_control.py", str(self.run_time)]
+            self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", "123", str(self.run_time)]
+            self.sg_controller_args = ["python3", self.working_dir + "/utils/ramp_control.py", str(self.run_time)]
 
         # The arguments to give to subprocess.Popen() to run iperf
         self.iperf_client_args = ["iperf", "-c", str(self.iperf_client_addr), "-u", "-b"+str(self.iperf_rate)+"M", "-S", str(self.iperf_mem_addr), "-t10000000000"]
@@ -72,7 +75,7 @@ class SiGPyC_Controller():
     # Runs a subprocess for the USRP based on the usrp_control_args variable
     def start_usrp(self):
         print("Running USRP...\n")
-        self.usrp_control_args = ["python", "../utils/writeIQ.py", self.file_name, str(self.run_time)]
+        self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.usrp_proc.poll() is None:
             continue
@@ -94,7 +97,7 @@ class SiGPyC_Controller():
     # are checked
     def start_usrp_controller(self):
         print("Running USRP with interference injected...\n")
-        self.usrp_control_args = ["python", "../utils/writeIQ.py", self.file_name, str(self.run_time)]
+        self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
@@ -104,7 +107,7 @@ class SiGPyC_Controller():
             self.controller_proc.poll()
             # Make sure the sequence won't continue until both tools have
             # finished
-            if self.usrp_proc.returncode is not None or self.controller_proc.returncode is not None:
+            if self.usrp_proc.returncode is not None and self.controller_proc.returncode is not None:
                 break
 
         print("Done sensing with added interference\n")
@@ -114,7 +117,7 @@ class SiGPyC_Controller():
     # are checked
     def start_usrp_iperf(self):
         print("Running USRP with interference injected...\n")
-        self.usrp_control_args = ["python", "../utils/writeIQ.py", self.file_name, str(self.run_time)]
+        self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
@@ -126,7 +129,7 @@ class SiGPyC_Controller():
             self.iperf_server_proc.poll()
             # Make sure the sequence won't continue until all tools have
             # finished
-            if self.usrp_proc.returncode is not None or self.iperf_client_proc.returncode is not None or self.iperf_server_proc.returncode is not None:
+            if self.usrp_proc.returncode is not None and self.iperf_client_proc.returncode is not None and self.iperf_server_proc.returncode is not None:
                 break
 
         print("Done sensing with iperf\n")
@@ -158,7 +161,7 @@ class SiGPyC_Controller():
             # finished. Is it necessary that we wait for the server, or is the
             # time given to it just to ensure that we had time to run the client
             # manually?
-            if self.iperf_client_proc.returncode is not None or self.iperf_server_proc.returncode is not None:
+            if self.iperf_client_proc.returncode is not None and self.iperf_server_proc.returncode is not None:
                 break
 
         print("Done running iperf\n")
