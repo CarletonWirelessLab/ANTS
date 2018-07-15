@@ -53,4 +53,6 @@ Note that the code relies on the availability of the Python MATLAB Engine (insta
 
 ## Authors
 
-* **Trevor Gamblin** - [threexc](https://github.com/threexc)
+* **Trevor Gamblin** - [threexc](https://github.com/threexc) - Primary developer
+* **Ammar Alhosainy** - MATLAB and some Python tools
+* **Kareem Attiah** - MATLAB and some Python tools
