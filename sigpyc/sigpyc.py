@@ -1,7 +1,7 @@
 #/usr/bin/python3
 
-from sigpyc_controller import SiGPyC_Controller
-from sigpyc_gui import SiGPyC_GUI
+from sigcontrol import SiGPyC_Controller
+from siggui import SiGPyC_GUI
 from PyQt5.QtWidgets import QWidget, QCheckBox, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel
 from PyQt5.QtCore import Qt, QRegExp
 from PyQt5.QtGui import QRegExpValidator

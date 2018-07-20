@@ -139,6 +139,7 @@ class SiGPyC_Controller():
         print("Running converter tool...\n")
         print(self.file_name)
         self.engine.workspace['fileName'] = self.file_name + ".bin"
+        self.engine.workspace['duration'] = self.run_time
         self.engine.displayTimingInformation(nargout=0)
         print("Done conversion\n")
 
