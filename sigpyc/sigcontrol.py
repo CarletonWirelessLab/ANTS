@@ -6,7 +6,14 @@ import threading
 import time
 import queue
 import os
-import matlab.engine
+
+try:
+    import matlab.engine
+except ImportError:
+    print("MATLAB engine could not be found. Converter and plotter tools may not function properly. See README.md for details on how to install this component.\n")
+    matlab_available = False
+else:
+    matlab_available = True
 
 class SiGPyC_Controller():
 
@@ -30,6 +37,10 @@ class SiGPyC_Controller():
         self.iperf_rate = None
         self.iperf_mem_addr = None
 
+        # The arguments to give to subprocess.Popen() to run iperf
+        self.iperf_client_args = ["iperf", "-c", str(self.iperf_client_addr), "-u", "-b"+str(self.iperf_rate)+"M", "-S", str(self.iperf_mem_addr), "-t10000000000"]
+        self.iperf_server_args = ["iperf", "-s", "-u", "-t100000000000000"]
+
         # Default run time length
         self.run_time = 0.5
 
@@ -43,10 +54,11 @@ class SiGPyC_Controller():
         # self-identification message, then runs time.sleep() for a certain
         # amount of seconds
         if test_mode == True:
-            self.usrp_control_args = ["python3", self.working_dir + "/tests/fake_USRP_control.py"]
-            self.sg_controller_args = ["python3", self.working_dir + "/tests/fake_SG_control.py"]
-            self.matlab_converter_args = ["python3", self.working_dir + "/tests/fake_matlab_converter.py"]
-            self.matlab_plotter_args = ["python3", self.working_dir + "/tests/fake_matlab_plotter.py"]
+            self.usrp_control_args = ["python3", self.working_dir + "/tests/usrp_sim.py"]
+            self.sg_controller_args = ["python3", self.working_dir + "/tests/sg_sim.py"]
+            self.matlab_converter_args = ["python3", self.working_dir + "/tests/converter_sim.py"]
+            self.matlab_plotter_args = ["python3", self.working_dir + "/tests/plotter_sim.py"]
+            self.iperf_client_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.iperf_client_addr)]
 
         # Run the real arguments in the intended environment using
         # subprocess.Popen()
@@ -54,22 +66,21 @@ class SiGPyC_Controller():
             self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", "123", str(self.run_time)]
             self.sg_controller_args = ["python3", self.working_dir + "/utils/ramp_control.py", str(self.run_time)]
 
-        # The arguments to give to subprocess.Popen() to run iperf
-        self.iperf_client_args = ["iperf", "-c", str(self.iperf_client_addr), "-u", "-b"+str(self.iperf_rate)+"M", "-S", str(self.iperf_mem_addr), "-t10000000000"]
-        self.iperf_server_args = ["iperf", "-s", "-u", "-t100000000000000"]
+        if matlab_available == True:
+            print("Starting Matlab engine for Python... ")
+            self.engine = matlab.engine.start_matlab()
+            print("Done\n")
 
-        print("Starting Matlab engine for Python... ")
-        self.engine = matlab.engine.start_matlab()
-        print("Done\n")
-
-        print("Pre-cleaning workspace...")
-        self.engine.close('all', nargout=0)
-        self.engine.clear('all', nargout=0)
-        print("Done\n")
-        print("Setting up Matlab engine workspace...")
-        cur_dir = os.getcwd()
-        self.engine.addpath(self.engine.genpath(cur_dir))
-        print("Done\n")
+            print("Pre-cleaning workspace...")
+            self.engine.close('all', nargout=0)
+            self.engine.clear('all', nargout=0)
+            print("Done\n")
+            print("Setting up Matlab engine workspace...")
+            cur_dir = os.getcwd()
+            self.engine.addpath(self.engine.genpath(cur_dir))
+            print("Done\n")
+        else:
+            print("MATLAB not previously found during import step. Skipping setup...\n")
 
 
     # Runs a subprocess for the USRP based on the usrp_control_args variable
@@ -138,15 +149,21 @@ class SiGPyC_Controller():
     def start_converter(self):
         print("Running converter tool...\n")
         print(self.file_name)
-        self.engine.workspace['fileName'] = self.file_name + ".bin"
-        self.engine.workspace['duration'] = self.run_time
-        self.engine.displayTimingInformation(nargout=0)
-        print("Done conversion\n")
+        if matlab_available == True:
+            self.engine.workspace['fileName'] = self.file_name + ".bin"
+            self.engine.workspace['duration'] = self.run_time
+            self.engine.displayTimingInformation(nargout=0)
+            print("Done conversion\n")
+        else:
+            print("Nothing converted. Is the MATLAB engine installed?")
 
     def start_plotter(self):
         print("Running plotter...\n")
-        self.engine.Load_and_Eval(nargout=0)
-        print("Done plotting\n")
+        if matlab_available == True:
+            self.engine.Load_and_Eval(nargout=0)
+            print("Done plotting\n")
+        else:
+            print("Nothing plotted. Is the MATLAB engine installed?")
 
     # Runs the iperf client and server processes
     def start_iperf(self):

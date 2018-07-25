@@ -2,16 +2,8 @@
 
 from sigcontrol import SiGPyC_Controller
 from siggui import SiGPyC_GUI
-from PyQt5.QtWidgets import QWidget, QCheckBox, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel
-from PyQt5.QtCore import Qt, QRegExp
-from PyQt5.QtGui import QRegExpValidator
+from PyQt5.QtWidgets import QApplication
 import sys
-import subprocess
-import threading
-import time
-import queue
-import os
-import matlab.engine
 
 
 if __name__ == '__main__':
