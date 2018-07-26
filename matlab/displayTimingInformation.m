@@ -5,7 +5,7 @@ IntDuration = 0; % mSec
 
 tic
 sampRate = 20e6;
-duration = 0.1;       % In seconds
+%duration = 2;       % In seconds
 packetIndex = 3;
 f = 0.01;
 
