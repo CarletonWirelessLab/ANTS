@@ -64,6 +64,14 @@ class SiGPyC_GUI(QMainWindow):
         self.iperf_checkbox.move(20, 260)
         self.iperf_checkbox.stateChanged.connect(self.iperf_check)
 
+        # The checkbox for toggling the run mode (sim or actual)
+        self.sim_mode_checkbox = QCheckBox('Simulate', self)
+        self.sim_mode_checkbox.move(380, 165)
+        self.sim_mode_checkbox.stateChanged.connect(self.sim_mode_check)
+        #self.sim_mode_checkbox_text = "Simulate"
+        #self.sim_mode_checkbox_label = QLabel(self.sim_mode_checkbox_text, self)
+        #self.sim_mode_checkbox_label.move(440, 125)
+
         # Labels for the iperf IP address boxes
         self.iperf_client_label = QLabel("Client IP", self)
         self.iperf_client_label.move(20, 300)
@@ -173,6 +181,14 @@ class SiGPyC_GUI(QMainWindow):
         else:
             self.iperf_state = False
 
+    # Dictates whether or not the test scripts or the target programs are used
+    def sim_mode_check(self, state):
+
+        if state == Qt.Checked:
+            self.test_mode = True
+        else:
+            self.test_mode = False
+
     # Controls changing the value pointed to by the slider. The slider should
     # allow ranges between 0.5 and 10, but since the class only supports
     # integers, some math must be done to the actual value when it is moved
@@ -219,7 +235,7 @@ class SiGPyC_GUI(QMainWindow):
     # boxes are checked, then runs based on what it sees. Is there a case where
     # we don't want to run the USRP? Should make this more modular, turn it
     # into a dictionary with functions as the values
-    def run_button_clicked(self, options):
+    def run_button_clicked(self):
         sender = self.sender()
         self.statusBar().showMessage('Running...')
 
@@ -305,5 +321,7 @@ class SiGPyC_GUI(QMainWindow):
         # What did you select?
         else:
             print("No options or bad options given\n")
+
+        print("\nDone sequence\n")
 
         self.statusBar().showMessage('Idle')

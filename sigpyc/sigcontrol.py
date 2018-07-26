@@ -147,7 +147,7 @@ class SiGPyC_Controller():
         return
 
     def start_converter(self):
-        print("Running converter tool...\n")
+        print("Running converter tool...")
         print(self.file_name)
         if matlab_available == True:
             self.engine.workspace['fileName'] = self.file_name + ".bin"
@@ -158,7 +158,7 @@ class SiGPyC_Controller():
             print("Nothing converted. Is the MATLAB engine installed?")
 
     def start_plotter(self):
-        print("Running plotter...\n")
+        print("Running plotter...")
         if matlab_available == True:
             self.engine.Load_and_Eval(nargout=0)
             print("Done plotting\n")
