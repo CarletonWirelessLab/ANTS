@@ -80,7 +80,7 @@ class SiGPyC_Controller():
             self.engine.addpath(self.engine.genpath(cur_dir))
             print("Done\n")
         else:
-            print("MATLAB not previously found during import step. Skipping setup...\n")
+            print("Skipping MATLAB engine setup...\n")
 
 
     # Runs a subprocess for the USRP based on the usrp_control_args variable
