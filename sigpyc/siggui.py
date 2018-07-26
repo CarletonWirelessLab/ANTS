@@ -6,7 +6,7 @@ from PyQt5.QtGui import QRegExpValidator
 
 class SiGPyC_GUI(QMainWindow):
 
-    def __init__(self, sigpyc_controller, test_mode=False):
+    def __init__(self, sigpyc_controller):
         super().__init__()
 
         # Class variables that are set by toggling the checkboxes. Used to
@@ -24,7 +24,7 @@ class SiGPyC_GUI(QMainWindow):
         self.ip_validator = QRegExpValidator(self.ip_regex, self)
 
         # Used to pass mode to the controller object
-        self.test_mode = test_mode
+        self.sim_mode = False
 
         # The SiGPyC Controller object
         self.sigpyc_controller = sigpyc_controller
@@ -185,9 +185,9 @@ class SiGPyC_GUI(QMainWindow):
     def sim_mode_check(self, state):
 
         if state == Qt.Checked:
-            self.test_mode = True
+            self.sim_mode = True
         else:
-            self.test_mode = False
+            self.sim_mode = False
 
     # Controls changing the value pointed to by the slider. The slider should
     # allow ranges between 0.5 and 10, but since the class only supports
@@ -242,81 +242,81 @@ class SiGPyC_GUI(QMainWindow):
         # USRP, iperf, Converter, Plotter
         if (self.usrp_state and self.iperf_state and self.converter_state and self.plotter_state and not self.controller_state):
 
-            self.sigpyc_controller.start_usrp_iperf()
-            self.sigpyc_controller.start_converter()
-            self.sigpyc_controller.start_plotter()
+            self.sigpyc_controller.start_usrp_iperf(self.sim_mode)
+            self.sigpyc_controller.start_converter(self.sim_mode)
+            self.sigpyc_controller.start_plotter(self.sim_mode)
 
         # USRP, SGControl, Converter, Plotter
         elif (self.usrp_state and self.controller_state and self.converter_state and self.plotter_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_usrp_controller()
-            self.sigpyc_controller.start_converter()
-            self.sigpyc_controller.start_plotter()
+            self.sigpyc_controller.start_usrp_controller(self.sim_mode)
+            self.sigpyc_controller.start_converter(self.sim_mode)
+            self.sigpyc_controller.start_plotter(self.sim_mode)
 
         # USRP, SGControl, Converter
         elif (self.usrp_state and self.controller_state and self.converter_state and not self.plotter_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_usrp_controller()
-            self.sigpyc_controller.start_converter()
+            self.sigpyc_controller.start_usrp_controller(self.sim_mode)
+            self.sigpyc_controller.start_converter(self.sim_mode)
 
         # USRP, iperf, Converter
         elif (self.usrp_state and self.iperf_state and self.converter_state and not self.plotter_state and not self.controller_state):
 
-            self.sigpyc_controller.start_usrp_iperf()
-            self.sigpyc_controller.start_converter()
+            self.sigpyc_controller.start_usrp_iperf(self.sim_mode)
+            self.sigpyc_controller.start_converter(self.sim_mode)
 
         # USRP, Converter, Plotter
         elif (self.usrp_state and self.converter_state and self.plotter_state and not self.controller_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_usrp()
-            self.sigpyc_controller.start_converter()
-            self.sigpyc_controller.start_plotter()
+            self.sigpyc_controller.start_usrp(self.sim_mode)
+            self.sigpyc_controller.start_converter(self.sim_mode)
+            self.sigpyc_controller.start_plotter(self.sim_mode)
 
         # USRP, SGControl
         elif (self.usrp_state and self.controller_state and not self.converter_state and not self.plotter_state):
 
-            self.sigpyc_controller.start_usrp_controller()
+            self.sigpyc_controller.start_usrp_controller(self.sim_mode)
 
         # USRP, iperf
         elif (self.usrp_state and self.iperf_state and not self.converter_state and not self.plotter_state and not self.controller_state):
 
-            self.sigpyc_controller.start_usrp_iperf()
+            self.sigpyc_controller.start_usrp_iperf(self.sim_mode)
 
         # USRP only
         elif (self.usrp_state and not self.controller_state and not self.converter_state and not self.plotter_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_usrp()
+            self.sigpyc_controller.start_usrp(self.sim_mode)
 
         # SGControl only
         elif (self.controller_state and not self.usrp_state and not self.converter_state and not self.plotter_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_controller()
+            self.sigpyc_controller.start_controller(self.sim_mode)
 
         elif (self.usrp_state and self.converter_state and not self.plotter_state and not self.controller_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_usrp()
-            self.sigpyc_controller.start_converter()
+            self.sigpyc_controller.start_usrp(self.sim_mode)
+            self.sigpyc_controller.start_converter(self.sim_mode)
 
         # Converter and Plotter
         elif (self.converter_state and self.plotter_state and not self.usrp_state and not self.controller_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_converter()
-            self.sigpyc_controller.start_plotter()
+            self.sigpyc_controller.start_converter(self.sim_mode)
+            self.sigpyc_controller.start_plotter(self.sim_mode)
 
         # Converter only
         elif (self.converter_state and not self.usrp_state and not self.plotter_state and not self.controller_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_converter()
+            self.sigpyc_controller.start_converter(self.sim_mode)
 
         # Plotter only
         elif (self.plotter_state and not self.converter_state and not self.usrp_state and not self.controller_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_plotter()
+            self.sigpyc_controller.start_plotter(self.sim_mode)
 
         # iperf only
         elif (self.iperf_state and not self.converter_state and not self.usrp_state and not self.controller_state and not self.plotter_state):
 
-            self.sigpyc_controller.start_iperf()
+            self.sigpyc_controller.start_iperf(self.sim_mode)
 
         # What did you select?
         else:

@@ -17,7 +17,7 @@ else:
 
 class SiGPyC_Controller():
 
-    def __init__(self, test_mode=False):
+    def __init__(self):
 
         # Class variables used for the subprocesses run, if any, of the tools
         # run when their checkboxes are selected
@@ -50,21 +50,21 @@ class SiGPyC_Controller():
         # Path of project directory for use in calls to scripts in utils/
         self.working_dir = os.getcwd()
 
-        # Each of these targets a local test script that prints a
-        # self-identification message, then runs time.sleep() for a certain
-        # amount of seconds
-        if test_mode == True:
-            self.usrp_control_args = ["python3", self.working_dir + "/tests/usrp_sim.py"]
-            self.sg_controller_args = ["python3", self.working_dir + "/tests/sg_sim.py"]
-            self.matlab_converter_args = ["python3", self.working_dir + "/tests/converter_sim.py"]
-            self.matlab_plotter_args = ["python3", self.working_dir + "/tests/plotter_sim.py"]
-            self.iperf_client_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.iperf_client_addr)]
-
-        # Run the real arguments in the intended environment using
-        # subprocess.Popen()
-        else:
-            self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", "123", str(self.run_time)]
-            self.sg_controller_args = ["python3", self.working_dir + "/utils/ramp_control.py", str(self.run_time)]
+        # # Each of these targets a local test script that prints a
+        # # self-identification message, then runs time.sleep() for a certain
+        # # amount of seconds
+        # if test_mode == True:
+        #     self.usrp_control_args = ["python3", self.working_dir + "/tests/usrp_sim.py"]
+        #     self.sg_controller_args = ["python3", self.working_dir + "/tests/sg_sim.py"]
+        #     self.matlab_converter_args = ["python3", self.working_dir + "/tests/converter_sim.py"]
+        #     self.matlab_plotter_args = ["python3", self.working_dir + "/tests/plotter_sim.py"]
+        #     self.iperf_client_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.iperf_client_addr)]
+        #
+        # # Run the real arguments in the intended environment using
+        # # subprocess.Popen()
+        # else:
+        #     self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", "123", str(self.run_time)]
+        #     self.sg_controller_args = ["python3", self.working_dir + "/utils/ramp_control.py", str(self.run_time)]
 
         if matlab_available == True:
             print("Starting Matlab engine for Python... ")
@@ -84,9 +84,14 @@ class SiGPyC_Controller():
 
 
     # Runs a subprocess for the USRP based on the usrp_control_args variable
-    def start_usrp(self):
+    def start_usrp(self, sim_mode):
         print("Running USRP...\n")
-        self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
+
+        if sim_mode == True:
+            self.usrp_control_args = ["python3", self.working_dir + "/tests/usrp_sim.py", str(self.run_time)]
+        else:
+            self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
+
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.usrp_proc.poll() is None:
             continue
@@ -95,8 +100,14 @@ class SiGPyC_Controller():
         return
     # Runs a subprocess for the SGControl tool based on the sg_controller_args
     # variable
-    def start_controller(self, args):
+    def start_controller(self, sim_mode):
         print("Running interference...\n")
+
+        if sim_mode == True:
+            self.sg_controller_args = ["python3", self.working_dir + "/tests/sg_sim.py", str(self.run_time)]
+        else:
+            self.sg_controller_args = ["python3", self.working_dir + "/utils/const_control.py", str(self.run_time)]
+
         self.controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.controller_proc.poll() is None:
             continue
@@ -106,9 +117,16 @@ class SiGPyC_Controller():
 
     # Runs the USRP and SGControl tools simultaneously if and only if both boxes
     # are checked
-    def start_usrp_controller(self):
+    def start_usrp_controller(self, sim_mode):
         print("Running USRP with interference injected...\n")
-        self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
+
+        if sim_mode == True:
+            self.usrp_control_args = ["python3", self.working_dir + "/tests/usrp_sim.py", str(self.run_time)]
+            self.sg_controller_args = ["python3", self.working_dir + "/tests/sg_sim.py", str(self.run_time)]
+        else:
+            self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
+            self.sg_controller_args = ["python3", self.working_dir + "/utils/const_control.py", str(self.run_time)]
+
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
@@ -126,10 +144,19 @@ class SiGPyC_Controller():
 
     # Runs the USRP and iperf tools simultaneously if and only if both boxes
     # are checked
-    def start_usrp_iperf(self):
+    def start_usrp_iperf(self, sim_mode):
         print("Running USRP with interference injected...\n")
-        self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
+
+        if sim_mode == True:
+            self.usrp_control_args = ["python3", self.working_dir + "/tests/usrp_sim.py", str(self.run_time)]
+            self.iperf_client_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.run_time), str(self.iperf_client_addr)]
+            self.iperf_server_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.run_time), str(self.iperf_server_addr)]
+        else:
+            self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
+
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+
+        # actual iperf arguments currently defined earlier in this file
         self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
@@ -146,28 +173,43 @@ class SiGPyC_Controller():
         print("Done sensing with iperf\n")
         return
 
-    def start_converter(self):
-        print("Running converter tool...")
-        print(self.file_name)
-        if matlab_available == True:
-            self.engine.workspace['fileName'] = self.file_name + ".bin"
-            self.engine.workspace['duration'] = self.run_time
-            self.engine.displayTimingInformation(nargout=0)
-            print("Done conversion\n")
+    def start_converter(self, sim_mode):
+        print("Running converter tool on {0}...".format(self.file_name))
+        if sim_mode == True:
+            self.matlab_converter_args = ["python3", self.working_dir + "/tests/converter_sim.py", str(8)]
+            self.converter_proc = subprocess.Popen(self.matlab_converter_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+            self.converter_proc.wait()
         else:
-            print("Nothing converted. Is the MATLAB engine installed?")
+            if matlab_available == True:
+                self.engine.workspace['fileName'] = self.file_name + ".bin"
+                self.engine.workspace['duration'] = self.run_time
+                self.engine.displayTimingInformation(nargout=0)
+                print("Done conversion\n")
+            else:
+                print("Nothing converted. Is the MATLAB engine installed?")
 
-    def start_plotter(self):
+    def start_plotter(self, sim_mode):
         print("Running plotter...")
-        if matlab_available == True:
-            self.engine.Load_and_Eval(nargout=0)
-            print("Done plotting\n")
+        if sim_mode == True:
+            self.matlab_plotter_args = ["python3", self.working_dir + "/tests/plotter_sim.py", str(10)]
+            self.plotter_proc = subprocess.Popen(self.matlab_plotter_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+            self.plotter_proc.wait()
         else:
-            print("Nothing plotted. Is the MATLAB engine installed?")
+            if matlab_available == True:
+                self.engine.Load_and_Eval(nargout=0)
+                print("Done plotting\n")
+            else:
+                print("Nothing plotted. Is the MATLAB engine installed?")
 
     # Runs the iperf client and server processes
-    def start_iperf(self):
+    def start_iperf(self, sim_mode):
         print("Running iperf...\n")
+
+        if sim_mode == True:
+            self.iperf_client_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.run_time), str(self.iperf_client_addr)]
+            self.iperf_server_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.run_time), str(self.iperf_server_addr)]
+
+        #iperf arguments for real mode are currently defined earlier in this module
         self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
