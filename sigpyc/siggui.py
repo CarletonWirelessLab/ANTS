@@ -43,31 +43,37 @@ class SiGPyC_GUI(QMainWindow):
         self.usrp_checkbox = QCheckBox('USRP', self)
         self.usrp_checkbox.move(20, 20)
         self.usrp_checkbox.stateChanged.connect(self.usrp_check)
+        self.usrp_checkbox.setToolTip("Sense traffic on the wireless medium")
 
         # The checkbox for enabling the signal generator, if used
         self.controller_checkbox = QCheckBox('SGControl', self)
         self.controller_checkbox.move(20, 80)
         self.controller_checkbox.stateChanged.connect(self.controller_check)
+        self.controller_checkbox.setToolTip("Use the signal generator to add interference (instead of iperf)")
 
         # The checkbox for the conversion tool
         self.converter_checkbox = QCheckBox('Convert', self)
         self.converter_checkbox.move(20, 140)
         self.converter_checkbox.stateChanged.connect(self.converter_check)
+        self.converter_checkbox.setToolTip("Convert the output file created by the USRP")
 
         # The checkbox for the plotting tool
         self.plotter_checkbox = QCheckBox('Plot', self)
         self.plotter_checkbox.move(20, 200)
         self.plotter_checkbox.stateChanged.connect(self.plotter_check)
+        self.plotter_checkbox.setToolTip("Plot the WiFi traffic collected by the Converter tool")
 
         # The checkbox for running iperf
         self.iperf_checkbox = QCheckBox('iperf', self)
         self.iperf_checkbox.move(20, 260)
         self.iperf_checkbox.stateChanged.connect(self.iperf_check)
+        self.iperf_checkbox.setToolTip("Use iperf to control wireless devices (instead of signal generator)")
 
         # The checkbox for toggling the run mode (sim or actual)
         self.sim_mode_checkbox = QCheckBox('Simulate', self)
         self.sim_mode_checkbox.move(380, 165)
         self.sim_mode_checkbox.stateChanged.connect(self.sim_mode_check)
+        self.sim_mode_checkbox.setToolTip("Run dummy scripts instead of using devices")
         #self.sim_mode_checkbox_text = "Simulate"
         #self.sim_mode_checkbox_label = QLabel(self.sim_mode_checkbox_text, self)
         #self.sim_mode_checkbox_label.move(440, 125)
@@ -94,6 +100,7 @@ class SiGPyC_GUI(QMainWindow):
         self.file_name_lineedit = QLineEdit(self)
         self.file_name_lineedit.textChanged[str].connect(self.on_name_change)
         self.file_name_lineedit.move(380, 125)
+        self.file_name_lineedit.setToolTip("The filename for the USRP to output the data to")
         self.file_name_text = "Filename"
         self.file_name_label = QLabel(self.file_name_text, self)
         self.file_name_label.move(380, 100)
@@ -108,6 +115,7 @@ class SiGPyC_GUI(QMainWindow):
         self.runtime_slider.setMinimum(0)
         self.runtime_slider.setMaximum(20)
         self.runtime_slider.setTickInterval(1)
+        self.runtime_slider.setToolTip("Sense/injection duration for the USRP and signal generator")
         self.runtime_text = str(0.5) + " seconds"
         self.runtime_label = QLabel(self.runtime_text, self)
         self.runtime_label.move(380, 50)
@@ -137,7 +145,7 @@ class SiGPyC_GUI(QMainWindow):
 
         # Set up the GUI window
         self.setGeometry(300, 600, 500, 500)
-        self.setWindowTitle('SYSC WiFi Control Panel')
+        self.setWindowTitle('SiGPyC Control Panel')
         self.show()
 
 
