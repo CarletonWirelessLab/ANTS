@@ -30,7 +30,8 @@ but they'll get improvements to be object-oriented as I go.
 
 ## Requirements
 
-SiGPyC should work on any modern Linux operating system with the following installed:
+SiGPyC was written and tested on systems running Fedora 28 and Ubuntu 16.04, but it should work on any modern Linux 
+operating system with the following installed:
 
 1. Python 3 (written and tested on 3.6.5)
 2. PyQt5
