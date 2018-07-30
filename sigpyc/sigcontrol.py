@@ -128,20 +128,27 @@ class SiGPyC_Controller():
     # are checked
     def start_usrp_iperf(self):
         print("Running USRP with interference injected...\n")
+
+        # Only run with the client option if something is provided. If not, the iperf client will be run elsewhere
+        if self.iperf_client_addr:
+            self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+
+        self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
         while True:
 
             self.usrp_proc.poll()
-            self.iperf_client_proc.poll()
-            self.iperf_server_proc.poll()
             # Make sure the sequence won't continue until all tools have
             # finished
-            if self.usrp_proc.returncode is not None and self.iperf_client_proc.returncode is not None and self.iperf_server_proc.returncode is not None:
+            if self.usrp_proc.returncode is not None:
                 break
+
+        if self.iperf_client_addr:
+            self.iperf_client_proc.kill()
+
+        self.iperf_server_proc.kill()
 
         print("Done sensing with iperf\n")
         return
