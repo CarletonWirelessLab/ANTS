@@ -1,6 +1,5 @@
 #!/bin/python3
 
-from tkinter import filedialog
 from echo_client import echo_to_server
 import random as rnd
 import subprocess

@@ -1,9 +1,10 @@
 import time
+import sys
 
 def plotter_sim(slp_time):
     print("Fake plotter will now sleep for {0} seconds.\n".format(str(slp_time)))
     time.sleep(slp_time)
-    print("Done\n")
+    print("Done plotting sim\n")
 
     return
 
