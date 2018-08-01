@@ -144,7 +144,7 @@ class SiGPyC_Controller():
 
     # Runs the USRP and iperf tools simultaneously if and only if both boxes
     # are checked
-    def start_usrp_iperf(self, sim_mode):
+    def start_usrp_iperf_server(self, sim_mode):
         print("Running USRP with interference injected...\n")
 
         if sim_mode == True:
@@ -156,7 +156,8 @@ class SiGPyC_Controller():
 
         # Only run with the client option if something is provided. If not, the iperf client will be run elsewhere
         if self.iperf_client_addr:
-            self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+            #self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+            pass
 
         # Always run the iperf server
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
@@ -171,8 +172,8 @@ class SiGPyC_Controller():
             if self.usrp_proc.returncode is not None:
                 break
 
-        if self.iperf_client_addr:
-            self.iperf_client_proc.kill()
+        #if self.iperf_client_addr:
+            #self.iperf_client_proc.kill()
 
         self.iperf_server_proc.kill()
 
@@ -208,7 +209,7 @@ class SiGPyC_Controller():
                 print("Nothing plotted. Is the MATLAB engine installed?")
 
     # Runs the iperf client and server processes
-    def start_iperf(self, sim_mode):
+    def start_iperf_server(self, sim_mode):
         print("Running iperf...\n")
 
         if sim_mode == True:
@@ -216,18 +217,18 @@ class SiGPyC_Controller():
             self.iperf_server_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.run_time), str(self.iperf_server_addr)]
 
         #iperf arguments for real mode are currently defined earlier in this module
-        self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        #self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
         while True:
 
-            self.iperf_client_proc.poll()
+            #self.iperf_client_proc.poll()
             self.iperf_server_proc.poll()
             # Make sure the sequence won't continue until both tools have
             # finished. Is it necessary that we wait for the server, or is the
             # time given to it just to ensure that we had time to run the client
             # manually?
-            if self.iperf_client_proc.returncode is not None and self.iperf_server_proc.returncode is not None:
+            if self.iperf_server_proc.returncode is not None:
                 break
 
         print("Done running iperf\n")

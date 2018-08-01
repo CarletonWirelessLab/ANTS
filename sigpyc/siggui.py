@@ -15,7 +15,8 @@ class SiGPyC_GUI(QMainWindow):
         self.controller_state = False
         self.converter_state = False
         self.plotter_state = False
-        self.iperf_state = False
+        self.iperf_client_state = False
+        self.iperf_server_state = False
 
         # Ensure that a proper IP format is used. Taken from
         # https://evileg.com/en/post/57/
@@ -63,11 +64,17 @@ class SiGPyC_GUI(QMainWindow):
         self.plotter_checkbox.stateChanged.connect(self.plotter_check)
         self.plotter_checkbox.setToolTip("Plot the WiFi traffic collected by the Converter tool")
 
-        # The checkbox for running iperf
-        self.iperf_checkbox = QCheckBox('iperf', self)
-        self.iperf_checkbox.move(20, 260)
-        self.iperf_checkbox.stateChanged.connect(self.iperf_check)
-        self.iperf_checkbox.setToolTip("Use iperf to control wireless devices (instead of signal generator)")
+        # The checkbox for running the iperf client
+        self.iperf_client_checkbox = QCheckBox('iperf client', self)
+        self.iperf_client_checkbox.move(20, 360)
+        self.iperf_client_checkbox.stateChanged.connect(self.iperf_client_check)
+        self.iperf_client_checkbox.setToolTip("Use iperf to generate wireless transmission data (instead of signal generator)")
+
+        # The checkbox for running iperf server
+        self.iperf_server_checkbox = QCheckBox('iperf server', self)
+        self.iperf_server_checkbox.move(20, 260)
+        self.iperf_server_checkbox.stateChanged.connect(self.iperf_server_check)
+        self.iperf_server_checkbox.setToolTip("Provide an iperf server for corresponding client traffic")
 
         # The checkbox for toggling the run mode (sim or actual)
         self.sim_mode_checkbox = QCheckBox('Simulate', self)
@@ -80,20 +87,22 @@ class SiGPyC_GUI(QMainWindow):
 
         # Labels for the iperf IP address boxes
         self.iperf_client_label = QLabel("Client IP", self)
-        self.iperf_client_label.move(20, 300)
+        self.iperf_client_label.move(20, 385)
         self.iperf_server_label = QLabel("Server IP", self)
-        self.iperf_server_label.move(20, 360)
+        self.iperf_server_label.move(20, 285)
 
         # Create text boxes that use the regex rules and ip_validator from
         # above to ensure that proper IP addresses for the devices are given
         self.iperf_client_lineedit = QLineEdit(self)
         self.iperf_client_lineedit.setValidator(self.ip_validator)
         self.iperf_client_lineedit.textChanged[str].connect(self.on_client_ip)
-        self.iperf_client_lineedit.move(20, 325)
+        self.iperf_client_lineedit.move(20, 410)
         self.iperf_server_lineedit = QLineEdit(self)
         self.iperf_server_lineedit.setValidator(self.ip_validator)
         self.iperf_server_lineedit.textChanged[str].connect(self.on_server_ip)
-        self.iperf_server_lineedit.move(20, 385)
+        self.iperf_server_lineedit.move(20, 310)
+
+        # Configurable fields for the iperf server
 
         # Create a text box to take the filename used by the USRP and converter
         # tools
@@ -181,13 +190,21 @@ class SiGPyC_GUI(QMainWindow):
         else:
             self.plotter_state = False
 
-    # Changes the iperf run state when the checkbox is clicked
-    def iperf_check(self, state):
+    # Changes the iperf client run state when the checkbox is clicked
+    def iperf_client_check(self, state):
 
         if state == Qt.Checked:
-            self.iperf_state = True
+            self.iperf_client_state = True
         else:
-            self.iperf_state = False
+            self.iperf_client_state = False
+
+    # Changes the iperf server run state when the checkbox is clicked
+    def iperf_server_check(self, state):
+
+        if state == Qt.Checked:
+            self.iperf_server_state = True
+        else:
+            self.iperf_server_state = False
 
     # Dictates whether or not the test scripts or the target programs are used
     def sim_mode_check(self, state):
@@ -248,9 +265,9 @@ class SiGPyC_GUI(QMainWindow):
         self.statusBar().showMessage('Running...')
 
         # USRP, iperf, Converter, Plotter
-        if (self.usrp_state and self.iperf_state and self.converter_state and self.plotter_state and not self.controller_state):
+        if (self.usrp_state and self.iperf_server_state and self.converter_state and self.plotter_state and not self.controller_state):
 
-            self.sigpyc_controller.start_usrp_iperf(self.sim_mode)
+            self.sigpyc_controller.start_usrp_iperf_server(self.sim_mode)
             self.sigpyc_controller.start_converter(self.sim_mode)
             self.sigpyc_controller.start_plotter(self.sim_mode)
 
@@ -268,9 +285,9 @@ class SiGPyC_GUI(QMainWindow):
             self.sigpyc_controller.start_converter(self.sim_mode)
 
         # USRP, iperf, Converter
-        elif (self.usrp_state and self.iperf_state and self.converter_state and not self.plotter_state and not self.controller_state):
+        elif (self.usrp_state and self.iperf_server_state and self.converter_state and not self.plotter_state and not self.controller_state):
 
-            self.sigpyc_controller.start_usrp_iperf(self.sim_mode)
+            self.sigpyc_controller.start_usrp_iperf_server(self.sim_mode)
             self.sigpyc_controller.start_converter(self.sim_mode)
 
         # USRP, Converter, Plotter
@@ -286,9 +303,9 @@ class SiGPyC_GUI(QMainWindow):
             self.sigpyc_controller.start_usrp_controller(self.sim_mode)
 
         # USRP, iperf
-        elif (self.usrp_state and self.iperf_state and not self.converter_state and not self.plotter_state and not self.controller_state):
+        elif (self.usrp_state and self.iperf_server_state and not self.converter_state and not self.plotter_state and not self.controller_state):
 
-            self.sigpyc_controller.start_usrp_iperf(self.sim_mode)
+            self.sigpyc_controller.start_usrp_iperf_server(self.sim_mode)
 
         # USRP only
         elif (self.usrp_state and not self.controller_state and not self.converter_state and not self.plotter_state and not self.iperf_state):
@@ -317,12 +334,12 @@ class SiGPyC_GUI(QMainWindow):
             self.sigpyc_controller.start_converter(self.sim_mode)
 
         # Plotter only
-        elif (self.plotter_state and not self.converter_state and not self.usrp_state and not self.controller_state and not self.iperf_state):
+        elif (self.plotter_state and not self.converter_state and not self.usrp_state and not self.controller_state and not self.iperf_server_state):
 
             self.sigpyc_controller.start_plotter(self.sim_mode)
 
         # iperf only
-        elif (self.iperf_state and not self.converter_state and not self.usrp_state and not self.controller_state and not self.plotter_state):
+        elif (self.iperf_server_state and not self.converter_state and not self.usrp_state and not self.controller_state and not self.plotter_state):
 
             self.sigpyc_controller.start_iperf(self.sim_mode)
 
