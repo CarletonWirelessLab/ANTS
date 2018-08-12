@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QWidget, QCheckBox, QApplication, QComboBox, QMessag
 from PyQt5.QtCore import Qt, QRegExp
 from PyQt5.QtGui import QRegExpValidator
 
-class SiGPyC_GUI(QMainWindow):
+class Simple_GUI(QMainWindow):
 
     def __init__(self, sigpyc_controller):
         super().__init__()
