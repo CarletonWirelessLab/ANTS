@@ -15,7 +15,7 @@ except ImportError:
 else:
     matlab_available = True
 
-class SiGPyC_Controller():
+class ANTS_Controller():
 
     def __init__(self):
 

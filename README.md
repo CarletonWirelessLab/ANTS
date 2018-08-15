@@ -1,6 +1,7 @@
-# SiGPyC
+# ANTS
 
-SiGPyC is tool written using Python 3 with PyQt5 to do the following:
+ANTS (the Automated Networking Test Suite; formerly SiGPyC or the Signal Generator Python Control tool) is an app
+written using Python 3 with PyQt5 to do the following:
 
 1. Provide software triggers to a signal generator such as the E4438C, or wireless device(s) with the
 use of the ```iperf``` utility;
@@ -17,7 +18,7 @@ The interface and functionality contained therein are not guaranteed to be consi
 ## Intended Usage
 
 1. Change directory to utils/ and type "gcc lanio.c getopt.c -o ks_lanio"
-2. Run the sigpyc.py main script by typing "python3 sigpyc/sigpyc.py" from the project directory
+2. Run the ants.py main script by typing "python3 ants/ants.py" from the project directory
 3. Toggle devices on or off, providing IP addresses and filenames as necessary
 4. (Temporary) Manually run iperf as a client on a device with wireless access
 to generate the traffic to analyze
@@ -33,7 +34,7 @@ to generate the traffic to analyze
 
 ## Requirements
 
-SiGPyC was written and tested on systems running Fedora 28 and Ubuntu 16.04, but it should work on any modern Linux
+ANTS was written and tested on systems running Fedora 28 and Ubuntu 16.04, but it should work on any modern Linux
 operating system with the following installed:
 
 1. Python 3 (written and tested on 3.6.5)
@@ -41,14 +42,14 @@ operating system with the following installed:
 3. MATLAB (used R2018a for testing)
 4. gnuradio (for the writeIQ script)
 
-Note that the code relies on the availability of the Python MATLAB Engine (installation instructions below). If MATLAB is unavailable then SiGPyC should still work, but it will be limited to controlling the USRP, signal generator, and iperf controls.
+Note that the code relies on the availability of the Python MATLAB Engine (installation instructions below). If MATLAB is unavailable then ANTS should still work, but it will be limited to controlling the USRP, signal generator, and iperf controls.
 
 ## Setup and Install
 
 1. ```pip3 install pyqt5```
 2. ```sudo dnf install gnuradio```
 3. Navigate to /usr/local/MATLAB/R20XXX/extern/engines/python and run ``` sudo python3 setup.py install ```
-4. ```git clone https://github.com/threexc/SiGPyC```
+4. ```git clone https://github.com/threexc/ANTS```
 
 ## To-Do List
 
