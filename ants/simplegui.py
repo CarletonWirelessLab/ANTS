@@ -6,7 +6,7 @@ from PyQt5.QtGui import QRegExpValidator
 
 class Simple_GUI(QMainWindow):
 
-    def __init__(self, sigpyc_controller):
+    def __init__(self, ants_controller):
         super().__init__()
 
         # Class variables that are set by toggling the checkboxes. Used to
@@ -27,8 +27,8 @@ class Simple_GUI(QMainWindow):
         # Used to pass mode to the controller object
         self.sim_mode = False
 
-        # The SiGPyC Controller object
-        self.sigpyc_controller = sigpyc_controller
+        # The ANTS Controller object
+        self.ants_controller = ants_controller
 
         # Starts up the UI
         self.init_UI()
@@ -154,7 +154,7 @@ class Simple_GUI(QMainWindow):
 
         # Set up the GUI window
         self.setGeometry(300, 600, 500, 500)
-        self.setWindowTitle('SiGPyC Control Panel')
+        self.setWindowTitle('ants Control Panel')
         self.show()
 
 
@@ -220,29 +220,29 @@ class Simple_GUI(QMainWindow):
     def change_value(self, value):
 
         if value == 0:
-            self.sigpyc_controller.run_time = 0.5
+            self.ants_controller.run_time = 0.5
         elif value == 20:
-            self.sigpyc_controller.run_time = 10
+            self.ants_controller.run_time = 10
         else:
-            self.sigpyc_controller.run_time = value / 2.0
-        self.runtime_label.setText(str(self.sigpyc_controller.run_time) + " seconds")
+            self.ants_controller.run_time = value / 2.0
+        self.runtime_label.setText(str(self.ants_controller.run_time) + " seconds")
 
     # Checks to make sure iperf_client_addr is set to a realistic IP value
     def on_client_ip(self, text):
 
         if self.iperf_client_lineedit.hasAcceptableInput():
-            self.sigpyc_controller.iperf_client_addr = text
+            self.ants_controller.iperf_client_addr = text
 
     # Checks to make sure iperf_server_addr is set to a realistic IP value
     def on_server_ip(self, text):
 
         if self.iperf_server_lineedit.hasAcceptableInput():
-            self.sigpyc_controller.iperf_server_addr = text
+            self.ants_controller.iperf_server_addr = text
 
     # Set file name based on what's in the box
     def on_name_change(self, text):
 
-        self.sigpyc_controller.file_name = text
+        self.ants_controller.file_name = text
 
     # Make sure we get prompted before closing the GUI
     def closeEvent(self, event):
@@ -267,81 +267,81 @@ class Simple_GUI(QMainWindow):
         # USRP, iperf, Converter, Plotter
         if (self.usrp_state and self.iperf_server_state and self.converter_state and self.plotter_state and not self.controller_state):
 
-            self.sigpyc_controller.start_usrp_iperf_server(self.sim_mode)
-            self.sigpyc_controller.start_converter(self.sim_mode)
-            self.sigpyc_controller.start_plotter(self.sim_mode)
+            self.ants_controller.start_usrp_iperf_server(self.sim_mode)
+            self.ants_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_plotter(self.sim_mode)
 
         # USRP, SGControl, Converter, Plotter
         elif (self.usrp_state and self.controller_state and self.converter_state and self.plotter_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_usrp_controller(self.sim_mode)
-            self.sigpyc_controller.start_converter(self.sim_mode)
-            self.sigpyc_controller.start_plotter(self.sim_mode)
+            self.ants_controller.start_usrp_controller(self.sim_mode)
+            self.ants_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_plotter(self.sim_mode)
 
         # USRP, SGControl, Converter
         elif (self.usrp_state and self.controller_state and self.converter_state and not self.plotter_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_usrp_controller(self.sim_mode)
-            self.sigpyc_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_usrp_controller(self.sim_mode)
+            self.ants_controller.start_converter(self.sim_mode)
 
         # USRP, iperf, Converter
         elif (self.usrp_state and self.iperf_server_state and self.converter_state and not self.plotter_state and not self.controller_state):
 
-            self.sigpyc_controller.start_usrp_iperf_server(self.sim_mode)
-            self.sigpyc_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_usrp_iperf_server(self.sim_mode)
+            self.ants_controller.start_converter(self.sim_mode)
 
         # USRP, Converter, Plotter
         elif (self.usrp_state and self.converter_state and self.plotter_state and not self.controller_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_usrp(self.sim_mode)
-            self.sigpyc_controller.start_converter(self.sim_mode)
-            self.sigpyc_controller.start_plotter(self.sim_mode)
+            self.ants_controller.start_usrp(self.sim_mode)
+            self.ants_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_plotter(self.sim_mode)
 
         # USRP, SGControl
         elif (self.usrp_state and self.controller_state and not self.converter_state and not self.plotter_state):
 
-            self.sigpyc_controller.start_usrp_controller(self.sim_mode)
+            self.ants_controller.start_usrp_controller(self.sim_mode)
 
         # USRP, iperf
         elif (self.usrp_state and self.iperf_server_state and not self.converter_state and not self.plotter_state and not self.controller_state):
 
-            self.sigpyc_controller.start_usrp_iperf_server(self.sim_mode)
+            self.ants_controller.start_usrp_iperf_server(self.sim_mode)
 
         # USRP only
         elif (self.usrp_state and not self.controller_state and not self.converter_state and not self.plotter_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_usrp(self.sim_mode)
+            self.ants_controller.start_usrp(self.sim_mode)
 
         # SGControl only
         elif (self.controller_state and not self.usrp_state and not self.converter_state and not self.plotter_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_controller(self.sim_mode)
+            self.ants_controller.start_controller(self.sim_mode)
 
         elif (self.usrp_state and self.converter_state and not self.plotter_state and not self.controller_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_usrp(self.sim_mode)
-            self.sigpyc_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_usrp(self.sim_mode)
+            self.ants_controller.start_converter(self.sim_mode)
 
         # Converter and Plotter
         elif (self.converter_state and self.plotter_state and not self.usrp_state and not self.controller_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_converter(self.sim_mode)
-            self.sigpyc_controller.start_plotter(self.sim_mode)
+            self.ants_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_plotter(self.sim_mode)
 
         # Converter only
         elif (self.converter_state and not self.usrp_state and not self.plotter_state and not self.controller_state and not self.iperf_state):
 
-            self.sigpyc_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_converter(self.sim_mode)
 
         # Plotter only
         elif (self.plotter_state and not self.converter_state and not self.usrp_state and not self.controller_state and not self.iperf_server_state):
 
-            self.sigpyc_controller.start_plotter(self.sim_mode)
+            self.ants_controller.start_plotter(self.sim_mode)
 
         # iperf only
         elif (self.iperf_server_state and not self.converter_state and not self.usrp_state and not self.controller_state and not self.plotter_state):
 
-            self.sigpyc_controller.start_iperf(self.sim_mode)
+            self.ants_controller.start_iperf(self.sim_mode)
 
         # What did you select?
         else:
