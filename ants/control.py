@@ -190,7 +190,7 @@ class ANTS_Controller():
             if matlab_available == True:
                 self.engine.workspace['fileName'] = self.file_name + ".bin"
                 self.engine.workspace['duration'] = self.run_time
-                self.engine.displayTimingInformation(nargout=0)
+                self.engine.findIFS_only(nargout=0)
                 print("Done conversion\n")
             else:
                 print("Nothing converted. Is the MATLAB engine installed?")
@@ -203,7 +203,7 @@ class ANTS_Controller():
             self.plotter_proc.wait()
         else:
             if matlab_available == True:
-                self.engine.Load_and_Eval(nargout=0)
+                self.engine.Load_and_Eval_IFSOnly(nargout=0)
                 print("Done plotting\n")
             else:
                 print("Nothing plotted. Is the MATLAB engine installed?")

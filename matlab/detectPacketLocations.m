@@ -34,9 +34,9 @@ packetStartIndices = packetIndices([true; tempVector> windowSize]);
 %t_first_packet = t(packet_indices(1):packetEndIndices(1));
 locs = [packetStartIndices packetEndIndices];
 
-% figure(20)
-% t = (0:(length(cData)-1))/sampRate;
-% indicator = zeros(size(t));
-% indicator(locs(:)) = 0.4 * max(abs(cData(:)));
-% plot(t, abs(cData), 'b-',  t, sqrt(threshold) * ones(size(cData)), 'g--', t, indicator, 'r-');
-% legend('IQ', 'Thrshold')
+figure(20)
+t = (0:(length(cData)-1))/sampRate;
+indicator = zeros(size(t));
+indicator(locs(:)) = 0.4 * max(abs(cData(:)));
+plot(t, abs(cData), 'b-',  t, sqrt(threshold) * ones(size(cData)), 'g--', t, indicator, 'r-');
+legend('IQ', 'Thrshold')

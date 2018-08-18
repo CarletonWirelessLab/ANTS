@@ -1,6 +1,4 @@
-close all; clear all;
-
-fileName = 'TP_LinkAP_AsusUSB42_0x80.bin';
+%fileName = 'TP_LinkAP_AsusUSB42_0x80.bin';
 accessCategory = 2; % 0 = Voice, 1 = Video, 2 = Best Effort, 3 = BackGround
 IntDuration = 0; % mSec
 
@@ -41,6 +39,6 @@ backOff = IFS;
 
 %%
 
-  Load_and_Eval_IFSOnly
+  %Load_and_Eval_IFSOnly
 
 
