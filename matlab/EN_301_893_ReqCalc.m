@@ -9,17 +9,17 @@ function [B, p, pMax, TxopDurations] = EN_301_893_ReqCalc(allBackOffs, locs, pri
 % 3 = BackGround (Class 1)
 % deviceClass: 'Supervising' or 'Supervised'
 
-if (deviceClass == 'Supervised')
-    BackOffs = allBackOffs(allBackOffs > 27); % 27 uSec, Guido's recommendation
+if (deviceClass ~= 'Supervised') & (priorityClass < 2)
+   BackOffs = allBackOffs(allBackOffs > 18); % (27-9) uSec, Ammar's recommendation
 else
-    BackOffs = allBackOffs(allBackOffs > 18); % (27-9) uSec, Ammar's recommendation
+   BackOffs = allBackOffs(allBackOffs > 27); % 27 uSec, Guido's recommendation 
 end
 
 % Calculate TXOP (COT)
-if (deviceClass == 'Supervised')
-    COT = find(allBackOffs > 25)'; %  4.2.7.3.2.4 Priority Classes, EN 301 893
-else
+if (deviceClass ~= 'Supervised') & (priorityClass < 2)
     COT = find(allBackOffs > 23)'; %  Ammar's recommendation
+else
+    COT = find(allBackOffs > 25)'; %  4.2.7.3.2.4 Priority Classes, EN 301 893
 end
 TxopDurations = zeros(length(COT),1);
 for ii = 2:length(COT)
