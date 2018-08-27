@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from PyQt5.QtWidgets import QWidget, QMenuBar, QCheckBox, QAction, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel
+from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout, QHBoxLayout, QVBoxLayout
 from PyQt5.QtCore import Qt, QRegExp
 from PyQt5.QtGui import QRegExpValidator
 
@@ -194,7 +194,7 @@ class Advanced_GUI(QMainWindow):
         self.iperf_menu.addAction(self.iperf_server_state_action)
 
         self.iperf_settings_action = QAction('Settings', self, checkable=False)
-        self.iperf_settings_action.triggered.connect(self.on_plotting_settings_clicked)
+        self.iperf_settings_action.triggered.connect(self.on_iperf_settings_clicked)
         self.iperf_menu.addAction(self.iperf_settings_action)
 
         self.about_menu = self.menubar.addMenu('About')
@@ -322,6 +322,12 @@ class Advanced_GUI(QMainWindow):
     def on_name_change(self, text):
 
         self.ants_controller.file_name = text
+
+    def on_iperf_IP_TOS_field_change(self, text):
+        pass
+
+    def on_iperf_bandwidth_field_change(self, text):
+        pass
 
     # Make sure we get prompted before closing the GUI
     def closeEvent(self, event):
@@ -457,14 +463,48 @@ class Plotting_Settings(QMainWindow):
 
         self.setCentralWidget(self.pushButton)
 
-class Iperf_Settings(QMainWindow):
+class Iperf_Settings(QDialog):
 
     def __init__(self, parent):
         super(Iperf_Settings, self).__init__(parent)
 
-        self.pushButton = QPushButton("click me")
+        #self.pushButton = QPushButton("click me")
+        self.ip_range = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"
+        self.ip_regex = QRegExp("^" + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "$")
+        self.ip_validator = QRegExpValidator(self.ip_regex, self)
 
-        self.setCentralWidget(self.pushButton)
+        self.iperf_client_lineedit = QLineEdit(self)
+        self.iperf_client_lineedit.setValidator(self.ip_validator)
+        self.iperf_client_lineedit.textChanged[str].connect(parent.on_client_ip)
+        #self.iperf_client_lineedit.move(20, 410)
+        self.iperf_server_lineedit = QLineEdit(self)
+        self.iperf_server_lineedit.setValidator(self.ip_validator)
+        self.iperf_server_lineedit.textChanged[str].connect(parent.on_server_ip)
+
+        self.iperf_IP_TOS_field = QLineEdit(self)
+        self.iperf_IP_TOS_field.textChanged[str].connect(parent.on_iperf_IP_TOS_field_change)
+
+        self.iperf_bandwidth_field = QLineEdit(self)
+        self.iperf_bandwidth_field.textChanged[str].connect(parent.on_iperf_bandwidth_field_change)
+
+        grid = QGridLayout()
+        self.setLayout(grid)
+        self.setGeometry(300, 300, 450, 225)
+        self.setWindowTitle("iperf Settings")
+
+        self.iperf_client_label = QLabel("Client IP", self)
+        self.iperf_server_label = QLabel("Server IP", self)
+        self.iperf_IP_TOS_label = QLabel("IP TOS", self)
+        self.iperf_bandwidth_label = QLabel("Bandwidth", self)
+
+        grid.addWidget(self.iperf_client_label, 0, 0)
+        grid.addWidget(self.iperf_server_label, 1, 0)
+        grid.addWidget(self.iperf_IP_TOS_label, 2, 0)
+        grid.addWidget(self.iperf_bandwidth_label, 3, 0)
+        grid.addWidget(self.iperf_client_lineedit, 0, 1)
+        grid.addWidget(self.iperf_server_lineedit, 1, 1)
+        grid.addWidget(self.iperf_IP_TOS_field, 2, 1)
+        grid.addWidget(self.iperf_bandwidth_field, 3, 1)
 
 class About_ANTS_Menu(QMainWindow):
 
