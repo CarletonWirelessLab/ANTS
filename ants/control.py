@@ -161,19 +161,15 @@ class ANTS_Controller():
 
         # Always run the iperf server
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
-        self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
-        while True:
+        if sim_mode == False:
+            while True:
 
-            self.usrp_proc.poll()
-            # Make sure the sequence won't continue until all tools have
-            # finished
-            if self.usrp_proc.returncode is not None:
-                break
-
-        #if self.iperf_client_addr:
-            #self.iperf_client_proc.kill()
+                self.usrp_proc.poll()
+                # Make sure the sequence won't continue until all tools have
+                # finished
+                if self.usrp_proc.returncode is not None:
+                    break
 
         self.iperf_server_proc.kill()
 
