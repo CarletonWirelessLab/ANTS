@@ -48,7 +48,17 @@ class ANTS_Controller():
         self.file_name = ""
 
         # Path of project directory for use in calls to scripts in utils/
-        self.working_dir = os.getcwd()
+        #self.working_dir = os.getcwd()
+        self.working_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # Path of the utilities (i.e. non-MATLAB scripts) used to run the tests
+        self.utils_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'utils'))
+        self.utils_dir = self.utils_dir + '/'
+
+        # Path for calling scripts in simulation mode
+        self.sim_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tests'))
+        self.sim_dir = self.sim_dir + '/'
+        print(self.sim_dir)
 
 
         if matlab_available == True:
@@ -73,9 +83,9 @@ class ANTS_Controller():
         print("Running USRP...\n")
 
         if sim_mode == True:
-            self.usrp_control_args = ["python3", self.working_dir + "/tests/usrp_sim.py", str(self.run_time)]
+            self.usrp_control_args = ["python3", self.sim_dir + "usrp_sim.py", str(self.run_time)]
         else:
-            self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
+            self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.file_name, str(self.run_time)]
 
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.usrp_proc.poll() is None:
@@ -89,9 +99,9 @@ class ANTS_Controller():
         print("Running interference...\n")
 
         if sim_mode == True:
-            self.sg_controller_args = ["python3", self.working_dir + "/tests/sg_sim.py", str(self.run_time)]
+            self.sg_controller_args = ["python3", self.sim_dir + "sg_sim.py", str(self.run_time)]
         else:
-            self.sg_controller_args = ["python3", self.working_dir + "/utils/const_control.py", str(self.run_time)]
+            self.sg_controller_args = ["python3", self.utils_dir + "const_control.py", str(self.run_time)]
 
         self.controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.controller_proc.poll() is None:
@@ -106,11 +116,11 @@ class ANTS_Controller():
         print("Running USRP with interference injected...\n")
 
         if sim_mode == True:
-            self.usrp_control_args = ["python3", self.working_dir + "/tests/usrp_sim.py", str(self.run_time)]
-            self.sg_controller_args = ["python3", self.working_dir + "/tests/sg_sim.py", str(self.run_time)]
+            self.usrp_control_args = ["python3", self.sim_dir + "usrp_sim.py", str(self.run_time)]
+            self.sg_controller_args = ["python3", self.sim_dir + "sg_sim.py", str(self.run_time)]
         else:
-            self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
-            self.sg_controller_args = ["python3", self.working_dir + "/utils/const_control.py", str(self.run_time)]
+            self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.file_name, str(self.run_time)]
+            self.sg_controller_args = ["python3", self.utils_dir + "const_control.py", str(self.run_time)]
 
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.controller_proc = subprocess.Popen(self.sg_controller_args, stdin=subprocess.PIPE, stderr=None, shell=False)
@@ -133,11 +143,11 @@ class ANTS_Controller():
         print("Running USRP with interference injected...\n")
 
         if sim_mode == True:
-            self.usrp_control_args = ["python3", self.working_dir + "/tests/usrp_sim.py", str(self.run_time)]
-            self.iperf_client_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.run_time), str(self.iperf_client_addr)]
-            self.iperf_server_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.run_time), str(self.iperf_server_addr)]
+            self.usrp_control_args = ["python3", self.sim_dir + "usrp_sim.py", str(self.run_time)]
+            self.iperf_client_args = ["python3", self.sim_dir + "iperf_sim.py", str(self.run_time), str(self.iperf_client_addr)]
+            self.iperf_server_args = ["python3", self.sim_dir + "iperf_sim.py", str(self.run_time), str(self.iperf_server_addr)]
         else:
-            self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", self.file_name, str(self.run_time)]
+            self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.file_name, str(self.run_time)]
 
         # Only run with the client option if something is provided. If not, the iperf client will be run elsewhere
         if self.iperf_client_addr:
@@ -164,7 +174,7 @@ class ANTS_Controller():
     def start_converter(self, sim_mode):
         print("Running converter tool on {0}...".format(self.file_name))
         if sim_mode == True:
-            self.matlab_converter_args = ["python3", self.working_dir + "/tests/converter_sim.py", str(8)]
+            self.matlab_converter_args = ["python3", self.sim_dir + "converter_sim.py", str(8)]
             self.converter_proc = subprocess.Popen(self.matlab_converter_args, stdin=subprocess.PIPE, stderr=None, shell=False)
             self.converter_proc.wait()
         else:
@@ -179,7 +189,7 @@ class ANTS_Controller():
     def start_plotter(self, sim_mode):
         print("Running plotter...")
         if sim_mode == True:
-            self.matlab_plotter_args = ["python3", self.working_dir + "/tests/plotter_sim.py", str(10)]
+            self.matlab_plotter_args = ["python3", self.sim_dir + "plotter_sim.py", str(10)]
             self.plotter_proc = subprocess.Popen(self.matlab_plotter_args, stdin=subprocess.PIPE, stderr=None, shell=False)
             self.plotter_proc.wait()
         else:
@@ -194,8 +204,8 @@ class ANTS_Controller():
         print("Running iperf...\n")
 
         if sim_mode == True:
-            self.iperf_client_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.run_time), str(self.iperf_client_addr)]
-            self.iperf_server_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.run_time), str(self.iperf_server_addr)]
+            self.iperf_client_args = ["python3", self.sim_dir + "iperf_sim.py", str(self.run_time), str(self.iperf_client_addr)]
+            self.iperf_server_args = ["python3", self.sim_dir + "iperf_sim.py", str(self.run_time), str(self.iperf_server_addr)]
 
         #iperf arguments for real mode are currently defined earlier in this module
         #self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
