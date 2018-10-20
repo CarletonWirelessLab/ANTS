@@ -58,7 +58,6 @@ class ANTS_Controller():
         # Path for calling scripts in simulation mode
         self.sim_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tests'))
         self.sim_dir = self.sim_dir + '/'
-        print(self.sim_dir)
 
 
         if matlab_available == True:
@@ -156,6 +155,8 @@ class ANTS_Controller():
 
         # Always run the iperf server
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        
+        self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
         if sim_mode == False:
             while True:
