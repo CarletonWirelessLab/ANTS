@@ -50,21 +50,6 @@ class ANTS_Controller():
         # Path of project directory for use in calls to scripts in utils/
         self.working_dir = os.getcwd()
 
-        # # Each of these targets a local test script that prints a
-        # # self-identification message, then runs time.sleep() for a certain
-        # # amount of seconds
-        # if test_mode == True:
-        #     self.usrp_control_args = ["python3", self.working_dir + "/tests/usrp_sim.py"]
-        #     self.sg_controller_args = ["python3", self.working_dir + "/tests/sg_sim.py"]
-        #     self.matlab_converter_args = ["python3", self.working_dir + "/tests/converter_sim.py"]
-        #     self.matlab_plotter_args = ["python3", self.working_dir + "/tests/plotter_sim.py"]
-        #     self.iperf_client_args = ["python3", self.working_dir + "/tests/iperf_sim.py", str(self.iperf_client_addr)]
-        #
-        # # Run the real arguments in the intended environment using
-        # # subprocess.Popen()
-        # else:
-        #     self.usrp_control_args = ["python", self.working_dir + "/utils/writeIQ.py", "123", str(self.run_time)]
-        #     self.sg_controller_args = ["python3", self.working_dir + "/utils/ramp_control.py", str(self.run_time)]
 
         if matlab_available == True:
             print("Starting Matlab engine for Python... ")
