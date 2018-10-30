@@ -45,7 +45,7 @@ Note that the code relies on the availability of the Python MATLAB Engine (insta
 ## Setup and Install
 
 1. ```pip3 install pyqt5```
-2. ```sudo dnf install gnuradio```
+2. ```sudo apt install gnuradio``` (Ubuntu) or ```sudo dnf install gnuradio``` (Fedora)
 3. Navigate to /usr/local/MATLAB/R20XXX/extern/engines/python and run ``` sudo python3 setup.py install ```
 4. From the home directory (or wherever you want to store your copy of the project), ```git clone https://github.com/threexc/ANTS```
 
