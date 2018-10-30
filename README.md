@@ -17,17 +17,15 @@ The interface and functionality contained therein are not guaranteed to be consi
 
 ## Intended Usage
 
-1. Change directory to utils/ and type "gcc lanio.c getopt.c -o ks_lanio"
-2. Run the ants.py main script by typing "python3 ants/ants.py" from the project directory
-3. Toggle devices on or off, providing IP addresses and filenames as necessary
-4. (Temporary) Manually run iperf as a client on a device with wireless access
+1. Run the ants.py main script by typing "python3 ants/ants.py" from the project directory
+2. Toggle devices on or off, providing IP addresses and filenames as necessary
+3. (Temporary) Manually run iperf as a client on a device with wireless access
 to generate the traffic to analyze
-5. Collect the results
+4. Collect the results
 
 ## What Works
 
 - USRP option
-- SGControl option
 - Converter option
 - Plotter option
 - iperf (server only; client option not yet functional)
@@ -49,13 +47,13 @@ Note that the code relies on the availability of the Python MATLAB Engine (insta
 1. ```pip3 install pyqt5```
 2. ```sudo dnf install gnuradio```
 3. Navigate to /usr/local/MATLAB/R20XXX/extern/engines/python and run ``` sudo python3 setup.py install ```
-4. ```git clone https://github.com/threexc/ANTS```
+4. From the home directory (or wherever you want to store your copy of the project), ```git clone https://github.com/threexc/ANTS```
 
 ## To-Do List
 
 1. Clean up the GUI and add more user-friendly features
-2. Settings menus that allow the target devices to be configured (among other things), so that the USRP and signal generator paremeters are not hard-coded as they are now
-3. More configurability for the MATLAB scripts
+2. Settings menus that allow the target devices to be configured (among other things), so that the USRP and signal generator parameters are not hard-coded as they are now
+3. Replace MATLAB with a NumPy/Matplotlib alternative
 4. Windows support (low-priority right now)
 
 ## Authors
