@@ -47,6 +47,10 @@ class ANTS_Controller():
         # Output/conversion file name
         self.file_name = ""
 
+        # Used to set the access category. '0' is voice, '1' is video, '2' is
+        # best effort, '3' is background
+        self.access_category = 0
+
         # Path of project directory for use in calls to scripts in utils/
         #self.working_dir = os.getcwd()
         self.working_dir = os.path.dirname(os.path.abspath(__file__))
@@ -155,7 +159,7 @@ class ANTS_Controller():
 
         # Always run the iperf server
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        
+
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
         if sim_mode == False:
@@ -182,6 +186,7 @@ class ANTS_Controller():
             if matlab_available == True:
                 self.engine.workspace['fileName'] = self.file_name + ".bin"
                 self.engine.workspace['duration'] = self.run_time
+                self.engine.workspace['accessCategory'] = self.access_category
                 self.engine.findIFS_only(nargout=0)
                 print("Done conversion\n")
             else:
