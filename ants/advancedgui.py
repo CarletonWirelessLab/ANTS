@@ -268,15 +268,19 @@ class Advanced_GUI(QMainWindow):
 
     def on_ac_voice_clicked(self):
         self.ants_controller.access_category = 0
+        #print("Access category is now {0}\n".format(self.ants_controller.access_category))
 
     def on_ac_video_clicked(self):
         self.ants_controller.access_category = 1
+        #print("Access category is now {0}\n".format(self.ants_controller.access_category))
 
     def on_ac_besteffort_clicked(self):
         self.ants_controller.access_category = 2
+        #print("Access category is now {0}\n".format(self.ants_controller.access_category))
 
     def on_ac_background_clicked(self):
         self.ants_controller.access_category = 3
+        #print("Access category is now {0}\n".format(self.ants_controller.access_category))
 
     # Changes the usrp run state when the checkbox is clicked
     def usrp_check(self, state):
