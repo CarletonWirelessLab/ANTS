@@ -1,4 +1,4 @@
-#/usr/bin/python3
+#!/usr/bin/python3
 
 from control import ANTS_Controller
 from simplegui import Simple_GUI
