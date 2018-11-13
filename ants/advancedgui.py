@@ -1,10 +1,16 @@
 #!/usr/bin/python3
 
+<<<<<<< HEAD
 from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout, QHBoxLayout, QVBoxLayout, QRadioButton
 from PyQt5.QtCore import Qt, QRegExp, QSettings
+=======
+from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout, QHBoxLayout, QVBoxLayout
+from PyQt5.QtCore import Qt, QRegExp
+from PyQt5.QtCore import QSettings
+>>>>>>>  pull again
 from PyQt5.QtGui import QRegExpValidator
 import sys
-#Qt, QRegExp, QSettings, QRegExpValidator
+
 class Advanced_GUI(QMainWindow):
 
     def __init__(self, ants_controller):
@@ -257,8 +263,10 @@ class Advanced_GUI(QMainWindow):
         self.setGeometry(300, 600, 500, 500)
         self.setWindowTitle('ANTS Control Panel')
         self.show()
-#--------Save Checkbox values on the main window here----------
-        # get settings
+
+        #--------Save Checkbox values on the main window here----------
+
+        # get settings checkbox values from main window
         checkboxSettings = QSettings()
         check_USRP_checkbox = checkboxSettings.value('usrp_checkbox',False,type=bool)
         check_SGControl_checkbox = checkboxSettings.value('siggen_checkbox',False,type=bool)
@@ -320,7 +328,7 @@ class Advanced_GUI(QMainWindow):
         settings = QSettings()
         settings.setValue('sim_mode_checkbox', self.sim_mode_checkbox.isChecked())
         settings.sync()
-#--------end of save checkbox---------
+    #--------end of save checkbox---------
 
     def on_usrp_settings_clicked(self):
         self.usrp_settings_menu.show()
