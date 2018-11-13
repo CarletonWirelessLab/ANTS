@@ -13,11 +13,12 @@ The echo_server.py and echo_client.py scripts are based off of those found [here
 but they'll get improvements to be object-oriented as I go.
 
 **Note**: This project is under heavy development, and a stable release branch has not yet been established.
-The interface and functionality contained therein are not guaranteed to be consistent
+The interface and functionality contained therein are not guaranteed to be consistent or fully operational.
 
 ## Intended Usage
 
-1. Run the ants.py main script by typing "python3 ants/ants.py" from the project directory
+1. Run `sudo bash install.sh` or make install.sh executable with `chmod +x install.sh` then run `sudo ./install.sh`
+2. Type `ants` from anywhere on the system
 2. Toggle devices on or off, providing IP addresses and filenames as necessary
 3. (Temporary) Manually run iperf as a client on a device with wireless access
 to generate the traffic to analyze

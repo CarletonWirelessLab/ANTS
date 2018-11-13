@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout, QHBoxLayout, QVBoxLayout, QRadioButton
 from PyQt5.QtCore import QRegExp, QSettings, Qt
 from PyQt5.QtGui import QRegExpValidator
 import sys
@@ -129,6 +129,33 @@ class Advanced_GUI(QMainWindow):
         self.runtime_text = str(0.5) + " seconds"
         self.runtime_label = QLabel(self.runtime_text, self)
         self.runtime_label.move(380, 50)
+
+        # Buttons for access category
+        self.ac_voice_button = QRadioButton(self)
+        self.ac_video_button = QRadioButton(self)
+        self.ac_besteffort_button = QRadioButton(self)
+        self.ac_background_button = QRadioButton(self)
+        self.ac_voice_button.move(380, 240)
+        self.ac_video_button.move(380, 300)
+        self.ac_besteffort_button.move(380, 360)
+        self.ac_background_button.move(380, 420)
+        self.ac_voice_button.setChecked(True)
+        self.ac_voice_label = QLabel("Voice", self)
+        self.ac_voice_label.move(400, 240)
+        self.ac_video_label = QLabel("Video", self)
+        self.ac_video_label.move(400, 300)
+        self.ac_besteffort_label = QLabel("Best Effort", self)
+        self.ac_besteffort_label.move(400, 360)
+        self.ac_background_label = QLabel("Background", self)
+        self.ac_background_label.move(400, 420)
+
+        self.ac_voice_button.clicked.connect(self.on_ac_voice_clicked)
+        self.ac_video_button.clicked.connect(self.on_ac_video_clicked)
+        self.ac_besteffort_button.clicked.connect(self.on_ac_besteffort_clicked)
+        self.ac_background_button.clicked.connect(self.on_ac_background_clicked)
+
+
+
 
 
         self.usrp_settings_menu = USRP_Settings(self)
@@ -312,6 +339,20 @@ class Advanced_GUI(QMainWindow):
 
     def on_license_menu_clicked(self):
         self.license_menu.show()
+
+    # Action functions for access category radio buttons
+
+    def on_ac_voice_clicked(self):
+        self.ants_controller.access_category = 0
+
+    def on_ac_video_clicked(self):
+        self.ants_controller.access_category = 1
+
+    def on_ac_besteffort_clicked(self):
+        self.ants_controller.access_category = 2
+
+    def on_ac_background_clicked(self):
+        self.ants_controller.access_category = 3
 
     # Changes the usrp run state when the checkbox is clicked
     def usrp_check(self, state):
