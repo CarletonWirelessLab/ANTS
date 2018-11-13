@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 
 from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout, QHBoxLayout, QVBoxLayout
-from PyQt5.QtCore import Qt, QRegExp
+from PyQt5.QtCore import QRegExp, QSettings, Qt
 from PyQt5.QtGui import QRegExpValidator
-
+import sys
+#Qt, QRegExp, QSettings, QRegExpValidator
 class Advanced_GUI(QMainWindow):
 
     def __init__(self, ants_controller):
@@ -229,6 +230,70 @@ class Advanced_GUI(QMainWindow):
         self.setGeometry(300, 600, 500, 500)
         self.setWindowTitle('ANTS Control Panel')
         self.show()
+#--------Save Checkbox values on the main window here----------
+        # get settings
+        checkboxSettings = QSettings()
+        check_USRP_checkbox = checkboxSettings.value('usrp_checkbox',False,type=bool)
+        check_SGControl_checkbox = checkboxSettings.value('siggen_checkbox',False,type=bool)
+        check_Convert_checkbox = checkboxSettings.value('converter_checkbox',False,type=bool)
+        check_Plot_checkbox = checkboxSettings.value('plotter_checkbox',False,type=bool)
+        check_iperf_client_checkbox = checkboxSettings.value('iperf_client_checkbox',False,type=bool)
+        check_iperf_server_checkbox = checkboxSettings.value('iperf_server_checkbox',False,type=bool)
+        check_Simulate_checkbox = checkboxSettings.value('sim_mode_checkbox',False,type=bool)
+
+        # set state
+        self.usrp_checkbox.setChecked(check_USRP_checkbox)
+        self.siggen_checkbox.setChecked(check_SGControl_checkbox)
+        self.converter_checkbox.setChecked(check_Convert_checkbox)
+        self.plotter_checkbox.setChecked(check_Plot_checkbox)
+        self.iperf_client_checkbox.setChecked(check_iperf_client_checkbox)
+        self.iperf_server_checkbox.setChecked(check_iperf_server_checkbox)
+        self.sim_mode_checkbox.setChecked(check_Simulate_checkbox)
+
+        # connect the slot to the signal by clicking the checkbox to save the state settings
+        self.usrp_checkbox.clicked.connect(self.save_usrp_checkbox_settings)
+        self.siggen_checkbox.clicked.connect(self.save_siggen_checkbox_settings)
+        self.converter_checkbox.clicked.connect(self.save_converter_checkbox_settings)
+        self.plotter_checkbox.clicked.connect(self.save_plotter_checkbox_settings)
+        self.iperf_client_checkbox.clicked.connect(self.save_iperf_client_checkbox_settings)
+        self.iperf_server_checkbox.clicked.connect(self.save_iperf_server_checkbox_settings)
+        self.sim_mode_checkbox.clicked.connect(self.save_sim_mode_checkbox_settings)
+
+    def save_usrp_checkbox_settings(self):
+        settings = QSettings()
+        settings.setValue('usrp_checkbox', self.usrp_checkbox.isChecked())
+        settings.sync()
+
+    def save_siggen_checkbox_settings(self):
+        settings = QSettings()
+        settings.setValue('siggen_checkbox', self.siggen_checkbox.isChecked())
+        settings.sync()
+
+    def save_converter_checkbox_settings(self):
+        settings = QSettings()
+        settings.setValue('converter_checkbox', self.converter_checkbox.isChecked())
+        settings.sync()
+
+    def save_plotter_checkbox_settings(self):
+        settings = QSettings()
+        settings.setValue('plotter_checkbox', self.plotter_checkbox.isChecked())
+        settings.sync()
+
+    def save_iperf_client_checkbox_settings(self):
+        settings = QSettings()
+        settings.setValue('iperf_client_checkbox', self.iperf_client_checkbox.isChecked())
+        settings.sync()
+
+    def save_iperf_server_checkbox_settings(self):
+        settings = QSettings()
+        settings.setValue('iperf_server_checkbox', self.iperf_server_checkbox.isChecked())
+        settings.sync()
+
+    def save_sim_mode_checkbox_settings(self):
+        settings = QSettings()
+        settings.setValue('sim_mode_checkbox', self.sim_mode_checkbox.isChecked())
+        settings.sync()
+#--------end of save checkbox---------
 
     def on_usrp_settings_clicked(self):
         self.usrp_settings_menu.show()
@@ -446,6 +511,7 @@ class Advanced_GUI(QMainWindow):
         print("\nDone sequence\n")
 
         self.statusBar().showMessage('Idle')
+
 
 class USRP_Settings(QMainWindow):
 
