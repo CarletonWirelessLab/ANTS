@@ -2,32 +2,27 @@
 % Based on ETSI EN 301 893 V2.1.1 (2017-05), calssification of idle periods
 % 5.4.9.3.2.4.1 steps 5 and 6
 
-function [B, p, pMax, TxopDurations] = EN_301_893_ReqCalc(allBackOffs, locs, priorityClass, deviceClass)
+function [B, p, pMax, TxopDurations] = EN_301_893_ReqCalc(allBackOffs, locs, priorityClass)
 % allBackOffs: A list of the backOff periods in (uSec)
 % locs: Locations of the packets (uSec)
 % priorityClass: 0 = Voice (Class 4), 1 = Video (Class 3), 2 = Best Effort (Class 2), 
 % 3 = BackGround (Class 1)
-% deviceClass: 'Supervising' or 'Supervised'
+% deviceClass: 'Supervising' or 'Supervised' not needed, deleted
 
-if (deviceClass ~= 'Supervised') & (priorityClass < 2)
-   BackOffs = allBackOffs(allBackOffs > 18); % (27-9) uSec, Ammar's recommendation
-else
-   BackOffs = allBackOffs(allBackOffs > 27); % 27 uSec, Guido's recommendation 
-end
+
+BackOffs = allBackOffs(allBackOffs > 27); % 27 uSec, Guido's recommendation 
+
 
 % Calculate TXOP (COT)
-if (deviceClass ~= 'Supervised') & (priorityClass < 2)
-    COT = find(allBackOffs > 23)'; %  Ammar's recommendation
-else
-    COT = find(allBackOffs > 25)'; %  4.2.7.3.2.4 Priority Classes, EN 301 893
-end
+
+COT = find(allBackOffs > 25)'; %  4.2.7.3.2.4 Priority Classes, EN 301 893
+
 TxopDurations = zeros(length(COT),1);
 for ii = 2:length(COT)
     TxopDurations(ii-1) = (locs(COT(ii),2) - locs(COT(ii-1)+1,1));
 end
 TxopDurations(TxopDurations == 0) = [];
 TxopDurations = TxopDurations/1e3;  %mSec;
-
 
 % plot TXOP hist
 figName = 'xx';
@@ -52,22 +47,12 @@ slotTime = 9;
 switch priorityClass
     case 0 % voice
         kp1 = 5;
-        if deviceClass == 'Supervised'
             mind = 32;
-            maxd = 59;
-        else  % Supervising 
-            mind = 23;
-            maxd = 50;
-        end
+            maxd = 59;       
     case 1 % video
         kp1 = 9;
-        if deviceClass == 'Supervised'
             mind = 32;
             maxd = 95;
-        else % Supervising
-            mind = 23;
-            maxd = 86;
-        end
     case 2 % Best Effort
         kp1 = 17;
         mind = 41;
@@ -128,7 +113,7 @@ else
 end
 
 %% Plot comparison with threshold
-figure(20)
+figure(3)
 bar(0:kp1-1,[p pMax])
 legend('Bin Probability','Compliance Upper threshold','Location','northwest')
 title('Bin Probability and Threshold');

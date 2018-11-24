@@ -30,11 +30,10 @@ tempVector = diff(packetIndices);
 packetEndIndices = packetIndices([tempVector > windowSize; true]);
 packetStartIndices = packetIndices([true; tempVector> windowSize]);
 
-%first_packet = i_data(packet_indices(1):packetEndIndices(1)) + 1j * q_data(packet_indices(1):packetEndIndices(1));
-%t_first_packet = t(packet_indices(1):packetEndIndices(1));
+
 locs = [packetStartIndices packetEndIndices];
 
-figure(20)
+figure(1)
 t = (0:(length(cData)-1))/sampRate;
 indicator = zeros(size(t));
 indicator(locs(:)) = 0.4 * max(abs(cData(:)));
