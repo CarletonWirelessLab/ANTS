@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout, QHBoxLayout, QVBoxLayout, QRadioButton
-from PyQt5.QtCore import Qt, QRegExp
+from PyQt5.QtCore import Qt, QRegExp, QSettings
 from PyQt5.QtGui import QRegExpValidator
 
 class Advanced_GUI(QMainWindow):
