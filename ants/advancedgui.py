@@ -175,6 +175,19 @@ class Advanced_GUI(QMainWindow):
         self.sim_state_action.triggered.connect(self.sim_mode_check)
         self.file_menu.addAction(self.sim_state_action)
 
+        self.file_setdefault_action = QAction('Set Profile to Default', self, checkable=True)
+        self.file_save_action = QAction('Save Profile', self, checkable=False)
+        self.file_menu.addAction(self.file_save_action)
+
+        self.file_load_action = QAction('Load Profile', self, checkable=False)
+        self.file_menu.addAction(self.file_load_action)
+
+        self.file_reset_action = QAction('Reset Profile', self, checkable=False)
+        self.file_menu.addAction(self.file_reset_action)
+
+        self.file_setdefault_action = QAction('Set Profile to Default', self, checkable=False)
+        self.file_menu.addAction(self.file_setdefault_action)
+
         # Add a checkbox to toggle the USRP to the USRP menu
         self.usrp_settings = self.menubar.addMenu('USRP')
         self.usrp_state_action = QAction('Enable', self, checkable=True)
