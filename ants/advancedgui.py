@@ -1,10 +1,12 @@
 #!/usr/bin/python3
-
 from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout, QHBoxLayout, QVBoxLayout, QRadioButton
 from PyQt5.QtCore import Qt, QRegExp, QSettings
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> Fixed imports
+=======
+>>>>>>> 907d2907b91ee68052d3ab35f4651ea3c3ca0487
 from PyQt5.QtGui import QRegExpValidator
 import sys
 
@@ -178,6 +180,7 @@ class Advanced_GUI(QMainWindow):
         self.sim_state_action = QAction('Simulate', self, checkable=True)
         self.file_menu.addAction(self.sim_state_action)
 
+<<<<<<< HEAD
         self.file_save_action = QAction('Save Profile', self, checkable=True)
         self.file_menu.addAction(self.file_save_action)
 
@@ -188,6 +191,18 @@ class Advanced_GUI(QMainWindow):
         self.file_menu.addAction(self.file_reset_action)
 
         self.file_setdefault_action = QAction('Set Profile to Default', self, checkable=True)
+=======
+        self.file_save_action = QAction('Save Profile', self, checkable=False)
+        self.file_menu.addAction(self.file_save_action)
+
+        self.file_load_action = QAction('Load Profile', self, checkable=False)
+        self.file_menu.addAction(self.file_load_action)
+
+        self.file_reset_action = QAction('Reset Profile', self, checkable=False)
+        self.file_menu.addAction(self.file_reset_action)
+
+        self.file_setdefault_action = QAction('Set Profile to Default', self, checkable=False)
+>>>>>>> 907d2907b91ee68052d3ab35f4651ea3c3ca0487
         self.file_menu.addAction(self.file_setdefault_action)
 
         # Add a checkbox to toggle the USRP to the USRP menu
