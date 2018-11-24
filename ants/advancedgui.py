@@ -1,13 +1,10 @@
 #!/usr/bin/python3
 
-<<<<<<< HEAD
 from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout, QHBoxLayout, QVBoxLayout, QRadioButton
 from PyQt5.QtCore import Qt, QRegExp, QSettings
+<<<<<<< HEAD
 =======
-from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction, QApplication, QComboBox, QMessageBox, QPushButton, QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout, QHBoxLayout, QVBoxLayout
-from PyQt5.QtCore import Qt, QRegExp
-from PyQt5.QtCore import QSettings
->>>>>>>  pull again
+>>>>>>> Fixed imports
 from PyQt5.QtGui import QRegExpValidator
 import sys
 
