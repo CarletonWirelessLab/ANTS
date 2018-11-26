@@ -1,47 +1,8 @@
 #Author Xinrui Zhang
 #Based on ETSI EN 301 893 V2.1.1 (2017-05), calssification of idle periods
 import math
-#realize the matlab function:
-#BackOffs = allBackOffs(allBackOffs > 27)
-#store all the elements which is greater than n into newList
-#compare=1 when comparing each element is greater than n
-#compare=0 when comparing each element is equal to n
-def leaveElemCompare(list,n,compare):
-    newList=[]
-    for i in range(0,len(list)):
-        if compare == 1:
-            if list[i] > n:
-                newList.append(list[i])
-        if compare == 0:
-            if list[i] == n:
-                newList.append(list[i])
-    return newList
-
-#realize the matlab function:
-#BackOffs = allBackOffs(allBackOffs > 27)
-#find all the elements that is greater than n and store the index into indexList
-def findIndex(list,n):
-    indexList=[]
-    for i in range(0,len(list)):
-        if list[i] > n:
-            indexList.append(i)
-    return indexList
-
-#realize the matlab function:
-#TxopDurations = zeros(length(COT), 1)
-def zeroMatrix(length):
-    zeros=[]
-    for i in range(0,length):
-        zeros.append(0)
-    return zeros
-
-def divide(list,n):
-    newList=[]
-    for i in range(0,len(list)):
-            newList.append(list[i]/n)
-    return newList
-
-
+import numpy as np
+import matplotlib.pyplot as plt
 # 5.4.9.3.2.4.1 steps 5 and 6
 def EN_301_893_ReqCalc(allBackOffs, locs, priorityClasss):
     # allBackOffs: A list of the backOff periods in (uSec)
@@ -51,17 +12,18 @@ def EN_301_893_ReqCalc(allBackOffs, locs, priorityClasss):
 
     #27 uSec, Guido's recommendation
     #BackOffs = allBackOffs(allBackOffs > 27)
-    BackOffs = leaveElemGreaterThan(allBackOffs,27)
+    BackOffs = [x for x in allBackOffs if x >27]
 
     # Calculate TXOP (COT)
 
     #COT = find(allBackOffs > 25).cT#  4.2.7.3.2.4 Priority Classes, EN 301 893
     #list index is the matlab index -1
     #dont know if it needs to be transposed
-    COT = findIndex(allBackOffs,25)
+    COT = [i for i,x in enumerate(allBackOffs) if x > 25]
 
     #TxopDurations = zeros(length(COT), 1)
-    TxopDurations = zeroMatrix(length(COT))
+    #dont know if it needs to be transposed
+    TxopDurations = np.zeros(length(COT))
     for ii in range[1:length(COT)]:
 #trace locs ----> detectPacketLocations
 #detectPacketLocations line 22 cData = iData + 1j * qData; typo???
@@ -69,9 +31,9 @@ def EN_301_893_ReqCalc(allBackOffs, locs, priorityClasss):
         TxopDurations[ii - 1] = (locs(COT(ii), 2) - locs(COT(ii - 1) + 1, 1))
 #dont understand this line below as well
     #TxopDurations(TxopDurations == 0) = [];
-    leaveElemCompare(TxopDurations,0,0)= [];
+    [x for x in TxopDurations if x == 0]= [];
 
-    TxopDurations = divide(TxopDurations ,1e3)   #mSec;
+    TxopDurations = [ x / 1e3 for x in TxopDurations)   #mSec;
 
     # plot TXOP hist
     figName ='xx'
@@ -89,11 +51,15 @@ def EN_301_893_ReqCalc(allBackOffs, locs, priorityClasss):
 
 #######not finished#######
 #assume Shady has converted the plot function:)
-    textf = mcat([num2str(length(TxopDurations)), mstring(' Samples')])
-    gtitle = mcat([mstring('TXOP duration Histogram, '), textf])
-    xlab = mstring('time (mSec)')
+    textf = [num2str(length(TxopDurations)) ' Samples'];
+    gtitle = ['TXOP duration Histogram, ' textf];
+    xlab = 'time (mSec)';
+    #is bar chark the same as Histogram? didnt convert next two lines
     histScales(4, TxopDurations, 50, gtitle, xlab, 0.05, mcat([0, ceil(max(TxopDurations))]))
-    saveas(gcf, mcat([mstring('tx_'), figName, mstring('.jpg')]))
+    saveas(gcf,['tx_' figName '.jpg'])
+
+    #plt.xlabel('time (mSec)')
+
 #######################
     slotTime = 9
     __switch_1__ = priorityClass
@@ -121,7 +87,9 @@ def EN_301_893_ReqCalc(allBackOffs, locs, priorityClasss):
     # Classification of Idle Periods (B)
     blen = len(BackOffs)
     #B = zeros(kp1, 1)
-    B = zeroMatrix(kp1)
+    #dont know if this implementation fits the other functions B =zeros(1,kp1)
+    #dont know if it needs to be transposed
+    B = np.zeros(kp1)
     for i in range(0:blen):
         x = BackOffs[i]
         if x < mind:
@@ -136,7 +104,9 @@ def EN_301_893_ReqCalc(allBackOffs, locs, priorityClasss):
 
     # Calculate the observed cumulative probabilities (p)
     E = blen                    # total observed periods
-    p = zeroMatrix(kp1)
+    #dont know if this implementation fits the other functions p =zeros(1,kp1)
+    #dont know if it needs to be transposed
+    p = np.zeros(kp1)
     pMax = p
 
     for ii in range(0:kp1):
@@ -174,13 +144,16 @@ def EN_301_893_ReqCalc(allBackOffs, locs, priorityClasss):
     else:
         print('(Unit Complies with the Standard)')
 
-#didnt comvert yet
-#assume Shady has converted the plot function:)
+#could be wrong...
     #% Plot comparison with threshold
-    figure(3)
-    bar(mslice[0:kp1 - 1], mcat([p, pMax]))
-    legend(mstring('Bin Probability'), mstring('Compliance Upper threshold'), mstring('Location'), mstring('northwest'))
-    title(mstring('Bin Probability and Threshold'))
-    xlabel(mstring('Bin'))
-    saveas(gcf, mcat([mstring('prob_'), figName, mstring('.jpg')]))
+    plt.figure(3)
+    plt.bar([0:kp1 - 1],[p, pMax])
+    # legend('Bin Probability','Compliance Upper threshold','Location','northwest')
+    # title('Bin Probability and Threshold');
+    # xlabel('Bin');
+    plt.legend('Bin Probability','Compliance Upper threshold','Location','northwest')
+    plt.title('Bin Probability and Threshold')
+    plt.xlabel('Bin')
+    #plt.savefig('prob_' figName '.jpg')
+    plt.show()
     return (B, p, pMax, TxopDurations)
