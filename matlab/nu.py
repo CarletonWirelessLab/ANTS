@@ -1,6 +1,4 @@
-import math
 import numpy as np
-
 
 def detect_packet_locations(file_name, samp_rate, f):
     # locs = detectPacketLocations(fileName, sampRate, duartion)
@@ -26,8 +24,6 @@ def detect_packet_locations(file_name, samp_rate, f):
     window_size = int(4e-6 * samp_rate)
     packet_indices = np.where(env_data > threshold)
     packet_indices = np.asarray(packet_indices)
-    # packet_indices = packet_indices.T
-    # print(packet_indices)
     temp_vector = np.diff(packet_indices).T
     packet_start_indices.append(packet_indices[0, 0])
     for i in range(0, len(temp_vector)):
@@ -36,14 +32,12 @@ def detect_packet_locations(file_name, samp_rate, f):
             packet_start_indices.append(packet_indices[0, i+1])
     packet_end_indices.append(packet_indices[0, len(temp_vector)])
     locs = np.vstack((packet_start_indices, packet_end_indices)).T
-    return locs, threshold
+    return locs, threshold, c_data
 
 
 file_name = "0.bin"
-duration = math.inf
 samp_rate = 20e6
-(locs, threshold) = detect_packet_locations(file_name, samp_rate,  0.02)
+(locs, threshold, c_data) = detect_packet_locations(file_name, samp_rate,  0.02)
 print(locs)
 print(threshold)
-
-
+print(c_data)
