@@ -12,13 +12,14 @@ import time
 
 global name
 global runFor #sec
+global access_category
 
 class writeIQ(gr.top_block):
 
 	def __init__(self):
 		gr.top_block.__init__(self)
 
-		global name, runFor
+		global name, runFor, access_category
 
 		# Define variables and their default values
 		self.samp_rate = 20e6
@@ -26,7 +27,7 @@ class writeIQ(gr.top_block):
 		self.gain = 60
 		self.cfreq = 5.765e9 #2.412e9
 		self.antenna = "RX2"
-		self.file_name = name + '.bin'
+		self.file_name = name + '_' + access_category + '.bin'
 		print(self.file_name)
 		#self.file_name = 'FgTest_' + name +'.bin'
 
@@ -90,19 +91,23 @@ def dowork():
 
 def main():
 
-	global name, runFor
+	global name, runFor, access_category
 	name = '0'
 	runFor = 2.5 # sec
+	access_category = 'voice'
 	if len(sys.argv) > 1:
 		name   = sys.argv[1]
 		runFor = float(sys.argv[2]) #sec
-
+                access_category = sys.argv[3]
+        
 	t = threading.Thread(target=dowork)
 	t.daemon = True
 	t.start()
 	#time.sleep(1.9828)   #to initiate the device on HP laptop
 	time.sleep(runFor)
 	print '## END READING ## Duration =',runFor,' s'
+	
+	
 	quit()
 
 if __name__  == '__main__':
