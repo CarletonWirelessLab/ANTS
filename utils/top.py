@@ -250,12 +250,19 @@ else:
 
 output_file = open(name+"_"+access_category+"_results.txt", "w")
 
-if (np.sum((p - pMax)/pMax > 0.001)==0): #sum(p > pMax)
-	print("Unit Complies with the Standard")
-	output_file.write("Unit Complies with the Standard"+"\n")
-else:
-	print("Unit does not Comply with the Standard")
-	output_file.write("Unit does not Comply with the Standard"+"\n")
+#if (np.sum((p - pMax)/pMax > 0.001)==0): #sum(p > pMax)
+#	print("Unit Complies with the Standard")
+#	output_file.write("Unit Complies with the Standard"+"\n")
+#else:
+#	print("Unit does not Comply with the Standard")
+#	output_file.write("Unit does not Comply with the Standard"+"\n")
+#
+#if sum(p > pMax): #
+#	print("Unit does not Comply with the Standard")
+#	output_file.write("Unit does not Comply with the Standard"+"\n")
+#else:
+#	print("Unit Complies with the Standard")
+#	output_file.write("Unit Complies with the Standard"+"\n")
 
 
 
@@ -290,7 +297,7 @@ else:
 	print(str(abs(AGFactor) * 100) + " Submissive and " + str(NFP) + " Compliant")
 	output_file.write(str(abs(AGFactor) * 100) + " Submissive and " + str(NFP) + " Compliant"+"\n")
 
-	
+
 # generate a plot for the power of the signal and the packet indicators
 plt.figure(1)
 plt.plot(time, np.sqrt(power_data), 'b-', time, packet_indicator, 'r-')#, time, packet_indicator, 'r-')
@@ -336,7 +343,3 @@ output_file.close()
 
 input("Hit enter to exit...")
 # ask user to hit enter
-
-
-
-
