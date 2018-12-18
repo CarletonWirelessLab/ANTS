@@ -198,7 +198,7 @@ class Advanced_GUI(QMainWindow):
         self.siggen_settings.addAction(self.siggen_settings_action)
 
         # Add checkboxes for the plotter and converter to the plotting menu
-        self.plotting_settings = self.menubar.addMenu('Convert/Plot')
+        self.plotting_settings = self.menubar.addMenu('Plotting')
 
         self.converter_state_action = QAction('Enable Converter', self, checkable=True)
         self.converter_state_action.triggered.connect(self.converter_check)
@@ -226,7 +226,7 @@ class Advanced_GUI(QMainWindow):
 
         self.about_menu = self.menubar.addMenu('About')
 
-        self.about_ants_action = QAction('About ants', self, checkable=False)
+        self.about_ants_action = QAction('About ANTS', self, checkable=False)
         self.about_ants_action.triggered.connect(self.on_about_ants_menu_clicked)
         self.about_menu.addAction(self.about_ants_action)
 
