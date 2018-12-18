@@ -495,14 +495,37 @@ class SigGen_Settings(QMainWindow):
 
         self.setCentralWidget(self.pushButton)
 
-class Plotting_Settings(QMainWindow):
+class Plotting_Settings(QDialog):
 
     def __init__(self, parent):
         super(Plotting_Settings, self).__init__(parent)
 
-        self.pushButton = QPushButton("click me")
+        # Buttons for access category
+        self.ac_voice_button = QRadioButton(self)
+        self.ac_video_button = QRadioButton(self)
+        self.ac_besteffort_button = QRadioButton(self)
+        self.ac_background_button = QRadioButton(self)
+        self.ac_voice_button.setChecked(True)
 
-        self.setCentralWidget(self.pushButton)
+        # Labels for access category
+        self.ac_voice_label = QLabel("Voice", self)
+        self.ac_video_label = QLabel("Video", self)
+        self.ac_besteffort_label = QLabel("Best Effort", self)
+        self.ac_background_label = QLabel("Background", self)
+
+        grid = QGridLayout()
+        self.setLayout(grid)
+        self.setGeometry(300, 300, 450, 225)
+        self.setWindowTitle("Plot Settings")
+
+        grid.addWidget(self.ac_voice_label, 0, 0)
+        grid.addWidget(self.ac_video_label, 1, 0)
+        grid.addWidget(self.ac_besteffort_label, 2, 0)
+        grid.addWidget(self.ac_background_label, 3, 0)
+        grid.addWidget(self.ac_voice_button, 0, 1)
+        grid.addWidget(self.ac_video_button, 1, 1)
+        grid.addWidget(self.ac_besteffort_button, 2, 1)
+        grid.addWidget(self.ac_background_button, 3, 1)
 
 class Iperf_Settings(QDialog):
 
