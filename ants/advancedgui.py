@@ -283,56 +283,70 @@ class Advanced_GUI(QMainWindow):
 
         if state:
             self.usrp_state = True
+            print("usrp on")
         else:
             self.usrp_state = False
+            print("usrp off")
 
     # Changes the signal generator run state when the checkbox is clicked
     def siggen_check(self, state):
 
         if state:
             self.siggen_state = True
+            print("signal generator on")
         else:
             self.siggen_state = False
+            print("signal generator off")
 
     # Changes the converter run state when the checkbox is clicked
     def converter_check(self, state):
 
         if state:
             self.converter_state = True
+            print("converter on")
         else:
             self.converter_state = False
+            print("converter off")
 
     # Changes the plotter run state when the checkbox is clicked
     def plotter_check(self, state):
 
         if state:
             self.plotter_state = True
+            print("plotter on")
         else:
             self.plotter_state = False
+            print("plotter off")
 
     # Changes the iperf client run state when the checkbox is clicked
     def iperf_client_check(self, state):
 
         if state:
             self.iperf_client_state = True
+            print("iperf client on")
         else:
             self.iperf_client_state = False
+            print("iperf client off")
 
     # Changes the iperf server run state when the checkbox is clicked
     def iperf_server_check(self, state):
 
         if state:
             self.iperf_server_state = True
+            print("iperf server on")
         else:
             self.iperf_server_state = False
+            print("iperf server off")
 
     # Dictates whether or not the test scripts or the target programs are used
     def sim_mode_check(self, state):
 
         if state:
             self.sim_mode = True
+            print("sim mode on")
         else:
             self.sim_mode = False
+            print("sim mode off")
 
     # Controls changing the value pointed to by the slider. The slider should
     # allow ranges between 0.5 and 10, but since the class only supports
