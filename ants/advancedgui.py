@@ -7,7 +7,70 @@ from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
 from PyQt5.QtCore import Qt, QRegExp, QSettings
 from PyQt5.QtGui import QRegExpValidator
 
+class ANTS_Table(QWidget):
+
+    def __init__(self, main_gui):
+        super(QWidget, self).__init__(main_gui)
+        self.layout = QVBoxLayout(self)
+
+        self.tabs = QTabWidget()
+
+        self.results_tab = QWidget()
+        self.usrp_tab = QWidget()
+        self.plot_tab = QWidget()
+        self.iperf_tab = QWidget()
+        self.about_tab = QWidget()
+        self.tabs.resize(300, 200)
+
+
+        self.tabs.addTab(self.results_tab, "Results")
+        self.tabs.addTab(self.usrp_tab, "USRP")
+        self.tabs.addTab(self.plot_tab, "Plotting")
+        self.tabs.addTab(self.iperf_tab, "iperf")
+        self.tabs.addTab(self.about_tab, "About")
+
+        self.results_tab.layout = QVBoxLayout(self)
+        self.pushButton1 = QPushButton("PyQt5")
+        self.results_tab.layout.addWidget(self.pushButton1)
+        self.results_tab.setLayout(self.results_tab.layout)
+
+        self.layout.addWidget(self.tabs)
+        self.setLayout(self.layout)
+
 class Advanced_GUI(QMainWindow):
+
+    def __init__(self, ants_controller):
+        super().__init__()
+
+        # Class variables that are set by toggling the checkboxes. Used to
+        # determine which tools to run when the "Run" button is pressed
+        self.usrp_state = False
+        self.siggen_state = False
+        self.converter_state = False
+        self.plotter_state = False
+        self.iperf_client_state = False
+        self.iperf_server_state = False
+
+        # Ensure that a proper IP format is used. Taken from
+        # https://evileg.com/en/post/57/
+        self.ip_range = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"
+        self.ip_regex = QRegExp("^" + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "$")
+        self.ip_validator = QRegExpValidator(self.ip_regex, self)
+
+        # Used to pass mode to the controller object
+        self.sim_mode = False
+
+        # The ANTS Controller object
+        self.ants_controller = ants_controller
+
+        self.table_widget = ANTS_Table(self)
+        self.setCentralWidget(self.table_widget)
+
+        self.show()
+
+
+
+class Advanced_GUI2(QMainWindow):
 
     def __init__(self, ants_controller):
         super().__init__()
