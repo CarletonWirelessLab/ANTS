@@ -9,19 +9,19 @@ from PyQt5.QtGui import QRegExpValidator
 
 class ANTS_Table(QWidget):
 
-    def __init__(self, main_gui):
+    def __init__(self, main_gui, ants_controller):
         super(QWidget, self).__init__(main_gui)
+        self.ants_controller = ants_controller
         self.layout = QVBoxLayout(self)
 
         self.tabs = QTabWidget()
 
-        self.results_tab = QWidget()
-        self.usrp_tab = QWidget()
-        self.plot_tab = QWidget()
-        self.iperf_tab = QWidget()
-        self.about_tab = QWidget()
+        self.results_tab = ANTS_Results_Tab(self, self.ants_controller)
+        self.usrp_tab = ANTS_USRP_Tab(self, self.ants_controller)
+        self.plot_tab = ANTS_Plot_Tab(self, self.ants_controller)
+        self.iperf_tab = ANTS_iperf_Tab(self, self.ants_controller)
+        self.about_tab = ANTS_About_Tab(self, self.ants_controller)
         self.tabs.resize(300, 200)
-
 
         self.tabs.addTab(self.results_tab, "Results")
         self.tabs.addTab(self.usrp_tab, "USRP")
@@ -29,12 +29,54 @@ class ANTS_Table(QWidget):
         self.tabs.addTab(self.iperf_tab, "iperf")
         self.tabs.addTab(self.about_tab, "About")
 
-        self.results_tab.layout = QVBoxLayout(self)
-        self.pushButton1 = QPushButton("PyQt5")
-        self.results_tab.layout.addWidget(self.pushButton1)
-        self.results_tab.setLayout(self.results_tab.layout)
-
         self.layout.addWidget(self.tabs)
+        self.setLayout(self.layout)
+
+class ANTS_Results_Tab(QWidget):
+
+    def __init__(self, tabs_object, ants_controller):
+        super(QWidget, self).__init__(tabs_object)
+        self.ants_controller = ants_controller
+        self.layout = QVBoxLayout(self)
+        self.pushButton1 = QPushButton("Results")
+        self.layout.addWidget(self.pushButton1)
+        self.setLayout(self.layout)
+
+class ANTS_USRP_Tab(QWidget):
+
+    def __init__(self, tabs_object, ants_controller):
+        super(QWidget, self).__init__(tabs_object)
+        self.ants_controller = ants_controller
+        self.layout = QVBoxLayout(self)
+        self.pushButton1 = QPushButton("USRP")
+        self.layout.addWidget(self.pushButton1)
+        self.setLayout(self.layout)
+
+class ANTS_Plot_Tab(QWidget):
+    def __init__(self, tabs_object, ants_controller):
+        super(QWidget, self).__init__(tabs_object)
+        self.ants_controller = ants_controller
+        self.layout = QVBoxLayout(self)
+        self.pushButton1 = QPushButton("Plot")
+        self.layout.addWidget(self.pushButton1)
+        self.setLayout(self.layout)
+
+class ANTS_iperf_Tab(QWidget):
+    def __init__(self, tabs_object, ants_controller):
+        super(QWidget, self).__init__(tabs_object)
+        self.ants_controller = ants_controller
+        self.layout = QVBoxLayout(self)
+        self.pushButton1 = QPushButton("iperf")
+        self.layout.addWidget(self.pushButton1)
+        self.setLayout(self.layout)
+
+class ANTS_About_Tab(QWidget):
+    def __init__(self, tabs_object, ants_controller):
+        super(QWidget, self).__init__(tabs_object)
+        self.ants_controller = ants_controller
+        self.layout = QVBoxLayout(self)
+        self.pushButton1 = QPushButton("About")
+        self.layout.addWidget(self.pushButton1)
         self.setLayout(self.layout)
 
 class Advanced_GUI(QMainWindow):
@@ -63,7 +105,7 @@ class Advanced_GUI(QMainWindow):
         # The ANTS Controller object
         self.ants_controller = ants_controller
 
-        self.table_widget = ANTS_Table(self)
+        self.table_widget = ANTS_Table(self, self.ants_controller)
         self.setCentralWidget(self.table_widget)
 
         self.show()
