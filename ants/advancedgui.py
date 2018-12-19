@@ -5,8 +5,9 @@ from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox, QPushButton
 from PyQt5.QtWidgets import QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
 from PyQt5.QtCore import Qt, QRegExp, QSettings
-from PyQt5.QtGui import QRegExpValidator
+from PyQt5.QtGui import QRegExpValidator, QPixmap
 
+# The parent "table" class that holds all of the functional tabs
 class ANTS_Table(QWidget):
 
     def __init__(self, main_gui, ants_controller):
@@ -21,6 +22,7 @@ class ANTS_Table(QWidget):
         self.plot_tab = ANTS_Plot_Tab(self, self.ants_controller)
         self.iperf_tab = ANTS_iperf_Tab(self, self.ants_controller)
         self.about_tab = ANTS_About_Tab(self, self.ants_controller)
+        self.license_tab = ANTS_License_Tab(self, self.ants_controller)
         self.tabs.resize(300, 200)
 
         self.tabs.addTab(self.results_tab, "Results")
@@ -28,6 +30,7 @@ class ANTS_Table(QWidget):
         self.tabs.addTab(self.plot_tab, "Plotting")
         self.tabs.addTab(self.iperf_tab, "iperf")
         self.tabs.addTab(self.about_tab, "About")
+        self.tabs.addTab(self.license_tab, "License")
 
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
@@ -37,10 +40,91 @@ class ANTS_Results_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
-        self.layout = QVBoxLayout(self)
-        self.pushButton1 = QPushButton("Results")
-        self.layout.addWidget(self.pushButton1)
+        self.layout = QGridLayout(self)
+
+        self.debug_mode = False
+
+        self.graphic_label = QLabel(self)
+        self.pixmap = QPixmap('/home/threexc/Projects/ANTS/Ericsson_video_bin_probability.png')
+        self.graphic_label.setPixmap(self.pixmap)
+
+        # Create a text box to take the filename used by the USRP and converter
+        # tools
+        self.file_name_lineedit = QLineEdit(self)
+        self.file_name_lineedit.textChanged[str].connect(self.on_name_change)
+        self.file_name_lineedit.setToolTip("The filename for the USRP to output the data to")
+        self.file_name_text = "Filename"
+        self.file_name_label = QLabel(self.file_name_text, self)
+        self.layout.addWidget(self.file_name_label, 0, 6, 1, 1)
+        self.layout.addWidget(self.file_name_lineedit, 1, 6, 1, 1)
+        self.layout.addWidget(self.graphic_label, 0, 0, 5, 5)
+
+        # Run time slider set up
+        self.runtime_slider = QSlider(Qt.Horizontal, self)
+        self.runtime_slider.setFocusPolicy(Qt.NoFocus)
+        self.runtime_slider.setGeometry(380,70,100,30)
+        self.runtime_slider.valueChanged[int].connect(self.change_value)
+        self.runtime_slider.setMinimum(0)
+        self.runtime_slider.setMaximum(20)
+        self.runtime_slider.setTickInterval(1)
+        self.runtime_slider.setToolTip("Sense/injection duration for the USRP and signal generator")
+        self.runtime_text = "Runtime " + str(0.5) + " seconds"
+        self.runtime_label = QLabel(self.runtime_text, self)
+
+        self.layout.addWidget(self.runtime_label, 2, 6, 1, 1)
+        self.layout.addWidget(self.runtime_slider, 3, 6, 1, 1)
+
+        # The button for running the entire sequence
+        self.run_btn = QPushButton('Run', self)
+        self.run_btn.setToolTip('Run the test sequences selected')
+        self.run_btn.resize(self.run_btn.sizeHint())
+        self.run_btn.clicked.connect(self.run_button_clicked)
+
+        self.layout.addWidget(self.run_btn, 4, 6, 1, 1)
+
+        # The checkbox for toggling the run mode (sim or actual)
+        self.debug_mode_checkbox = QCheckBox('Debug Mode', self)
+        self.debug_mode_checkbox.stateChanged.connect(self.debug_mode_check)
+        self.debug_mode_checkbox.setToolTip("Run dummy scripts instead of using devices")
+
+        #self.layout.addWidget(self.debug_mode_checkbox_label, 4, 6, 1, 1)
+        self.layout.addWidget(self.debug_mode_checkbox, 5, 6, 1, 1)
+
         self.setLayout(self.layout)
+
+    # Set file name based on what's in the box
+    def on_name_change(self, text):
+
+        self.ants_controller.file_name = text
+
+    # Dictates whether or not the test scripts or the target programs are used
+    def debug_mode_check(self, state):
+
+        if state:
+            self.debug_mode = True
+            print("sim mode on")
+        else:
+            self.debug_mode = False
+            print("sim mode off")
+
+    # Controls changing the value pointed to by the slider. The slider should
+    # allow ranges between 0.5 and 10, but since the class only supports
+    # integers, some math must be done to the actual value when it is moved
+    def change_value(self, value):
+
+        if value == 0:
+            self.ants_controller.run_time = 0.5
+        elif value == 20:
+            self.ants_controller.run_time = 10
+        else:
+            self.ants_controller.run_time = value / 2.0
+        self.runtime_label.setText("Runtime " + str(self.ants_controller.run_time) + " seconds")
+
+    def run_button_clicked(self):
+        self.ants_controller.start_usrp_iperf_server(self.debug_mode)
+        self.ants_controller.start_converter(self.debug_mode)
+        self.ants_controller.start_plotter(self.debug_mode)
+
 
 class ANTS_USRP_Tab(QWidget):
 
@@ -75,8 +159,48 @@ class ANTS_About_Tab(QWidget):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
         self.layout = QVBoxLayout(self)
-        self.pushButton1 = QPushButton("About")
-        self.layout.addWidget(self.pushButton1)
+        self.ants_message = QLabel()
+        self.ants_message.setText("ANTS (the Automated Networking Test Suite) is an application written \
+by Trevor Gamblin (tvgamblin@gmail.com) with the goal of automating and simplifying compliance testing of \
+wireless devices. For more information, or if you have suggestions or bugs to report, visit \
+https://github.com/threexc/ANTS, or contact the author directly.\n")
+
+        self.ants_message.setMargin(10)
+        self.ants_message.setWordWrap(1)
+        #self.setCentralWidget(self.ants_message)
+
+        self.layout.addWidget(self.ants_message)
+        self.setLayout(self.layout)
+
+class ANTS_License_Tab(QWidget):
+    def __init__(self, tabs_object, ants_controller):
+        super(QWidget, self).__init__(tabs_object)
+        self.ants_controller = ants_controller
+        self.layout = QVBoxLayout(self)
+        self.license_message = QLabel()
+        self.license_message.setText("MIT License\n\
+\n\
+Copyright (c) 2018 Trevor Gamblin - tvgamblin@gmail.com\n\
+\n\
+Permission is hereby granted, free of charge, to any person obtaining a copy\n\
+of this software and associated documentation files (the \"Software\"), to deal\n\
+in the Software without restriction, including without limitation the rights\n\
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n\
+copies of the Software, and to permit persons to whom the Software is\n\
+furnished to do so, subject to the following conditions:\n\
+\n\
+The above copyright notice and this permission notice shall be included in all\n\
+copies or substantial portions of the Software.\n\
+\n\
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n\
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n\
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n\
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n\
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n\
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n\
+SOFTWARE.")
+        self.license_message.setMargin(10)
+        self.layout.addWidget(self.license_message)
         self.setLayout(self.layout)
 
 class Advanced_GUI(QMainWindow):
@@ -100,7 +224,7 @@ class Advanced_GUI(QMainWindow):
         self.ip_validator = QRegExpValidator(self.ip_regex, self)
 
         # Used to pass mode to the controller object
-        self.sim_mode = False
+        self.debug_mode = False
 
         # The ANTS Controller object
         self.ants_controller = ants_controller
@@ -133,7 +257,7 @@ class Advanced_GUI2(QMainWindow):
         self.ip_validator = QRegExpValidator(self.ip_regex, self)
 
         # Used to pass mode to the controller object
-        self.sim_mode = False
+        self.debug_mode = False
 
         # The ANTS Controller object
         self.ants_controller = ants_controller
@@ -185,13 +309,13 @@ class Advanced_GUI2(QMainWindow):
         #self.iperf_server_checkbox.setToolTip("Provide an iperf server for corresponding client traffic")
 
         # The checkbox for toggling the run mode (sim or actual)
-        #self.sim_mode_checkbox = QCheckBox('Simulate', self)
-        #self.sim_mode_checkbox.move(380, 165)
-        #self.sim_mode_checkbox.stateChanged.connect(self.sim_mode_check)
-        #self.sim_mode_checkbox.setToolTip("Run dummy scripts instead of using devices")
-        #self.sim_mode_checkbox_text = "Simulate"
-        #self.sim_mode_checkbox_label = QLabel(self.sim_mode_checkbox_text, self)
-        #self.sim_mode_checkbox_label.move(440, 125)
+        #self.debug_mode_checkbox = QCheckBox('Simulate', self)
+        #self.debug_mode_checkbox.move(380, 165)
+        #self.debug_mode_checkbox.stateChanged.connect(self.debug_mode_check)
+        #self.debug_mode_checkbox.setToolTip("Run dummy scripts instead of using devices")
+        #self.debug_mode_checkbox_text = "Simulate"
+        #self.debug_mode_checkbox_label = QLabel(self.debug_mode_checkbox_text, self)
+        #self.debug_mode_checkbox_label.move(440, 125)
 
         # Labels for the iperf IP address boxes
         #self.iperf_client_label = QLabel("Client IP", self)
@@ -212,30 +336,8 @@ class Advanced_GUI2(QMainWindow):
 
         # Configurable fields for the iperf server
 
-        # Create a text box to take the filename used by the USRP and converter
-        # tools
-        self.file_name_lineedit = QLineEdit(self)
-        self.file_name_lineedit.textChanged[str].connect(self.on_name_change)
-        self.file_name_lineedit.move(380, 125)
-        self.file_name_lineedit.setToolTip("The filename for the USRP to output the data to")
-        self.file_name_text = "Filename"
-        self.file_name_label = QLabel(self.file_name_text, self)
-        self.file_name_label.move(380, 100)
 
 
-        # Run time slider set up. Currently does nothing until the writeIQ
-        # program supports run time input
-        self.runtime_slider = QSlider(Qt.Horizontal, self)
-        self.runtime_slider.setFocusPolicy(Qt.NoFocus)
-        self.runtime_slider.setGeometry(380,70,100,30)
-        self.runtime_slider.valueChanged[int].connect(self.change_value)
-        self.runtime_slider.setMinimum(0)
-        self.runtime_slider.setMaximum(20)
-        self.runtime_slider.setTickInterval(1)
-        self.runtime_slider.setToolTip("Sense/injection duration for the USRP and signal generator")
-        self.runtime_text = str(0.5) + " seconds"
-        self.runtime_label = QLabel(self.runtime_text, self)
-        self.runtime_label.move(380, 50)
 
         # Buttons for access category
         #self.ac_voice_button = QRadioButton(self)
@@ -280,7 +382,7 @@ class Advanced_GUI2(QMainWindow):
 
         self.file_menu = self.menubar.addMenu('File')
         self.sim_state_action = QAction('Simulate', self, checkable=True)
-        self.sim_state_action.triggered.connect(self.sim_mode_check)
+        self.sim_state_action.triggered.connect(self.debug_mode_check)
         self.file_menu.addAction(self.sim_state_action)
 
         # Add a checkbox to toggle the USRP to the USRP menu
@@ -341,13 +443,6 @@ class Advanced_GUI2(QMainWindow):
         self.about_license_action = QAction('Licensing Information', self, checkable=False)
         self.about_license_action.triggered.connect(self.on_license_menu_clicked)
         self.about_menu.addAction(self.about_license_action)
-
-        # The button for running the entire sequence
-        self.run_btn = QPushButton('Run', self)
-        self.run_btn.setToolTip('Run the test sequences selected')
-        self.run_btn.resize(self.run_btn.sizeHint())
-        self.run_btn.move(380, 20)
-        self.run_btn.clicked.connect(self.run_button_clicked)
 
         # Set up the GUI window
         self.setGeometry(300, 600, 500, 500)
@@ -446,28 +541,7 @@ class Advanced_GUI2(QMainWindow):
             self.iperf_server_state = False
             print("iperf server off")
 
-    # Dictates whether or not the test scripts or the target programs are used
-    def sim_mode_check(self, state):
 
-        if state:
-            self.sim_mode = True
-            print("sim mode on")
-        else:
-            self.sim_mode = False
-            print("sim mode off")
-
-    # Controls changing the value pointed to by the slider. The slider should
-    # allow ranges between 0.5 and 10, but since the class only supports
-    # integers, some math must be done to the actual value when it is moved
-    def change_value(self, value):
-
-        if value == 0:
-            self.ants_controller.run_time = 0.5
-        elif value == 20:
-            self.ants_controller.run_time = 10
-        else:
-            self.ants_controller.run_time = value / 2.0
-        self.runtime_label.setText(str(self.ants_controller.run_time) + " seconds")
 
     # Checks to make sure iperf_client_addr is set to a realistic IP value
     def on_client_ip(self, text):
@@ -492,18 +566,6 @@ class Advanced_GUI2(QMainWindow):
     def on_iperf_bandwidth_field_change(self, text):
         pass
 
-    # Make sure we get prompted before closing the GUI
-    def closeEvent(self, event):
-
-        reply = QMessageBox.question(self, 'Message',
-            "Are you sure you want to quit?", QMessageBox.Yes |
-            QMessageBox.No, QMessageBox.No)
-
-        if reply == QMessageBox.Yes:
-            event.accept()
-        else:
-            event.ignore()
-
     # The logic for when the "Run" button is pressed. It checks to see which
     # boxes are checked, then runs based on what it sees. Is there a case where
     # Should make this more modular, turn it into a dictionary with functions
@@ -515,81 +577,81 @@ class Advanced_GUI2(QMainWindow):
         # USRP, iperf, Converter, Plotter
         if (self.usrp_state and self.iperf_server_state and self.converter_state and self.plotter_state and not self.siggen_state):
 
-            self.ants_controller.start_usrp_iperf_server(self.sim_mode)
-            self.ants_controller.start_converter(self.sim_mode)
-            self.ants_controller.start_plotter(self.sim_mode)
+            self.ants_controller.start_usrp_iperf_server(self.debug_mode)
+            self.ants_controller.start_converter(self.debug_mode)
+            self.ants_controller.start_plotter(self.debug_mode)
 
         # USRP, SGControl, Converter, Plotter
         elif (self.usrp_state and self.siggen_state and self.converter_state and self.plotter_state and not self.iperf_server_state):
 
-            self.ants_controller.start_usrp_controller(self.sim_mode)
-            self.ants_controller.start_converter(self.sim_mode)
-            self.ants_controller.start_plotter(self.sim_mode)
+            self.ants_controller.start_usrp_controller(self.debug_mode)
+            self.ants_controller.start_converter(self.debug_mode)
+            self.ants_controller.start_plotter(self.debug_mode)
 
         # USRP, SGControl, Converter
         elif (self.usrp_state and self.siggen_state and self.converter_state and not self.plotter_state and not self.iperf_server_state):
 
-            self.ants_controller.start_usrp_controller(self.sim_mode)
-            self.ants_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_usrp_controller(self.debug_mode)
+            self.ants_controller.start_converter(self.debug_mode)
 
         # USRP, iperf, Converter
         elif (self.usrp_state and self.iperf_server_state and self.converter_state and not self.plotter_state and not self.siggen_state):
 
-            self.ants_controller.start_usrp_iperf_server(self.sim_mode)
-            self.ants_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_usrp_iperf_server(self.debug_mode)
+            self.ants_controller.start_converter(self.debug_mode)
 
         # USRP, Converter, Plotter
         elif (self.usrp_state and self.converter_state and self.plotter_state and not self.siggen_state and not self.iperf_server_state):
 
-            self.ants_controller.start_usrp(self.sim_mode)
-            self.ants_controller.start_converter(self.sim_mode)
-            self.ants_controller.start_plotter(self.sim_mode)
+            self.ants_controller.start_usrp(self.debug_mode)
+            self.ants_controller.start_converter(self.debug_mode)
+            self.ants_controller.start_plotter(self.debug_mode)
 
         # USRP, SGControl
         elif (self.usrp_state and self.siggen_state and not self.converter_state and not self.plotter_state and not self.iperf_server_state):
 
-            self.ants_controller.start_usrp_controller(self.sim_mode)
+            self.ants_controller.start_usrp_controller(self.debug_mode)
 
         # USRP, iperf
         elif (self.usrp_state and self.iperf_server_state and not self.converter_state and not self.plotter_state and not self.siggen_state):
 
-            self.ants_controller.start_usrp_iperf_server(self.sim_mode)
+            self.ants_controller.start_usrp_iperf_server(self.debug_mode)
 
         # USRP only
         elif (self.usrp_state and not self.siggen_state and not self.converter_state and not self.plotter_state and not self.iperf_server_state):
 
-            self.ants_controller.start_usrp(self.sim_mode)
+            self.ants_controller.start_usrp(self.debug_mode)
 
         # SGControl only
         elif (self.siggen_state and not self.usrp_state and not self.converter_state and not self.plotter_state and not self.iperf_server_state):
 
-            self.ants_controller.start_controller(self.sim_mode)
+            self.ants_controller.start_controller(self.debug_mode)
 
         elif (self.usrp_state and self.converter_state and not self.plotter_state and not self.siggen_state and not self.iperf_server_state):
 
-            self.ants_controller.start_usrp(self.sim_mode)
-            self.ants_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_usrp(self.debug_mode)
+            self.ants_controller.start_converter(self.debug_mode)
 
         # Converter and Plotter
         elif (self.converter_state and self.plotter_state and not self.usrp_state and not self.siggen_state and not self.iperf_server_state):
 
-            self.ants_controller.start_converter(self.sim_mode)
-            self.ants_controller.start_plotter(self.sim_mode)
+            self.ants_controller.start_converter(self.debug_mode)
+            self.ants_controller.start_plotter(self.debug_mode)
 
         # Converter only
         elif (self.converter_state and not self.usrp_state and not self.plotter_state and not self.siggen_state and not self.iperf_server_state):
 
-            self.ants_controller.start_converter(self.sim_mode)
+            self.ants_controller.start_converter(self.debug_mode)
 
         # Plotter only
         elif (self.plotter_state and not self.converter_state and not self.usrp_state and not self.siggen_state and not self.iperf_server_state):
 
-            self.ants_controller.start_plotter(self.sim_mode)
+            self.ants_controller.start_plotter(self.debug_mode)
 
         # iperf only
         elif (self.iperf_server_state and not self.converter_state and not self.usrp_state and not self.siggen_state and not self.plotter_state):
 
-            self.ants_controller.start_iperf_server(self.sim_mode)
+            self.ants_controller.start_iperf_server(self.debug_mode)
 
         # What did you select?
         else:
@@ -598,6 +660,18 @@ class Advanced_GUI2(QMainWindow):
         print("\nDone sequence\n")
 
         self.statusBar().showMessage('Idle')
+
+    # Make sure we get prompted before closing the GUI
+    def closeEvent(self, event):
+
+        reply = QMessageBox.question(self, 'Message',
+            "Are you sure you want to quit?", QMessageBox.Yes |
+            QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            event.accept()
+        else:
+            event.ignore()
 
 class USRP_Settings(QMainWindow):
 
