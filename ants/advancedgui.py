@@ -44,9 +44,23 @@ class ANTS_Results_Tab(QWidget):
 
         self.debug_mode = False
 
+        # Set up the graphics for the main display
         self.graphic_label = QLabel(self)
-        self.pixmap = QPixmap('/home/threexc/Projects/ANTS/Ericsson_video_bin_probability.png')
-        self.graphic_label.setPixmap(self.pixmap)
+        self.bin_pixmap = QPixmap('/home/threexc/Projects/ANTS/tests/sampledir/Ericsson_video_bin_probability.png')
+        self.interframe_pixmap = QPixmap('/home/threexc/Projects/ANTS/tests/sampledir/Ericsson_video_interframe_spacing_histogram.png')
+        self.raw_signal_pixmap = QPixmap('/home/threexc/Projects/ANTS/tests/sampledir/Ericsson_video_signal_magnitude_plot.png')
+        self.txop_pixmap = QPixmap('/home/threexc/Projects/ANTS/tests/sampledir/Ericsson_video_txop_durations_histogram.png')
+        self.graphic_label.setStyleSheet("""
+            background-color: grey;
+            color: white;
+            font: bold;
+            padding: 1px;
+            border-width: 1px;
+            border-style: panel;
+            border-radius: 1px;
+            border-color: white;
+        """)
+        self.graphic_label.setPixmap(self.bin_pixmap)
 
         # Create a text box to take the filename used by the USRP and converter
         # tools
@@ -81,6 +95,33 @@ class ANTS_Results_Tab(QWidget):
         self.run_btn.clicked.connect(self.run_button_clicked)
 
         self.layout.addWidget(self.run_btn, 4, 6, 1, 1)
+
+        # The following four buttons are specifically for displaying one of the
+        # four plot types
+
+        self.bin_button = QPushButton("Show Bin Distribution", self)
+        self.bin_button.setToolTip('Show the bin probability and treshold data for the run')
+        self.bin_button.resize(self.bin_button.sizeHint())
+        self.bin_button.clicked.connect(self.bin_button_clicked)
+        self.layout.addWidget(self.bin_button, 6, 0, 1, 1)
+
+        self.interframe_button = QPushButton("Show Interframe Spacing", self)
+        self.interframe_button.setToolTip('Show the interframe spacing histogram')
+        self.interframe_button.resize(self.interframe_button.sizeHint())
+        self.interframe_button.clicked.connect(self.interframe_button_clicked)
+        self.layout.addWidget(self.interframe_button, 6, 1, 1, 1)
+
+        self.raw_signal_button = QPushButton("Show Raw Signal Data", self)
+        self.raw_signal_button.setToolTip('Show the raw signal Fourier Transform')
+        self.raw_signal_button.resize(self.raw_signal_button.sizeHint())
+        self.raw_signal_button.clicked.connect(self.raw_signal_button_clicked)
+        self.layout.addWidget(self.raw_signal_button, 6, 2, 1, 1)
+
+        self.txop_button = QPushButton("TXOP", self)
+        self.txop_button.setToolTip('Show Transmission Opportunity Durations')
+        self.txop_button.resize(self.txop_button.sizeHint())
+        self.txop_button.clicked.connect(self.txop_button_clicked)
+        self.layout.addWidget(self.txop_button, 6, 3, 1, 1)
 
         # The checkbox for toggling the run mode (sim or actual)
         self.debug_mode_checkbox = QCheckBox('Debug Mode', self)
@@ -124,6 +165,18 @@ class ANTS_Results_Tab(QWidget):
         self.ants_controller.start_usrp_iperf_server(self.debug_mode)
         self.ants_controller.start_converter(self.debug_mode)
         self.ants_controller.start_plotter(self.debug_mode)
+
+    def bin_button_clicked(self):
+        self.graphic_label.setPixmap(self.bin_pixmap)
+
+    def interframe_button_clicked(self):
+        self.graphic_label.setPixmap(self.interframe_pixmap)
+
+    def raw_signal_button_clicked(self):
+        self.graphic_label.setPixmap(self.raw_signal_pixmap)
+
+    def txop_button_clicked(self):
+        self.graphic_label.setPixmap(self.txop_pixmap)
 
 
 class ANTS_USRP_Tab(QWidget):
