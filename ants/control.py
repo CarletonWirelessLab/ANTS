@@ -6,14 +6,15 @@ import threading
 import time
 import queue
 import os
+import datetime
 
-try:
-    import matlab.engine
-except ImportError:
-    print("MATLAB engine could not be found. Converter and plotter tools may not function properly. See README.md for details on how to install this component.\n")
-    matlab_available = False
-else:
-    matlab_available = True
+# try:
+#     import matlab.engine
+# except ImportError:
+#     print("MATLAB engine could not be found. Converter and plotter tools may not function properly. See README.md for details on how to install this component.\n")
+#     matlab_available = False
+# else:
+#     matlab_available = True
 
 class ANTS_Controller():
 
@@ -63,25 +64,60 @@ class ANTS_Controller():
         self.sim_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tests'))
         self.sim_dir = self.sim_dir + '/'
 
+        # Create and/or get the
+        self.data_dir = make_data_dir()
 
-        if matlab_available == True:
-            print("Starting Matlab engine for Python... ")
-            self.engine = matlab.engine.start_matlab()
-            print("Done\n")
+        # if matlab_available == True:
+        #     print("Starting Matlab engine for Python... ")
+        #     self.engine = matlab.engine.start_matlab()
+        #     print("Done\n")
+        #
+        #     print("Pre-cleaning workspace...")
+        #     self.engine.close('all', nargout=0)
+        #     self.engine.clear('all', nargout=0)
+        #     print("Done\n")
+        #     print("Setting up Matlab engine workspace...")
+        #     cur_dir = os.getcwd()
+        #     self.engine.addpath(self.engine.genpath(cur_dir))
+        #     print("Done\n")
+        # else:
+        #     print("Skipping MATLAB engine setup...\n")
 
-            print("Pre-cleaning workspace...")
-            self.engine.close('all', nargout=0)
-            self.engine.clear('all', nargout=0)
-            print("Done\n")
-            print("Setting up Matlab engine workspace...")
-            cur_dir = os.getcwd()
-            self.engine.addpath(self.engine.genpath(cur_dir))
-            print("Done\n")
-        else:
-            print("Skipping MATLAB engine setup...\n")
+    # def start_matlab(self):
+    #
+    #     if matlab_available == True:
+    #         print("Starting Matlab engine for Python... ")
+    #         self.engine = matlab.engine.start_matlab()
+    #         print("Done\n")
+    #
+    #         print("Pre-cleaning workspace...")
+    #         self.engine.close('all', nargout=0)
+    #         self.engine.clear('all', nargout=0)
+    #         print("Done\n")
+    #         print("Setting up Matlab engine workspace...")
+    #         cur_dir = os.getcwd()
+    #         self.engine.addpath(self.engine.genpath(cur_dir))
+    #         print("Done\n")
+    #     else:
+    #         print("Skipping MATLAB engine setup...\n")
 
+
+    # Make the timestamped data directory, and then return the full path for
+    # writing data files to
+    def make_data_dir(self):
+        time = str(datetime.datetime.utcnow().strftime("%Y-%m-%d %H-%M-%S"))
+        time = time.replace(' ', '_')
+        dir_name = self.file_name + "_" + self.time + "/"
+        location = os.path.dirname(os.path.abspath(__file__))
+        full_path = location + "../tests/" + dir_name
+
+        if not os.path.exists(full_path):
+            os.makedirs(full_path)
+
+        return full_path
 
     # Runs a subprocess for the USRP based on the usrp_control_args variable
+
     def start_usrp(self, sim_mode):
         print("Running USRP...\n")
 
@@ -96,6 +132,7 @@ class ANTS_Controller():
         print("Done sensing medium\n")
 
         return
+        
     # Runs a subprocess for the SGControl tool based on the sg_controller_args
     # variable
     def start_controller(self, sim_mode):

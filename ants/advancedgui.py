@@ -194,9 +194,6 @@ class ANTS_Plot_Tab(QWidget):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
         self.layout = QVBoxLayout(self)
-        self.pushButton1 = QPushButton("Plot")
-        self.layout.addWidget(self.pushButton1)
-        self.setLayout(self.layout)
 
 class ANTS_iperf_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
