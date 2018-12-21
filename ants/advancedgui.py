@@ -46,10 +46,10 @@ class ANTS_Results_Tab(QWidget):
 
         # Set up the graphics for the main display
         self.graphic_label = QLabel(self)
-        self.bin_pixmap = QPixmap('/home/threexc/Projects/ANTS/tests/sampledir/Ericsson_video_bin_probability.png')
-        self.interframe_pixmap = QPixmap('/home/threexc/Projects/ANTS/tests/sampledir/Ericsson_video_interframe_spacing_histogram.png')
-        self.raw_signal_pixmap = QPixmap('/home/threexc/Projects/ANTS/tests/sampledir/Ericsson_video_signal_magnitude_plot.png')
-        self.txop_pixmap = QPixmap('/home/threexc/Projects/ANTS/tests/sampledir/Ericsson_video_txop_durations_histogram.png')
+        self.bin_pixmap = QPixmap('/home/trevor/ANTS/tests/sampledir/Ericsson_video_bin_probability.png')
+        self.interframe_pixmap = QPixmap('/home/trevor/ANTS/tests/sampledir/Ericsson_video_interframe_spacing_histogram.png')
+        self.raw_signal_pixmap = QPixmap('/home/trevor/ANTS/tests/sampledir/Ericsson_video_signal_magnitude_plot.png')
+        self.txop_pixmap = QPixmap('/home/trevor/ANTS/tests/sampledir/Ericsson_video_txop_durations_histogram.png')
         self.graphic_label.setStyleSheet("""
             background-color: grey;
             color: white;

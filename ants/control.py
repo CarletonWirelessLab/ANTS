@@ -65,7 +65,7 @@ class ANTS_Controller():
         self.sim_dir = self.sim_dir + '/'
 
         # Create and/or get the
-        self.data_dir = make_data_dir()
+        self.data_dir = self.make_data_dir()
 
         # if matlab_available == True:
         #     print("Starting Matlab engine for Python... ")
@@ -107,7 +107,7 @@ class ANTS_Controller():
     def make_data_dir(self):
         time = str(datetime.datetime.utcnow().strftime("%Y-%m-%d %H-%M-%S"))
         time = time.replace(' ', '_')
-        dir_name = self.file_name + "_" + self.time + "/"
+        dir_name = self.file_name + "_" + time + "/"
         location = os.path.dirname(os.path.abspath(__file__))
         full_path = location + "../tests/" + dir_name
 
@@ -132,7 +132,7 @@ class ANTS_Controller():
         print("Done sensing medium\n")
 
         return
-        
+
     # Runs a subprocess for the SGControl tool based on the sg_controller_args
     # variable
     def start_controller(self, sim_mode):
