@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction
 from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox, QPushButton
 from PyQt5.QtWidgets import QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
+from PyQt5.QtWidgets import QGroupBox
 from PyQt5.QtCore import Qt, QRegExp, QSettings
 from PyQt5.QtGui import QRegExpValidator, QPixmap
 
@@ -18,17 +19,13 @@ class ANTS_Table(QWidget):
         self.tabs = QTabWidget()
 
         self.results_tab = ANTS_Results_Tab(self, self.ants_controller)
-        self.usrp_tab = ANTS_USRP_Tab(self, self.ants_controller)
-        self.plot_tab = ANTS_Plot_Tab(self, self.ants_controller)
-        self.iperf_tab = ANTS_iperf_Tab(self, self.ants_controller)
+        self.settings_tab = ANTS_Settings_Tab(self, self.ants_controller)
         self.about_tab = ANTS_About_Tab(self, self.ants_controller)
         self.license_tab = ANTS_License_Tab(self, self.ants_controller)
         self.tabs.resize(300, 200)
 
         self.tabs.addTab(self.results_tab, "Results")
-        self.tabs.addTab(self.usrp_tab, "USRP")
-        self.tabs.addTab(self.plot_tab, "Plotting")
-        self.tabs.addTab(self.iperf_tab, "iperf")
+        self.tabs.addTab(self.settings_tab, "Control Settings")
         self.tabs.addTab(self.about_tab, "About")
         self.tabs.addTab(self.license_tab, "License")
 
@@ -178,31 +175,131 @@ class ANTS_Results_Tab(QWidget):
     def txop_button_clicked(self):
         self.graphic_label.setPixmap(self.txop_pixmap)
 
-
-class ANTS_USRP_Tab(QWidget):
-
+class ANTS_Settings_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
-        self.layout = QVBoxLayout(self)
-        self.pushButton1 = QPushButton("USRP")
-        self.layout.addWidget(self.pushButton1)
+        self.layout = QGridLayout(self)
         self.setLayout(self.layout)
+        self.layout.setColumnStretch(0, 1)
+        self.layout.setColumnStretch(1, 1)
+        self.layout.setColumnStretch(2, 1)
 
-class ANTS_Plot_Tab(QWidget):
-    def __init__(self, tabs_object, ants_controller):
-        super(QWidget, self).__init__(tabs_object)
-        self.ants_controller = ants_controller
-        self.layout = QVBoxLayout(self)
+        # IP Validator for the IP fields
+        self.ip_range = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"
+        self.ip_regex = QRegExp("^" + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "$")
+        self.ip_validator = QRegExpValidator(self.ip_regex, self)
+        self.iperf_client_lineedit = QLineEdit(self)
+        self.iperf_client_lineedit_label = QLabel("Client IP", self)
+        self.iperf_client_lineedit.setValidator(self.ip_validator)
+        self.iperf_client_lineedit.textChanged[str].connect(self.on_client_ip)
+        self.iperf_server_lineedit = QLineEdit(self)
+        self.iperf_server_lineedit_label = QLabel("Server IP", self)
+        self.iperf_server_lineedit.setValidator(self.ip_validator)
+        self.iperf_server_lineedit.textChanged[str].connect(self.on_server_ip)
+        self.iperf_IP_TOS_field = QLineEdit(self)
+        self.iperf_TOS_field_label = QLabel("TOS", self)
+        self.iperf_IP_TOS_field.textChanged[str].connect(self.on_iperf_IP_TOS_field_change)
+        self.iperf_bandwidth_field = QLineEdit(self)
+        self.iperf_bandwidth_field_label = QLabel("Bandwidth", self)
+        self.iperf_bandwidth_field.textChanged[str].connect(self.on_iperf_bandwidth_field_change)
 
-class ANTS_iperf_Tab(QWidget):
-    def __init__(self, tabs_object, ants_controller):
-        super(QWidget, self).__init__(tabs_object)
-        self.ants_controller = ants_controller
-        self.layout = QVBoxLayout(self)
-        self.pushButton1 = QPushButton("iperf")
-        self.layout.addWidget(self.pushButton1)
-        self.setLayout(self.layout)
+        self.usrp_groupbox = QGroupBox("USRP Settings")
+        self.usrp_gridbox = QGridLayout(self)
+        self.usrp_groupbox.setLayout(self.usrp_gridbox)
+
+        self.plotting_groupbox = QGroupBox("Plot Settings")
+        self.plotting_gridbox = QGridLayout(self)
+        self.plotting_groupbox.setLayout(self.plotting_gridbox)
+
+
+        # Create the GroupBox object for the access category buttons
+        self.ac_groupbox = QGroupBox("Access Category")
+
+        # Buttons for access category. These will be added to the ac_groupbox
+        self.ac_voice_button = QRadioButton("Voice", self)
+        self.ac_video_button = QRadioButton("Video", self)
+        self.ac_besteffort_button = QRadioButton("Best Effort", self)
+        self.ac_background_button = QRadioButton("Background", self)
+        self.ac_voice_button.setChecked(True)
+
+        # Create a vertical layout for the ac_groupbox
+        self.ac_vbox = QVBoxLayout(self)
+
+        # Add the widgets to the ac_groupbox vbox
+        self.ac_vbox.addWidget(self.ac_voice_button)
+        self.ac_vbox.addWidget(self.ac_video_button)
+        self.ac_vbox.addWidget(self.ac_besteffort_button)
+        self.ac_vbox.addWidget(self.ac_background_button)
+
+        # Set the ac_groupbox layout to the vbox created
+        self.ac_groupbox.setLayout(self.ac_vbox)
+
+        # Link the access category buttons to the functions to set the value in
+        # the ANTS controller
+        self.ac_voice_button.clicked.connect(self.on_ac_voice_clicked)
+        self.ac_video_button.clicked.connect(self.on_ac_video_clicked)
+        self.ac_besteffort_button.clicked.connect(self.on_ac_besteffort_clicked)
+        self.ac_background_button.clicked.connect(self.on_ac_background_clicked)
+
+        self.client_groupbox = QGroupBox("iperf Client Settings")
+        self.client_gridbox = QGridLayout(self)
+        self.client_gridbox.addWidget(self.iperf_client_lineedit_label, 0, 0)
+        self.client_gridbox.addWidget(self.iperf_client_lineedit, 0, 1)
+        self.client_gridbox.addWidget(self.iperf_TOS_field_label, 1, 0)
+        self.client_gridbox.addWidget(self.iperf_IP_TOS_field, 1, 1)
+        self.client_gridbox.addWidget(self.iperf_bandwidth_field_label, 2, 0)
+        self.client_gridbox.addWidget(self.iperf_bandwidth_field, 2, 1)
+        self.client_groupbox.setLayout(self.client_gridbox)
+
+        self.server_groupbox = QGroupBox("iperf Server Settings")
+        self.server_gridbox = QGridLayout(self)
+        self.server_gridbox.addWidget(self.iperf_server_lineedit_label, 0, 0)
+        self.server_gridbox.addWidget(self.iperf_server_lineedit, 0, 1)
+        self.server_groupbox.setLayout(self.server_gridbox)
+
+        # Add the groupbox widgets to the main tab grid
+        self.layout.addWidget(self.ac_groupbox, 0, 0)
+        self.layout.addWidget(self.usrp_groupbox, 1, 0)
+        self.layout.addWidget(self.client_groupbox, 0, 1)
+        self.layout.addWidget(self.server_groupbox, 1, 1)
+        self.layout.addWidget(self.plotting_groupbox, 0, 2)
+
+    # Action methods for access category radio buttons
+    def on_ac_voice_clicked(self):
+        self.ants_controller.access_category = 0
+
+    def on_ac_video_clicked(self):
+        self.ants_controller.access_category = 1
+
+    def on_ac_besteffort_clicked(self):
+        self.ants_controller.access_category = 2
+
+    def on_ac_background_clicked(self):
+        self.ants_controller.access_category = 3
+
+    # Checks to make sure iperf_client_addr is set to a realistic IP value
+    def on_client_ip(self, text):
+
+        if self.iperf_client_lineedit.hasAcceptableInput():
+            self.ants_controller.iperf_client_addr = text
+
+    # Checks to make sure iperf_server_addr is set to a realistic IP value
+    def on_server_ip(self, text):
+
+        if self.iperf_server_lineedit.hasAcceptableInput():
+            self.ants_controller.iperf_server_addr = text
+
+    # Set file name based on what's in the box
+    def on_name_change(self, text):
+
+        self.ants_controller.file_name = text
+
+    def on_iperf_IP_TOS_field_change(self, text):
+        pass
+
+    def on_iperf_bandwidth_field_change(self, text):
+        pass
 
 class ANTS_About_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
@@ -321,101 +418,6 @@ class Advanced_GUI2(QMainWindow):
     def init_UI(self):
 
         self.statusBar().showMessage('Idle')
-
-        # The checkbox for enabling the USRP
-        #self.usrp_checkbox = QCheckBox('USRP', self)
-        #self.usrp_checkbox.move(20, 20)
-        #self.usrp_checkbox.stateChanged.connect(self.usrp_check)
-        #self.usrp_checkbox.setToolTip("Sense traffic on the wireless medium")
-
-        # The checkbox for enabling the signal generator, if used
-        #self.siggen_checkbox = QCheckBox('SGControl', self)
-        #self.siggen_checkbox.move(20, 80)
-        #self.siggen_checkbox.stateChanged.connect(self.siggen_check)
-        #self.siggen_checkbox.setToolTip("Use the signal generator to add interference (instead of iperf)")
-
-        # The checkbox for the conversion tool
-        #self.converter_checkbox = QCheckBox('Convert', self)
-        #self.converter_checkbox.move(20, 140)
-        #self.converter_checkbox.stateChanged.connect(self.converter_check)
-        #self.converter_checkbox.setToolTip("Convert the output file created by the USRP")
-
-        # The checkbox for the plotting tool
-        #self.plotter_checkbox = QCheckBox('Plot', self)
-        #self.plotter_checkbox.move(20, 200)
-        #self.plotter_checkbox.stateChanged.connect(self.plotter_check)
-        #self.plotter_checkbox.setToolTip("Plot the WiFi traffic collected by the Converter tool")
-
-        # The checkbox for running the iperf client
-        #self.iperf_client_checkbox = QCheckBox('iperf client', self)
-        #self.iperf_client_checkbox.move(20, 360)
-        #self.iperf_client_checkbox.stateChanged.connect(self.iperf_client_check)
-        #self.iperf_client_checkbox.setToolTip("Use iperf to generate wireless transmission data (instead of signal generator)")
-
-        # The checkbox for running iperf server
-        #self.iperf_server_checkbox = QCheckBox('iperf server', self)
-        #self.iperf_server_checkbox.move(20, 260)
-        #self.iperf_server_checkbox.stateChanged.connect(self.iperf_server_check)
-        #self.iperf_server_checkbox.setToolTip("Provide an iperf server for corresponding client traffic")
-
-        # The checkbox for toggling the run mode (sim or actual)
-        #self.debug_mode_checkbox = QCheckBox('Simulate', self)
-        #self.debug_mode_checkbox.move(380, 165)
-        #self.debug_mode_checkbox.stateChanged.connect(self.debug_mode_check)
-        #self.debug_mode_checkbox.setToolTip("Run dummy scripts instead of using devices")
-        #self.debug_mode_checkbox_text = "Simulate"
-        #self.debug_mode_checkbox_label = QLabel(self.debug_mode_checkbox_text, self)
-        #self.debug_mode_checkbox_label.move(440, 125)
-
-        # Labels for the iperf IP address boxes
-        #self.iperf_client_label = QLabel("Client IP", self)
-        #self.iperf_client_label.move(20, 385)
-        #self.iperf_server_label = QLabel("Server IP", self)
-        #self.iperf_server_label.move(20, 285)
-
-        # Create text boxes that use the regex rules and ip_validator from
-        # above to ensure that proper IP addresses for the devices are given
-        #self.iperf_client_lineedit = QLineEdit(self)
-        #self.iperf_client_lineedit.setValidator(self.ip_validator)
-        #self.iperf_client_lineedit.textChanged[str].connect(self.on_client_ip)
-        #self.iperf_client_lineedit.move(20, 410)
-        #self.iperf_server_lineedit = QLineEdit(self)
-        #self.iperf_server_lineedit.setValidator(self.ip_validator)
-        #self.iperf_server_lineedit.textChanged[str].connect(self.on_server_ip)
-        #self.iperf_server_lineedit.move(20, 310)
-
-        # Configurable fields for the iperf server
-
-
-
-
-        # Buttons for access category
-        #self.ac_voice_button = QRadioButton(self)
-        #self.ac_video_button = QRadioButton(self)
-        #self.ac_besteffort_button = QRadioButton(self)
-        #self.ac_background_button = QRadioButton(self)
-        #self.ac_voice_button.move(380, 240)
-        #self.ac_video_button.move(380, 300)
-        #self.ac_besteffort_button.move(380, 360)
-        #self.ac_background_button.move(380, 420)
-        #self.ac_voice_button.setChecked(True)
-        #self.ac_voice_label = QLabel("Voice", self)
-        #self.ac_voice_label.move(400, 240)
-        #self.ac_video_label = QLabel("Video", self)
-        #self.ac_video_label.move(400, 300)
-        #self.ac_besteffort_label = QLabel("Best Effort", self)
-        #self.ac_besteffort_label.move(400, 360)
-        #self.ac_background_label = QLabel("Background", self)
-        #self.ac_background_label.move(400, 420)
-
-        #self.ac_voice_button.clicked.connect(self.on_ac_voice_clicked)
-        #self.ac_video_button.clicked.connect(self.on_ac_video_clicked)
-        #self.ac_besteffort_button.clicked.connect(self.on_ac_besteffort_clicked)
-        #self.ac_background_button.clicked.connect(self.on_ac_background_clicked)
-
-
-
-
 
         self.usrp_settings_menu = USRP_Settings(self)
         self.siggen_settings_menu = SigGen_Settings(self)
@@ -722,141 +724,3 @@ class Advanced_GUI2(QMainWindow):
             event.accept()
         else:
             event.ignore()
-
-class USRP_Settings(QMainWindow):
-
-    def __init__(self, parent):
-        super(USRP_Settings, self).__init__(parent)
-
-        self.pushButton = QPushButton("click me")
-
-        self.setCentralWidget(self.pushButton)
-
-class SigGen_Settings(QMainWindow):
-
-    def __init__(self, parent):
-        super(SigGen_Settings, self).__init__(parent)
-
-        self.pushButton = QPushButton("click me")
-
-        self.setCentralWidget(self.pushButton)
-
-class Plotting_Settings(QDialog):
-
-    def __init__(self, parent):
-        super(Plotting_Settings, self).__init__(parent)
-
-        # Buttons for access category
-        self.ac_voice_button = QRadioButton(self)
-        self.ac_video_button = QRadioButton(self)
-        self.ac_besteffort_button = QRadioButton(self)
-        self.ac_background_button = QRadioButton(self)
-        self.ac_voice_button.setChecked(True)
-
-        # Labels for access category
-        self.ac_voice_label = QLabel("Voice", self)
-        self.ac_video_label = QLabel("Video", self)
-        self.ac_besteffort_label = QLabel("Best Effort", self)
-        self.ac_background_label = QLabel("Background", self)
-
-        grid = QGridLayout()
-        self.setLayout(grid)
-        self.setGeometry(300, 300, 450, 225)
-        self.setWindowTitle("Plot Settings")
-
-        grid.addWidget(self.ac_voice_label, 0, 0)
-        grid.addWidget(self.ac_video_label, 1, 0)
-        grid.addWidget(self.ac_besteffort_label, 2, 0)
-        grid.addWidget(self.ac_background_label, 3, 0)
-        grid.addWidget(self.ac_voice_button, 0, 1)
-        grid.addWidget(self.ac_video_button, 1, 1)
-        grid.addWidget(self.ac_besteffort_button, 2, 1)
-        grid.addWidget(self.ac_background_button, 3, 1)
-
-class Iperf_Settings(QDialog):
-
-    def __init__(self, parent):
-        super(Iperf_Settings, self).__init__(parent)
-
-        #self.pushButton = QPushButton("click me")
-        self.ip_range = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"
-        self.ip_regex = QRegExp("^" + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "$")
-        self.ip_validator = QRegExpValidator(self.ip_regex, self)
-
-        self.iperf_client_lineedit = QLineEdit(self)
-        self.iperf_client_lineedit.setValidator(self.ip_validator)
-        self.iperf_client_lineedit.textChanged[str].connect(parent.on_client_ip)
-        #self.iperf_client_lineedit.move(20, 410)
-        self.iperf_server_lineedit = QLineEdit(self)
-        self.iperf_server_lineedit.setValidator(self.ip_validator)
-        self.iperf_server_lineedit.textChanged[str].connect(parent.on_server_ip)
-
-        self.iperf_IP_TOS_field = QLineEdit(self)
-        self.iperf_IP_TOS_field.textChanged[str].connect(parent.on_iperf_IP_TOS_field_change)
-
-        self.iperf_bandwidth_field = QLineEdit(self)
-        self.iperf_bandwidth_field.textChanged[str].connect(parent.on_iperf_bandwidth_field_change)
-
-        grid = QGridLayout()
-        self.setLayout(grid)
-        self.setGeometry(300, 300, 450, 225)
-        self.setWindowTitle("iperf Settings")
-
-        self.iperf_client_label = QLabel("Client IP", self)
-        self.iperf_server_label = QLabel("Server IP", self)
-        self.iperf_IP_TOS_label = QLabel("IP TOS", self)
-        self.iperf_bandwidth_label = QLabel("Bandwidth", self)
-
-        grid.addWidget(self.iperf_client_label, 0, 0)
-        grid.addWidget(self.iperf_server_label, 1, 0)
-        grid.addWidget(self.iperf_IP_TOS_label, 2, 0)
-        grid.addWidget(self.iperf_bandwidth_label, 3, 0)
-        grid.addWidget(self.iperf_client_lineedit, 0, 1)
-        grid.addWidget(self.iperf_server_lineedit, 1, 1)
-        grid.addWidget(self.iperf_IP_TOS_field, 2, 1)
-        grid.addWidget(self.iperf_bandwidth_field, 3, 1)
-
-class About_ANTS_Menu(QMainWindow):
-
-    def __init__(self, parent):
-        super(About_ANTS_Menu, self).__init__(parent)
-
-        self.ants_message = QLabel()
-        self.ants_message.setText("ANTS (the Automated Networking Test Suite) is an application written \
-by Trevor Gamblin (tvgamblin@gmail.com) with the goal of automating and simplifying compliance testing of \
-wireless devices. For more information, or if you have suggestions or bugs to report, visit \
-https://github.com/threexc/ANTS, or contact the author directly.\n")
-
-        self.ants_message.setMargin(10)
-        self.ants_message.setWordWrap(1)
-        self.setCentralWidget(self.ants_message)
-
-class License_Menu(QMainWindow):
-
-    def __init__(self, parent):
-        super(License_Menu, self).__init__(parent)
-
-        self.license_message = QLabel()
-        self.license_message.setText("MIT License\n\
-\n\
-Copyright (c) 2018 Trevor Gamblin - tvgamblin@gmail.com\n\
-\n\
-Permission is hereby granted, free of charge, to any person obtaining a copy\n\
-of this software and associated documentation files (the \"Software\"), to deal\n\
-in the Software without restriction, including without limitation the rights\n\
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n\
-copies of the Software, and to permit persons to whom the Software is\n\
-furnished to do so, subject to the following conditions:\n\
-\n\
-The above copyright notice and this permission notice shall be included in all\n\
-copies or substantial portions of the Software.\n\
-\n\
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n\
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n\
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n\
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n\
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n\
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n\
-SOFTWARE.")
-        self.license_message.setMargin(10)
-        self.setCentralWidget(self.license_message)
