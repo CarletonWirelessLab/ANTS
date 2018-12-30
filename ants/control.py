@@ -45,8 +45,9 @@ class ANTS_Controller():
         # Default run time length
         self.run_time = 0.5
 
-        # Output/conversion file name
-        self.file_name = ""
+        # Output/conversion file name. Set to "no_name" as default in case the
+        # user has not yet given a file name to the run in the GUI
+        self.file_name = "no_name"
 
         # Used to set the access category. '0' is voice, '1' is video, '2' is
         # best effort, '3' is background
@@ -109,11 +110,11 @@ class ANTS_Controller():
         time = time.replace(' ', '_')
         dir_name = self.file_name + "_" + time + "/"
         location = os.path.dirname(os.path.abspath(__file__))
-        full_path = location + "../tests/" + dir_name
+        full_path = location + "/../tests/" + dir_name
 
         if not os.path.exists(full_path):
             os.makedirs(full_path)
-
+        print(full_path)
         return full_path
 
     # Runs a subprocess for the USRP based on the usrp_control_args variable
