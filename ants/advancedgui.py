@@ -43,10 +43,10 @@ class ANTS_Results_Tab(QWidget):
 
         # Set up the graphics for the main display
         self.graphic_label = QLabel(self)
-        self.bin_pixmap = QPixmap('/home/trevor/ANTS/tests/sampledir/Ericsson_video_bin_probability.png')
-        self.interframe_pixmap = QPixmap('/home/trevor/ANTS/tests/sampledir/Ericsson_video_interframe_spacing_histogram.png')
-        self.raw_signal_pixmap = QPixmap('/home/trevor/ANTS/tests/sampledir/Ericsson_video_signal_magnitude_plot.png')
-        self.txop_pixmap = QPixmap('/home/trevor/ANTS/tests/sampledir/Ericsson_video_txop_durations_histogram.png')
+        # self.bin_pixmap = QPixmap(self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_bin_probability.png")
+        # self.interframe_pixmap = QPixmap(self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_interframe_spacing_histogram.png")
+        # self.raw_signal_pixmap = QPixmap(self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_signal_magnitude_plot.png")
+        # self.txop_pixmap = QPixmap(self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_txop_durations_histogram.png")
         self.graphic_label.setStyleSheet("""
             background-color: grey;
             color: white;
@@ -57,7 +57,7 @@ class ANTS_Results_Tab(QWidget):
             border-radius: 1px;
             border-color: white;
         """)
-        self.graphic_label.setPixmap(self.bin_pixmap)
+        # self.graphic_label.setPixmap(self.bin_pixmap)
 
         # Create a text box to take the filename used by the USRP and converter
         # tools
@@ -159,20 +159,49 @@ class ANTS_Results_Tab(QWidget):
         self.runtime_label.setText("Runtime " + str(self.ants_controller.run_time) + " seconds")
 
     def run_button_clicked(self):
-        self.ants_controller.start_usrp_iperf_server(self.debug_mode)
-        self.ants_controller.start_converter(self.debug_mode)
-        self.ants_controller.start_plotter(self.debug_mode)
+        self.ants_controller.start_usrp_iperf(self.debug_mode)
+        self.ants_controller.make_plots(self.debug_mode)
+
+        # Set up the graphics for the main display
+        #self.graphic_label = QLabel(self)
+        self.bin_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_bin_probability.png"
+        print(self.bin_pixmap_path)
+        self.bin_pixmap = QPixmap(self.bin_pixmap_path)
+        self.interframe_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_interframe_spacing_histogram.png"
+        print(self.interframe_pixmap_path)
+        self.interframe_pixmap = QPixmap(self.interframe_pixmap_path)
+        self.raw_signal_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_signal_magnitude_plot.png"
+        print(self.raw_signal_pixmap_path)
+        self.raw_signal_pixmap = QPixmap(self.raw_signal_pixmap_path)
+        self.txop_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_txop_durations_histogram.png"
+        print(self.txop_pixmap_path)
+        self.txop_pixmap = QPixmap(self.txop_pixmap_path)
+        self.graphic_label.setStyleSheet("""
+            background-color: grey;
+            color: white;
+            font: bold;
+            padding: 1px;
+            border-width: 1px;
+            border-style: panel;
+            border-radius: 1px;
+            border-color: white;
+        """)
+        self.graphic_label.setPixmap(self.bin_pixmap)
 
     def bin_button_clicked(self):
+        print("Trying to open {0}\n".format(self.bin_pixmap))
         self.graphic_label.setPixmap(self.bin_pixmap)
 
     def interframe_button_clicked(self):
+        print("Trying to open {0}\n".format(self.interframe_pixmap))
         self.graphic_label.setPixmap(self.interframe_pixmap)
 
     def raw_signal_button_clicked(self):
+        print("Trying to open {0}\n".format(self.raw_signal_pixmap))
         self.graphic_label.setPixmap(self.raw_signal_pixmap)
 
     def txop_button_clicked(self):
+        print("Trying to open {0}\n".format(self.txop_pixmap))
         self.graphic_label.setPixmap(self.txop_pixmap)
 
 class ANTS_Settings_Tab(QWidget):
@@ -354,21 +383,6 @@ class Advanced_GUI(QMainWindow):
 
     def __init__(self, ants_controller):
         super().__init__()
-
-        # Class variables that are set by toggling the checkboxes. Used to
-        # determine which tools to run when the "Run" button is pressed
-        self.usrp_state = False
-        self.siggen_state = False
-        self.converter_state = False
-        self.plotter_state = False
-        self.iperf_client_state = False
-        self.iperf_server_state = False
-
-        # Ensure that a proper IP format is used. Taken from
-        # https://evileg.com/en/post/57/
-        self.ip_range = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"
-        self.ip_regex = QRegExp("^" + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "$")
-        self.ip_validator = QRegExpValidator(self.ip_regex, self)
 
         # Used to pass mode to the controller object
         self.debug_mode = False

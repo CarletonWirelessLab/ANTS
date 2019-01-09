@@ -91,23 +91,20 @@ def dowork():
 
 def main():
 
+
 	global name, runFor, access_category
-	name = '0'
-	runFor = 2.5 # sec
-	access_category = 'voice'
-	if len(sys.argv) > 1:
-		name   = sys.argv[1]
-		runFor = float(sys.argv[2]) #sec
-                access_category = sys.argv[3]
-        
+	name = sys.argv[1]
+	runFor = float(sys.argv[2]) # sec
+	access_category = sys.argv[3]
+
 	t = threading.Thread(target=dowork)
 	t.daemon = True
 	t.start()
 	#time.sleep(1.9828)   #to initiate the device on HP laptop
 	time.sleep(runFor)
 	print '## END READING ## Duration =',runFor,' s'
-	
-	
+
+
 	quit()
 
 if __name__  == '__main__':
