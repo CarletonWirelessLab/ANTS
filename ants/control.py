@@ -33,7 +33,8 @@ class ANTS_Controller():
 
         # The arguments to give to subprocess.Popen() to run iperf
         self.iperf_client_args = ["iperf", "-c", str(self.iperf_client_addr), "-u", "-b"+str(self.iperf_rate)+"M", "-S", str(self.iperf_mem_addr), "-t10000000000"]
-        self.iperf_server_args = ["iperf", "-s", "-u", "-t100000000000000"]
+        # The arguments to run the iperf server. The original terminal command is "iperf -B 10.1.1.120 -s -u -t 1000000000000000 -i 1"
+        self.iperf_server_args = ["iperf", "-B", str(self.iperf_server_addr), "-s", "-u", "-t", "100000000000000", "-i", str(1)]
 
         # Default run time length
         self.run_time = 0.5
@@ -72,7 +73,7 @@ class ANTS_Controller():
 
         if not os.path.exists(full_path):
             os.makedirs(full_path)
-        print("Full path is {0}\n".format(full_path))
+        print("Generated the test directory {0}.\n".format(full_path))
         return full_path
 
     # Runs a subprocess for the USRP based on the usrp_control_args variable. Future-proofing method
@@ -94,7 +95,7 @@ class ANTS_Controller():
 
     # Runs the USRP and iperf tools simultaneously
     def start_usrp_iperf(self, sim_mode):
-        print("Running USRP with interference injected...\n")
+        print("Running USRP with interference injected using iperf...\n")
 
         if sim_mode == True:
             self.usrp_control_args = ["python3", self.sim_dir + "usrp_sim.py", str(self.run_time)]
@@ -116,18 +117,12 @@ class ANTS_Controller():
             self.test_path = self.data_dir + self.file_name
 
             self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
-            print("test path is {0}\n".format(self.data_dir))
-            print("Bin path is {0}\n".format(self.bin_path))
-            print("Filename before usrp_control_args is {0}\n".format(self.file_name))
+            print("The binary data file will be written to {0}.\n".format(self.bin_path))
             self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
 
-        # Only run with the client option if something is provided. If not, the iperf client will be run elsewhere
-        if self.iperf_client_addr:
-            #self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-            pass
-
-        # Always run the iperf server
+        # Run the iperf commands
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
@@ -140,9 +135,12 @@ class ANTS_Controller():
                 if self.usrp_proc.returncode is not None:
                     break
 
+        # Close the iperf processes as soon as the USRP is done sensing the medium
+        self.iperf_client_proc.kill()
         self.iperf_server_proc.kill()
 
-        print("Done sensing with iperf\n")
+
+        print("Done sampling the medium. iperf processes killed.\n")
         return
 
     def make_plots(self, sim_mode):
@@ -161,29 +159,3 @@ class ANTS_Controller():
 
             # Delete the current plotter when done to avoid excessive memory usage
             del self.plotter
-
-    # Runs the iperf client and server processes
-    def start_iperf_server(self, sim_mode):
-        print("Running iperf...\n")
-
-        if sim_mode == True:
-            self.iperf_client_args = ["python3", self.sim_dir + "iperf_sim.py", str(self.run_time), str(self.iperf_client_addr)]
-            self.iperf_server_args = ["python3", self.sim_dir + "iperf_sim.py", str(self.run_time), str(self.iperf_server_addr)]
-
-        #iperf arguments for real mode are currently defined earlier in this module
-        #self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-
-        while True:
-
-            #self.iperf_client_proc.poll()
-            self.iperf_server_proc.poll()
-            # Make sure the sequence won't continue until both tools have
-            # finished. Is it necessary that we wait for the server, or is the
-            # time given to it just to ensure that we had time to run the client
-            # manually?
-            if self.iperf_server_proc.returncode is not None:
-                break
-
-        print("Done running iperf\n")
-        return
