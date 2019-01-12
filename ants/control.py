@@ -58,15 +58,12 @@ class ANTS_Controller():
         self.sim_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tests'))
         self.sim_dir = self.sim_dir + '/'
 
-        # Create and/or get the
-        self.data_dir = self.make_data_dir()
 
-        self.test_path = self.data_dir + self.file_name
 
 
     # Make the timestamped data directory, and then return the full path for
     # writing data files to
-    def make_data_dir(self):
+    def make_data_dir(self, test_name):
         time = str(datetime.datetime.utcnow().strftime("%Y-%m-%d %H-%M-%S"))
         time = time.replace(' ', '_')
         dir_name = self.file_name + "_" + time + "/"
@@ -113,7 +110,13 @@ class ANTS_Controller():
             else:
                 self.plotter_ac = "voice"
 
+            # Create the data directory for the run
+            self.data_dir = self.make_data_dir(self.file_name)
+
+            self.test_path = self.data_dir + self.file_name
+
             self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
+            print("test path is {0}\n".format(self.data_dir))
             print("Bin path is {0}\n".format(self.bin_path))
             print("Filename before usrp_control_args is {0}\n".format(self.file_name))
             self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
