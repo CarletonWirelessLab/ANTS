@@ -10,7 +10,7 @@ The ```master``` branch is where the most stable version can be found, but inter
 The following is a list of essential components for using ANTS in its current form:
 
 * One or more wireless networking devices, known as the Unit(s) Under Test (UUTs) with USB and/or Gigabit Ethernet LAN connectivity
-* One or two modern computers with USB 3.0 and Gigabit Ethernet ports (see [Installation and Test Setup](## Installation and Test Setup) for the single-machine method)
+* One or two modern computers with USB 3.0 and Gigabit Ethernet ports (see Installation and Test Setup for the single-machine method)
 * A software-defined radio capable of transmitting and receiving on the same wireless bands as the UUTs
 
 ANTS was originally developed and tested using the [Ettus Research B200](https://www.ettus.com/product/details/UB200-KIT) software-defined radio device, which is the core measurement tool that senses the wireless channel and collects the data for further processing. No other devices are currently supported (although additional devices are on the roadmap). The (UUT) in a typical test setup is a either a commercially-available USB WiFi device, or a wireless router.
