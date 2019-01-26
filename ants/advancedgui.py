@@ -294,27 +294,31 @@ class ANTS_Settings_Tab(QWidget):
     # Action methods for access category radio buttons
     def on_ac_voice_clicked(self):
         self.ants_controller.access_category = 0
+        print("Access category set to voice\n")
 
     def on_ac_video_clicked(self):
         self.ants_controller.access_category = 1
+        print("Access category set to video\n")
 
     def on_ac_besteffort_clicked(self):
         self.ants_controller.access_category = 2
+        print("Access category set to best effort\n")
 
     def on_ac_background_clicked(self):
         self.ants_controller.access_category = 3
+        print("Access category set to background\n")
 
     # Checks to make sure iperf_client_addr is set to a realistic IP value
     def on_client_ip(self, text):
         if self.iperf_client_lineedit.text == "":
-            self.iperf_client_lineedit.text = "127.0.0.1"
+            self.iperf_client_lineedit.text = "10.1.11.115"
         elif self.iperf_client_lineedit.hasAcceptableInput():
             self.ants_controller.iperf_client_addr = text
 
     # Checks to make sure iperf_server_addr is set to a realistic IP value
     def on_server_ip(self, text):
         if self.iperf_server_lineedit.text == "":
-            self.iperf_server_lineedit.text = "127.0.0.1"
+            self.iperf_server_lineedit.text = "10.1.1.120"
         elif self.iperf_server_lineedit.hasAcceptableInput():
             self.ants_controller.iperf_server_addr = text
 

@@ -31,11 +31,6 @@ class ANTS_Controller():
         self.iperf_rate = None
         self.iperf_mem_addr = None
 
-        # The arguments to give to subprocess.Popen() to run iperf
-        self.iperf_client_args = ["iperf", "-c", str(self.iperf_client_addr), "-u", "-b"+str(self.iperf_rate)+"M", "-S", str(self.iperf_mem_addr), "-t10000000000"]
-        # The arguments to run the iperf server. The original terminal command is "iperf -B 10.1.1.120 -s -u -t 1000000000000000 -i 1"
-        self.iperf_server_args = ["iperf", "-B", str(self.iperf_server_addr), "-s", "-u", "-t", "100000000000000", "-i", str(1)]
-
         # Default run time length
         self.run_time = 0.5
 
@@ -84,7 +79,25 @@ class ANTS_Controller():
         if sim_mode == True:
             self.usrp_control_args = ["python3", self.sim_dir + "usrp_sim.py", str(self.run_time)]
         else:
-            self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.file_name, str(self.run_time)]
+            if self.access_category == 1:
+                self.plotter_ac = "video"
+            elif self.access_category == 2:
+                self.plotter_ac = "best_effort"
+            elif self.access_category == 3:
+                self.plotter_ac = "background"
+            else:
+                self.plotter_ac = "voice"
+
+            # Create the data directory for the run
+            self.data_dir = self.make_data_dir(self.file_name)
+
+            self.test_path = self.data_dir + self.file_name
+
+            self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
+            print("The binary data file will be written to {0}.\n".format(self.bin_path))
+            self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
+
+
 
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.usrp_proc.poll() is None:
@@ -104,12 +117,16 @@ class ANTS_Controller():
         else:
             if self.access_category == 1:
                 self.plotter_ac = "video"
+                self.iperf_client_ac = "0x80"
             elif self.access_category == 2:
                 self.plotter_ac = "best_effort"
+                self.iperf_client_ac = "0x00"
             elif self.access_category == 3:
                 self.plotter_ac = "background"
+                self.iperf_client_ac = "0x20"
             else:
                 self.plotter_ac = "voice"
+                self.iperf_client_ac = "0xC0"
 
             # Create the data directory for the run
             self.data_dir = self.make_data_dir(self.file_name)
@@ -120,18 +137,37 @@ class ANTS_Controller():
             print("The binary data file will be written to {0}.\n".format(self.bin_path))
             self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
 
-        # Run the iperf commands
+            # Ensure that the client and server addresses are set to something other than "None"
+            if self.iperf_client_addr == None:
+                self.iperf_client_addr = "10.1.11.115"
+
+            if self.iperf_server_addr == None:
+                self.iperf_server_addr = "10.1.1.120"
+
+            # The arguments to run the iperf client
+            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "10.2.1.120", "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+            print("iperf client args are:\n")
+            print(self.iperf_client_args)
+            # The arguments to run the iperf server
+            self.iperf_server_args = ["iperf", "-B", "{0}".format(str(self.iperf_server_addr)), "-s", "-u", "-t 1000000000000000", "-i 1"]
+            print("iperf server args are:\n")
+            print(self.iperf_server_args)
+
+        # Run the iperf commands and print debug information
+        print("iperf server IP is {0}\n".format(self.iperf_server_addr))
+        print("iperf client IP is {0}\n".format(self.iperf_client_addr))
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
+        # Wait for 3 seconds to ensure the iperf data has begun transferring
+        time.sleep(3)
+        # Start the USRP
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
         if sim_mode == False:
+            # Continuously check to see if the USRP is running, then break out when it has stopped
             while True:
-
                 self.usrp_proc.poll()
-                # Make sure the sequence won't continue until all tools have
-                # finished
                 if self.usrp_proc.returncode is not None:
                     break
 

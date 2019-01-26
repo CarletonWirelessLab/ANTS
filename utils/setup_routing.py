@@ -60,7 +60,7 @@ print("Setting up IP addresses...\n")
 server_ip_args = "ip addr add {0}/24 dev {1}".format(server_ip, server_device_name).split(" ")
 client_ip_args = "ip addr add {0}/24 dev {1}".format(client_ip, client_device_name).split(" ")
 
-iptables_one_args = "iptables -t nat -L".strip(" ")
+iptables_one_args = "iptables -t nat -L".split(" ")
 iptables_two_args = "iptables -t nat -A POSTROUTING -s {0} -d 10.2.11.115 -j SNAT --to-source 10.2.1.120".format(server_ip).split(" ")
 iptables_three_args = "iptables -t nat -A PREROUTING -d 10.2.1.120 -j DNAT --to-destination {0}".format(server_ip).split(" ")
 iptables_four_args = "iptables -t nat -A POSTROUTING -s {0} -d 10.2.1.120 -j SNAT --to-source 10.2.11.115".format(client_ip).split(" ")
@@ -71,3 +71,18 @@ arp_one_args = "arp -i {0} -s 10.2.11.115 {1}".format(server_device_name, client
 
 ip_route_two_args = "ip route add 10.2.1.120 dev {0}".format(client_device_name).split(" ")
 arp_two_args = "arp -i {0} -s 10.2.1.120 {1}".format(client_device_name, server_device_mac).split(" ")
+
+subprocess.call(server_ip_args)
+subprocess.call(client_ip_args)
+subprocess.call(iptables_one_args)
+subprocess.call(iptables_two_args)
+subprocess.call(iptables_three_args)
+subprocess.call(iptables_four_args)
+subprocess.call(iptables_five_args)
+
+subprocess.call(ip_route_one_args)
+subprocess.call(arp_one_args)
+subprocess.call(ip_route_two_args)
+subprocess.call(arp_two_args)
+
+print("Network routing should now be ready for use with ANTS.\n")
