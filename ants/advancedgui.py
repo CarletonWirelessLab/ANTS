@@ -13,11 +13,15 @@ class ANTS_Table(QWidget):
 
     def __init__(self, main_gui, ants_controller):
         super(QWidget, self).__init__(main_gui)
-        self.ants_controller = ants_controller
-        self.layout = QVBoxLayout(self)
 
+        # Initialize the ANTS controller object to run the tests
+        self.ants_controller = ants_controller
+
+        # Set the layout type for the GUI and instantiate the tabs widget
+        self.layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
 
+        # Instantiate all of the tab objects needed for the GUI
         self.results_tab = ANTS_Results_Tab(self, self.ants_controller)
         self.settings_tab = ANTS_Settings_Tab(self, self.ants_controller)
         self.about_tab = ANTS_About_Tab(self, self.ants_controller)
@@ -43,10 +47,6 @@ class ANTS_Results_Tab(QWidget):
 
         # Set up the graphics for the main display
         self.graphic_label = QLabel(self)
-        # self.bin_pixmap = QPixmap(self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_bin_probability.png")
-        # self.interframe_pixmap = QPixmap(self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_interframe_spacing_histogram.png")
-        # self.raw_signal_pixmap = QPixmap(self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_signal_magnitude_plot.png")
-        # self.txop_pixmap = QPixmap(self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_txop_durations_histogram.png")
         self.graphic_label.setStyleSheet("""
             background-color: grey;
             color: white;
@@ -57,7 +57,6 @@ class ANTS_Results_Tab(QWidget):
             border-radius: 1px;
             border-color: white;
         """)
-        # self.graphic_label.setPixmap(self.bin_pixmap)
 
         # Create a text box to take the filename used by the USRP and converter
         # tools

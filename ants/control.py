@@ -16,8 +16,6 @@ class ANTS_Controller():
         # Class variables used for the subprocesses run, if any, of the tools
         # run when their checkboxes are selected
         self.usrp_proc = None
-        self.controller_proc = None
-        self.converter_proc = None
         self.plotter_proc = None
         self.iperf_client_proc = None
         self.iperf_server_proc = None
@@ -31,7 +29,7 @@ class ANTS_Controller():
         self.iperf_rate = None
         self.iperf_mem_addr = None
 
-        # Default run time length
+        # Default run time length to 0.5 seconds if no time is provided
         self.run_time = 0.5
 
         # Output/conversion file name. Set to "no_name" as default in case the
@@ -60,15 +58,20 @@ class ANTS_Controller():
     # Make the timestamped data directory, and then return the full path for
     # writing data files to
     def make_data_dir(self, test_name):
+        # Create the timestamp
         time = str(datetime.datetime.utcnow().strftime("%Y-%m-%d %H-%M-%S"))
         time = time.replace(' ', '_')
+
+        # Get the full path of the data file to be created
         dir_name = self.file_name + "_" + time + "/"
         location = os.path.dirname(os.path.abspath(__file__))
         full_path = location + "/../tests/" + dir_name
 
+        # Make the data file path if it doesn't exist (this should always run as long as the timestamp is present)
         if not os.path.exists(full_path):
             os.makedirs(full_path)
         print("Generated the test directory {0}.\n".format(full_path))
+
         return full_path
 
     # Runs a subprocess for the USRP based on the usrp_control_args variable. Future-proofing method
@@ -76,9 +79,9 @@ class ANTS_Controller():
     def start_usrp(self, sim_mode):
         print("Running USRP...\n")
 
-        if sim_mode == True:
+        if sim_mode == True: # Run the dummy script for the USRP
             self.usrp_control_args = ["python3", self.sim_dir + "usrp_sim.py", str(self.run_time)]
-        else:
+        else: # Set the appropriate access category
             if self.access_category == 1:
                 self.plotter_ac = "video"
             elif self.access_category == 2:
@@ -90,18 +93,18 @@ class ANTS_Controller():
 
             # Create the data directory for the run
             self.data_dir = self.make_data_dir(self.file_name)
-
             self.test_path = self.data_dir + self.file_name
-
             self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
             print("The binary data file will be written to {0}.\n".format(self.bin_path))
+
+            # Create the argument list to pass to the USRP subprocess that will be instantiated
             self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
 
-
-
+        # Run the USRP process with the necessary arguments
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.usrp_proc.poll() is None:
             continue
+            
         print("Done sensing medium\n")
 
         return
@@ -110,11 +113,11 @@ class ANTS_Controller():
     def start_usrp_iperf(self, sim_mode):
         print("Running USRP with interference injected using iperf...\n")
 
-        if sim_mode == True:
+        if sim_mode == True: # Run the dummy scripts for interface testing purposes
             self.usrp_control_args = ["python3", self.sim_dir + "usrp_sim.py", str(self.run_time)]
             self.iperf_client_args = ["python3", self.sim_dir + "iperf_sim.py", str(self.run_time), str(self.iperf_client_addr)]
             self.iperf_server_args = ["python3", self.sim_dir + "iperf_sim.py", str(self.run_time), str(self.iperf_server_addr)]
-        else:
+        else: # Set the access category variables appropriately for the UUT test run
             if self.access_category == 1:
                 self.plotter_ac = "video"
                 self.iperf_client_ac = "0x80"
@@ -130,11 +133,13 @@ class ANTS_Controller():
 
             # Create the data directory for the run
             self.data_dir = self.make_data_dir(self.file_name)
-
             self.test_path = self.data_dir + self.file_name
-
             self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
+
+            # Print the file path for debug purposes
             print("The binary data file will be written to {0}.\n".format(self.bin_path))
+
+            # Set the arguments to be used to run the USRP
             self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
 
             # Ensure that the client and server addresses are set to something other than "None"
@@ -174,19 +179,18 @@ class ANTS_Controller():
         # Close the iperf processes as soon as the USRP is done sensing the medium
         self.iperf_client_proc.kill()
         self.iperf_server_proc.kill()
-
-
         print("Done sampling the medium. iperf processes killed.\n")
+
         return
 
+    # Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
     def make_plots(self, sim_mode):
         print("Running data conversion and plot routine on {0}...".format(self.file_name))
-        if sim_mode == True:
+        if sim_mode == True: # Run the dummy scripts
             self.matlab_plotter_args = ["python3", self.sim_dir + "plotter_sim.py", str(10)]
             self.plotter_proc = subprocess.Popen(self.matlab_plotter_args, stdin=subprocess.PIPE, stderr=None, shell=False)
             self.plotter_proc.wait()
-        else:
-            print(self.test_path)
+        else: # Create and run an actual plotter instance
             self.plotter = ANTS_Plotter(self.plotter_ac, self.test_path, 20e6)
             self.plotter.read_and_parse()
             self.plotter.setup_packet_data()
