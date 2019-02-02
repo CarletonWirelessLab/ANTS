@@ -49,10 +49,8 @@ class ANTS_Controller():
         self.utils_dir = self.utils_dir + '/'
 
         # Path for calling scripts in simulation mode
-        self.sim_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'tests'))
+        self.sim_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'utils/sim'))
         self.sim_dir = self.sim_dir + '/'
-
-
 
 
     # Make the timestamped data directory, and then return the full path for
@@ -76,87 +74,79 @@ class ANTS_Controller():
 
     # Runs a subprocess for the USRP based on the usrp_control_args variable. Future-proofing method
     # for when the option is added to run the USRP only
-    def start_usrp(self, sim_mode):
+    def start_usrp(self):
         print("Running USRP...\n")
 
-        if sim_mode == True: # Run the dummy script for the USRP
-            self.usrp_control_args = ["python3", self.sim_dir + "usrp_sim.py", str(self.run_time)]
-        else: # Set the appropriate access category
-            if self.access_category == 1:
-                self.plotter_ac = "video"
-            elif self.access_category == 2:
-                self.plotter_ac = "best_effort"
-            elif self.access_category == 3:
-                self.plotter_ac = "background"
-            else:
-                self.plotter_ac = "voice"
+        if self.access_category == 1:
+            self.plotter_ac = "video"
+        elif self.access_category == 2:
+            self.plotter_ac = "best_effort"
+        elif self.access_category == 3:
+            self.plotter_ac = "background"
+        else:
+            self.plotter_ac = "voice"
 
-            # Create the data directory for the run
-            self.data_dir = self.make_data_dir(self.file_name)
-            self.test_path = self.data_dir + self.file_name
-            self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
-            print("The binary data file will be written to {0}.\n".format(self.bin_path))
+        # Create the data directory for the run
+        self.data_dir = self.make_data_dir(self.file_name)
+        self.test_path = self.data_dir + self.file_name
+        self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
+        print("The binary data file will be written to {0}.\n".format(self.bin_path))
 
-            # Create the argument list to pass to the USRP subprocess that will be instantiated
-            self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
+        # Create the argument list to pass to the USRP subprocess that will be instantiated
+        self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
 
         # Run the USRP process with the necessary arguments
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
         while self.usrp_proc.poll() is None:
             continue
-            
+
         print("Done sensing medium\n")
 
         return
 
     # Runs the USRP and iperf tools simultaneously
-    def start_usrp_iperf(self, sim_mode):
+    def start_usrp_iperf(self):
         print("Running USRP with interference injected using iperf...\n")
 
-        if sim_mode == True: # Run the dummy scripts for interface testing purposes
-            self.usrp_control_args = ["python3", self.sim_dir + "usrp_sim.py", str(self.run_time)]
-            self.iperf_client_args = ["python3", self.sim_dir + "iperf_sim.py", str(self.run_time), str(self.iperf_client_addr)]
-            self.iperf_server_args = ["python3", self.sim_dir + "iperf_sim.py", str(self.run_time), str(self.iperf_server_addr)]
-        else: # Set the access category variables appropriately for the UUT test run
-            if self.access_category == 1:
-                self.plotter_ac = "video"
-                self.iperf_client_ac = "0x80"
-            elif self.access_category == 2:
-                self.plotter_ac = "best_effort"
-                self.iperf_client_ac = "0x00"
-            elif self.access_category == 3:
-                self.plotter_ac = "background"
-                self.iperf_client_ac = "0x20"
-            else:
-                self.plotter_ac = "voice"
-                self.iperf_client_ac = "0xC0"
+        if self.access_category == 1:
+            self.plotter_ac = "video"
+            self.iperf_client_ac = "0x80"
+        elif self.access_category == 2:
+            self.plotter_ac = "best_effort"
+            self.iperf_client_ac = "0x00"
+        elif self.access_category == 3:
+            self.plotter_ac = "background"
+            self.iperf_client_ac = "0x20"
+        else:
+            self.plotter_ac = "voice"
+            self.iperf_client_ac = "0xC0"
 
-            # Create the data directory for the run
-            self.data_dir = self.make_data_dir(self.file_name)
-            self.test_path = self.data_dir + self.file_name
-            self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
+        # Create the data directory for the run
+        self.data_dir = self.make_data_dir(self.file_name)
+        self.test_path = self.data_dir + self.file_name
+        self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
 
-            # Print the file path for debug purposes
-            print("The binary data file will be written to {0}.\n".format(self.bin_path))
+        # Print the file path for debug purposes
+        print("The binary data file will be written to {0}.\n".format(self.bin_path))
 
-            # Set the arguments to be used to run the USRP
-            self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
+        # Set the arguments to be used to run the USRP
+        self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
 
-            # Ensure that the client and server addresses are set to something other than "None"
-            if self.iperf_client_addr == None:
-                self.iperf_client_addr = "10.1.11.115"
+        # Ensure that the client and server addresses are set to something other than "None"
+        if self.iperf_client_addr == None:
+            self.iperf_client_addr = "10.1.11.115"
 
-            if self.iperf_server_addr == None:
-                self.iperf_server_addr = "10.1.1.120"
+        if self.iperf_server_addr == None:
+            self.iperf_server_addr = "10.1.1.120"
 
-            # The arguments to run the iperf client
-            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "10.2.1.120", "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
-            print("iperf client args are:\n")
-            print(self.iperf_client_args)
-            # The arguments to run the iperf server
-            self.iperf_server_args = ["iperf", "-B", "{0}".format(str(self.iperf_server_addr)), "-s", "-u", "-t 1000000000000000", "-i 1"]
-            print("iperf server args are:\n")
-            print(self.iperf_server_args)
+        # The arguments to run the iperf client
+        self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "10.2.1.120", "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+        print("iperf client args are:\n")
+        print(self.iperf_client_args)
+        # The arguments to run the iperf server
+        self.iperf_server_args = ["iperf", "-B", "{0}".format(str(self.iperf_server_addr)), "-s", "-u", "-t 1000000000000000", "-i 1"]
+        print("iperf server args are:\n")
+        print(self.iperf_server_args)
 
         # Run the iperf commands and print debug information
         print("iperf server IP is {0}\n".format(self.iperf_server_addr))
@@ -169,12 +159,11 @@ class ANTS_Controller():
         # Start the USRP
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
-        if sim_mode == False:
-            # Continuously check to see if the USRP is running, then break out when it has stopped
-            while True:
-                self.usrp_proc.poll()
-                if self.usrp_proc.returncode is not None:
-                    break
+        # Continuously check to see if the USRP is running, then break out when it has stopped
+        while True:
+            self.usrp_proc.poll()
+            if self.usrp_proc.returncode is not None:
+                break
 
         # Close the iperf processes as soon as the USRP is done sensing the medium
         self.iperf_client_proc.kill()
@@ -184,18 +173,14 @@ class ANTS_Controller():
         return
 
     # Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
-    def make_plots(self, sim_mode):
+    def make_plots(self):
         print("Running data conversion and plot routine on {0}...".format(self.file_name))
-        if sim_mode == True: # Run the dummy scripts
-            self.matlab_plotter_args = ["python3", self.sim_dir + "plotter_sim.py", str(10)]
-            self.plotter_proc = subprocess.Popen(self.matlab_plotter_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-            self.plotter_proc.wait()
-        else: # Create and run an actual plotter instance
-            self.plotter = ANTS_Plotter(self.plotter_ac, self.test_path, 20e6)
-            self.plotter.read_and_parse()
-            self.plotter.setup_packet_data()
-            self.plotter.write_results_to_file()
-            self.plotter.plot_results()
+        # Create and run an actual plotter instance
+        self.plotter = ANTS_Plotter(self.plotter_ac, self.test_path, 20e6)
+        self.plotter.read_and_parse()
+        self.plotter.setup_packet_data()
+        self.plotter.write_results_to_file()
+        self.plotter.plot_results()
 
-            # Delete the current plotter when done to avoid excessive memory usage
-            del self.plotter
+        # Delete the current plotter when done to avoid excessive memory usage
+        del self.plotter

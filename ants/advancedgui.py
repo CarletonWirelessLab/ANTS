@@ -43,8 +43,6 @@ class ANTS_Results_Tab(QWidget):
         self.ants_controller = ants_controller
         self.layout = QGridLayout(self)
 
-        self.debug_mode = False
-
         # Set up the graphics for the main display
         self.graphic_label = QLabel(self)
         self.graphic_label.setStyleSheet("""
@@ -119,30 +117,12 @@ class ANTS_Results_Tab(QWidget):
         self.txop_button.clicked.connect(self.txop_button_clicked)
         self.layout.addWidget(self.txop_button, 6, 3, 1, 1)
 
-        # The checkbox for toggling the run mode (sim or actual)
-        self.debug_mode_checkbox = QCheckBox('Debug Mode', self)
-        self.debug_mode_checkbox.stateChanged.connect(self.debug_mode_check)
-        self.debug_mode_checkbox.setToolTip("Run dummy scripts instead of using devices")
-
-        #self.layout.addWidget(self.debug_mode_checkbox_label, 4, 6, 1, 1)
-        self.layout.addWidget(self.debug_mode_checkbox, 5, 6, 1, 1)
-
         self.setLayout(self.layout)
 
     # Set file name based on what's in the box
     def on_name_change(self, text):
 
         self.ants_controller.file_name = text
-
-    # Dictates whether or not the test scripts or the target programs are used
-    def debug_mode_check(self, state):
-
-        if state:
-            self.debug_mode = True
-            print("sim mode on")
-        else:
-            self.debug_mode = False
-            print("sim mode off")
 
     # Controls changing the value pointed to by the slider. The slider should
     # allow ranges between 0.5 and 10, but since the class only supports
@@ -158,8 +138,8 @@ class ANTS_Results_Tab(QWidget):
         self.runtime_label.setText("Runtime " + str(self.ants_controller.run_time) + " seconds")
 
     def run_button_clicked(self):
-        self.ants_controller.start_usrp_iperf(self.debug_mode)
-        self.ants_controller.make_plots(self.debug_mode)
+        self.ants_controller.start_usrp_iperf()
+        self.ants_controller.make_plots()
 
         # Set up the graphics for the main display
         #self.graphic_label = QLabel(self)
@@ -386,9 +366,6 @@ class Advanced_GUI(QMainWindow):
     def __init__(self, ants_controller):
         super().__init__()
 
-        # Used to pass mode to the controller object
-        self.debug_mode = False
-
         # The ANTS Controller object
         self.ants_controller = ants_controller
 
@@ -396,338 +373,6 @@ class Advanced_GUI(QMainWindow):
         self.setCentralWidget(self.table_widget)
 
         self.show()
-
-
-
-class Advanced_GUI2(QMainWindow):
-
-    def __init__(self, ants_controller):
-        super().__init__()
-
-        # Class variables that are set by toggling the checkboxes. Used to
-        # determine which tools to run when the "Run" button is pressed
-        self.usrp_state = False
-        self.siggen_state = False
-        self.converter_state = False
-        self.plotter_state = False
-        self.iperf_client_state = False
-        self.iperf_server_state = False
-
-        # Ensure that a proper IP format is used. Taken from
-        # https://evileg.com/en/post/57/
-        self.ip_range = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"
-        self.ip_regex = QRegExp("^" + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "$")
-        self.ip_validator = QRegExpValidator(self.ip_regex, self)
-
-        # Used to pass mode to the controller object
-        self.debug_mode = False
-
-        # The ANTS Controller object
-        self.ants_controller = ants_controller
-
-        # Starts up the UI
-        self.init_UI()
-
-
-    # The primary method for setting up the buttons and other widgets, including
-    # the arguments to be run using subprocess.Popen()
-    def init_UI(self):
-
-        self.statusBar().showMessage('Idle')
-
-        self.usrp_settings_menu = USRP_Settings(self)
-        self.siggen_settings_menu = SigGen_Settings(self)
-        self.plotting_settings_menu = Plotting_Settings(self)
-        self.iperf_settings_menu = Iperf_Settings(self)
-        self.about_ants_menu = About_ANTS_Menu(self)
-        self.license_menu = License_Menu(self)
-        #self.usrp_settings_button = QPushButton("USRP Settings", self)
-        #self.usrp_settings_button.move(380,220)
-        #self.usrp_settings_button.clicked.connect(self.on_usrp_settings_clicked)
-
-        # Create the master menu bar
-        self.menubar = self.menuBar()
-
-        self.file_menu = self.menubar.addMenu('File')
-        self.sim_state_action = QAction('Simulate', self, checkable=True)
-        self.sim_state_action.triggered.connect(self.debug_mode_check)
-        self.file_menu.addAction(self.sim_state_action)
-
-        # Add a checkbox to toggle the USRP to the USRP menu
-        self.usrp_settings = self.menubar.addMenu('USRP')
-        self.usrp_state_action = QAction('Enable', self, checkable=True)
-        self.usrp_state_action.triggered.connect(self.usrp_check)
-        self.usrp_settings.addAction(self.usrp_state_action)
-
-        # Add a settings button to the USRP menu
-        self.usrp_settings_action = QAction('Settings', self, checkable=False)
-        self.usrp_settings_action.triggered.connect(self.on_usrp_settings_clicked)
-        self.usrp_settings.addAction(self.usrp_settings_action)
-
-        # Add a checkbox to toggle the signal generator to its menu
-        self.siggen_settings = self.menubar.addMenu('Signal Generator')
-
-        self.siggen_state_action = QAction('Enable', self, checkable=True)
-        self.siggen_state_action.triggered.connect(self.siggen_check)
-        self.siggen_settings.addAction(self.siggen_state_action)
-
-        self.siggen_settings_action = QAction('Settings', self, checkable=False)
-        self.siggen_settings_action.triggered.connect(self.on_siggen_settings_clicked)
-        self.siggen_settings.addAction(self.siggen_settings_action)
-
-        # Add checkboxes for the plotter and converter to the plotting menu
-        self.plotting_settings = self.menubar.addMenu('Plotting')
-
-        self.converter_state_action = QAction('Enable Converter', self, checkable=True)
-        self.converter_state_action.triggered.connect(self.converter_check)
-        self.plotting_settings.addAction(self.converter_state_action)
-        self.plotter_state_action = QAction('Enable Plotter', self, checkable=True)
-        self.plotter_state_action.triggered.connect(self.plotter_check)
-        self.plotting_settings.addAction(self.plotter_state_action)
-
-        self.plotting_settings_action = QAction('Settings', self, checkable=False)
-        self.plotting_settings_action.triggered.connect(self.on_plotting_settings_clicked)
-        self.plotting_settings.addAction(self.plotting_settings_action)
-
-        self.iperf_menu = self.menubar.addMenu('iperf')
-
-        self.iperf_client_state_action = QAction('Enable Client', self, checkable=True)
-        self.iperf_client_state_action.triggered.connect(self.iperf_client_check)
-        self.iperf_menu.addAction(self.iperf_client_state_action)
-        self.iperf_server_state_action = QAction('Enable Server', self, checkable=True)
-        self.iperf_server_state_action.triggered.connect(self.iperf_server_check)
-        self.iperf_menu.addAction(self.iperf_server_state_action)
-
-        self.iperf_settings_action = QAction('Settings', self, checkable=False)
-        self.iperf_settings_action.triggered.connect(self.on_iperf_settings_clicked)
-        self.iperf_menu.addAction(self.iperf_settings_action)
-
-        self.about_menu = self.menubar.addMenu('About')
-
-        self.about_ants_action = QAction('About ANTS', self, checkable=False)
-        self.about_ants_action.triggered.connect(self.on_about_ants_menu_clicked)
-        self.about_menu.addAction(self.about_ants_action)
-
-        self.about_license_action = QAction('Licensing Information', self, checkable=False)
-        self.about_license_action.triggered.connect(self.on_license_menu_clicked)
-        self.about_menu.addAction(self.about_license_action)
-
-        # Set up the GUI window
-        self.setGeometry(300, 600, 500, 500)
-        self.setWindowTitle('ANTS Control Panel')
-        self.show()
-
-    def on_usrp_settings_clicked(self):
-        self.usrp_settings_menu.show()
-
-    def on_siggen_settings_clicked(self):
-        self.siggen_settings_menu.show()
-
-    def on_plotting_settings_clicked(self):
-        self.plotting_settings_menu.show()
-
-    def on_iperf_settings_clicked(self):
-        self.iperf_settings_menu.show()
-
-    def on_about_ants_menu_clicked(self):
-        self.about_ants_menu.show()
-
-    def on_license_menu_clicked(self):
-        self.license_menu.show()
-
-    # Action functions for access category radio buttons
-
-    def on_ac_voice_clicked(self):
-        self.ants_controller.access_category = 0
-
-    def on_ac_video_clicked(self):
-        self.ants_controller.access_category = 1
-
-    def on_ac_besteffort_clicked(self):
-        self.ants_controller.access_category = 2
-
-    def on_ac_background_clicked(self):
-        self.ants_controller.access_category = 3
-
-    # Changes the usrp run state when the checkbox is clicked
-    def usrp_check(self, state):
-
-        if state:
-            self.usrp_state = True
-            print("usrp on")
-        else:
-            self.usrp_state = False
-            print("usrp off")
-
-    # Changes the signal generator run state when the checkbox is clicked
-    def siggen_check(self, state):
-
-        if state:
-            self.siggen_state = True
-            print("signal generator on")
-        else:
-            self.siggen_state = False
-            print("signal generator off")
-
-    # Changes the converter run state when the checkbox is clicked
-    def converter_check(self, state):
-
-        if state:
-            self.converter_state = True
-            print("converter on")
-        else:
-            self.converter_state = False
-            print("converter off")
-
-    # Changes the plotter run state when the checkbox is clicked
-    def plotter_check(self, state):
-
-        if state:
-            self.plotter_state = True
-            print("plotter on")
-        else:
-            self.plotter_state = False
-            print("plotter off")
-
-    # Changes the iperf client run state when the checkbox is clicked
-    def iperf_client_check(self, state):
-
-        if state:
-            self.iperf_client_state = True
-            print("iperf client on")
-        else:
-            self.iperf_client_state = False
-            print("iperf client off")
-
-    # Changes the iperf server run state when the checkbox is clicked
-    def iperf_server_check(self, state):
-
-        if state:
-            self.iperf_server_state = True
-            print("iperf server on")
-        else:
-            self.iperf_server_state = False
-            print("iperf server off")
-
-
-
-    # Checks to make sure iperf_client_addr is set to a realistic IP value
-    def on_client_ip(self, text):
-
-        if self.iperf_client_lineedit.hasAcceptableInput():
-            self.ants_controller.iperf_client_addr = text
-
-    # Checks to make sure iperf_server_addr is set to a realistic IP value
-    def on_server_ip(self, text):
-
-        if self.iperf_server_lineedit.hasAcceptableInput():
-            self.ants_controller.iperf_server_addr = text
-
-    # Set file name based on what's in the box
-    def on_name_change(self, text):
-
-        self.ants_controller.file_name = text
-
-    def on_iperf_IP_TOS_field_change(self, text):
-        pass
-
-    def on_iperf_bandwidth_field_change(self, text):
-        pass
-
-    # The logic for when the "Run" button is pressed. It checks to see which
-    # boxes are checked, then runs based on what it sees. Is there a case where
-    # Should make this more modular, turn it into a dictionary with functions
-    # as the values or something
-    def run_button_clicked(self):
-        sender = self.sender()
-        self.statusBar().showMessage('Running...')
-
-        # USRP, iperf, Converter, Plotter
-        if (self.usrp_state and self.iperf_server_state and self.converter_state and self.plotter_state and not self.siggen_state):
-
-            self.ants_controller.start_usrp_iperf_server(self.debug_mode)
-            self.ants_controller.start_converter(self.debug_mode)
-            self.ants_controller.start_plotter(self.debug_mode)
-
-        # USRP, SGControl, Converter, Plotter
-        elif (self.usrp_state and self.siggen_state and self.converter_state and self.plotter_state and not self.iperf_server_state):
-
-            self.ants_controller.start_usrp_controller(self.debug_mode)
-            self.ants_controller.start_converter(self.debug_mode)
-            self.ants_controller.start_plotter(self.debug_mode)
-
-        # USRP, SGControl, Converter
-        elif (self.usrp_state and self.siggen_state and self.converter_state and not self.plotter_state and not self.iperf_server_state):
-
-            self.ants_controller.start_usrp_controller(self.debug_mode)
-            self.ants_controller.start_converter(self.debug_mode)
-
-        # USRP, iperf, Converter
-        elif (self.usrp_state and self.iperf_server_state and self.converter_state and not self.plotter_state and not self.siggen_state):
-
-            self.ants_controller.start_usrp_iperf_server(self.debug_mode)
-            self.ants_controller.start_converter(self.debug_mode)
-
-        # USRP, Converter, Plotter
-        elif (self.usrp_state and self.converter_state and self.plotter_state and not self.siggen_state and not self.iperf_server_state):
-
-            self.ants_controller.start_usrp(self.debug_mode)
-            self.ants_controller.start_converter(self.debug_mode)
-            self.ants_controller.start_plotter(self.debug_mode)
-
-        # USRP, SGControl
-        elif (self.usrp_state and self.siggen_state and not self.converter_state and not self.plotter_state and not self.iperf_server_state):
-
-            self.ants_controller.start_usrp_controller(self.debug_mode)
-
-        # USRP, iperf
-        elif (self.usrp_state and self.iperf_server_state and not self.converter_state and not self.plotter_state and not self.siggen_state):
-
-            self.ants_controller.start_usrp_iperf_server(self.debug_mode)
-
-        # USRP only
-        elif (self.usrp_state and not self.siggen_state and not self.converter_state and not self.plotter_state and not self.iperf_server_state):
-
-            self.ants_controller.start_usrp(self.debug_mode)
-
-        # SGControl only
-        elif (self.siggen_state and not self.usrp_state and not self.converter_state and not self.plotter_state and not self.iperf_server_state):
-
-            self.ants_controller.start_controller(self.debug_mode)
-
-        elif (self.usrp_state and self.converter_state and not self.plotter_state and not self.siggen_state and not self.iperf_server_state):
-
-            self.ants_controller.start_usrp(self.debug_mode)
-            self.ants_controller.start_converter(self.debug_mode)
-
-        # Converter and Plotter
-        elif (self.converter_state and self.plotter_state and not self.usrp_state and not self.siggen_state and not self.iperf_server_state):
-
-            self.ants_controller.start_converter(self.debug_mode)
-            self.ants_controller.start_plotter(self.debug_mode)
-
-        # Converter only
-        elif (self.converter_state and not self.usrp_state and not self.plotter_state and not self.siggen_state and not self.iperf_server_state):
-
-            self.ants_controller.start_converter(self.debug_mode)
-
-        # Plotter only
-        elif (self.plotter_state and not self.converter_state and not self.usrp_state and not self.siggen_state and not self.iperf_server_state):
-
-            self.ants_controller.start_plotter(self.debug_mode)
-
-        # iperf only
-        elif (self.iperf_server_state and not self.converter_state and not self.usrp_state and not self.siggen_state and not self.plotter_state):
-
-            self.ants_controller.start_iperf_server(self.debug_mode)
-
-        # What did you select?
-        else:
-            print("No options or bad options given\n")
-
-        print("\nDone sequence\n")
-
-        self.statusBar().showMessage('Idle')
 
     # Make sure we get prompted before closing the GUI
     def closeEvent(self, event):
