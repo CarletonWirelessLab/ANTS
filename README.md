@@ -2,7 +2,7 @@
 
 ANTS, the Automated Networking Test Suite, is a tool designed to streamline the analysis of compliance of commercial WiFi networking devices to the IEEE 802.11 standard. The metric for this compliance output is developed by Ammar Alhosainy *et al.* at Carleton University, in parternship with Ericsson's Ottawa and international offices. The purpose of the ANTS tool is to simplify this process by providing an easy-to-use graphical interface for configuring and running tests against these devices. In order to maximize its accessibility, ANTS continues to be designed exclusively with open-source and freely-available software, particularly that which is available on modern Linux operating systems.
 
-![alt text](gui_example.jpg "The ANTS User Interface")
+![alt text](docs/images/gui_example.jpg "The ANTS User Interface")
 
 **Note**: This project is under active development, and a stable release branch has not yet been established.
 The ```master``` branch is where the most stable version can be found, but interface and functionality contained therein are not yet guaranteed to be consistent or fully operational.
@@ -20,7 +20,7 @@ ANTS was originally developed and tested using the [Ettus Research B200](https:/
 
 Below is a diagram showing an example test setup previously used at the Carleton Broadband Networks Laboratory:
 
-![alt text](sample_test_setup.jpg "Example ANTS Test Setup")
+![alt text](docs/images/sample_test_setup.jpg "Example ANTS Test Setup")
 
 ## Software Requirements
 
