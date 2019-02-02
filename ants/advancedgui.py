@@ -358,7 +358,7 @@ class ANTS_License_Tab(QWidget):
         self.license_message = QLabel()
         self.license_message.setText("MIT License\n\
 \n\
-Copyright (c) 2018 Trevor Gamblin - tvgamblin@gmail.com\n\
+Copyright (c) 2018-2019 Carleton University Broadband Networks Laboratory\n\
 \n\
 Permission is hereby granted, free of charge, to any person obtaining a copy\n\
 of this software and associated documentation files (the \"Software\"), to deal\n\
