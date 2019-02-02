@@ -321,7 +321,7 @@ class ANTS_About_Tab(QWidget):
         self.ants_message.setText("ANTS (the Automated Networking Test Suite) is an application written \
 by Trevor Gamblin (tvgamblin@gmail.com) with the goal of automating and simplifying compliance testing of \
 wireless devices. For more information, or if you have suggestions or bugs to report, visit \
-https://github.com/threexc/ANTS, or contact the author directly.\n")
+https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.\n")
 
         self.ants_message.setMargin(10)
         self.ants_message.setWordWrap(1)

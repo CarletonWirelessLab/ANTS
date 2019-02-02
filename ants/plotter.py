@@ -59,6 +59,8 @@ class ANTS_Plotter():
         if filename == None:
             filename = self.file_name
 
+        print("The plotter file name is {0}\n".format(self.file_name))
+
         with open(filename, mode='rb') as file:
             self.raw_data = np.fromfile(file, dtype=np.float32)
         file.close()
@@ -263,6 +265,7 @@ class ANTS_Plotter():
             else:
                 print(str(abs(self.ag_factor) * 100) + " Submissive and " + str(self.norm_factor_percent) + " Compliant")
                 outfile.write(str(abs(self.ag_factor) * 100) + " Submissive and " + str(self.norm_factor_percent) + " Compliant"+"\n")
+        outfile.close()
 
     def plot_results(self):
 

@@ -174,8 +174,9 @@ class ANTS_Controller():
 
     # Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
     def make_plots(self):
-        print("Running data conversion and plot routine on {0}...".format(self.file_name))
+        print("Running data conversion and plot routine on {0}...\n".format(self.bin_path))
         # Create and run an actual plotter instance
+        print("The test path is {0}\n".format(self.test_path))
         self.plotter = ANTS_Plotter(self.plotter_ac, self.test_path, 20e6)
         self.plotter.read_and_parse()
         self.plotter.setup_packet_data()
