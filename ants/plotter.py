@@ -308,6 +308,7 @@ class ANTS_Plotter():
         plt.draw()
         plt.savefig(self.test_name + '_' + self.access_category + '_bin_probability.png')
 
+        plt.close()
         #plt.show(block=False)
 
 

@@ -172,8 +172,10 @@ class ANTS_Controller():
 
         return
 
-    # Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
+    #Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
     def make_plots(self):
+        if hasattr(self, "plotter"):
+            del self.plotter
         print("Running data conversion and plot routine on {0}...\n".format(self.bin_path))
         # Create and run an actual plotter instance
         print("The test path is {0}\n".format(self.test_path))
@@ -184,4 +186,4 @@ class ANTS_Controller():
         self.plotter.plot_results()
 
         # Delete the current plotter when done to avoid excessive memory usage
-        del self.plotter
+        #del self.plotter
