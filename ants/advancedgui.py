@@ -144,18 +144,18 @@ class ANTS_Results_Tab(QWidget):
         # Set up the graphics for the main display
         #self.graphic_label = QLabel(self)
         self.bin_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_bin_probability.png"
-        #print(self.bin_pixmap_path)
+
         self.bin_pixmap = QPixmap(self.bin_pixmap_path)
         self.interframe_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_interframe_spacing_histogram.png"
-        #print(self.interframe_pixmap_path)
+
         self.interframe_pixmap = QPixmap(self.interframe_pixmap_path)
         self.raw_signal_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_signal_magnitude_plot.png"
-        #print(self.raw_signal_pixmap_path)
+
         self.raw_signal_pixmap = QPixmap(self.raw_signal_pixmap_path)
         self.txop_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_txop_durations_histogram.png"
-        #print(self.txop_pixmap_path)
-        print("Plots are saved as .png files at {0}.\n".format(self.ants_controller.data_dir))
+
         self.txop_pixmap = QPixmap(self.txop_pixmap_path)
+        print("Plots are saved as .png files at {0}.\n".format(self.ants_controller.data_dir))
         self.graphic_label.setStyleSheet("""
             background-color: grey;
             color: white;
@@ -169,15 +169,19 @@ class ANTS_Results_Tab(QWidget):
         self.graphic_label.setPixmap(self.bin_pixmap)
 
     def bin_button_clicked(self):
+        self.bin_pixmap.load(self.bin_pixmap_path)
         self.graphic_label.setPixmap(self.bin_pixmap)
 
     def interframe_button_clicked(self):
+        self.interframe_pixmap.load(self.interframe_pixmap_path)
         self.graphic_label.setPixmap(self.interframe_pixmap)
 
     def raw_signal_button_clicked(self):
+        self.raw_signal_pixmap.load(self.raw_signal_pixmap_path)
         self.graphic_label.setPixmap(self.raw_signal_pixmap)
 
     def txop_button_clicked(self):
+        self.txop_pixmap.load(self.txop_pixmap_path)
         self.graphic_label.setPixmap(self.txop_pixmap)
 
 class ANTS_Settings_Tab(QWidget):
