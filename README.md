@@ -36,14 +36,15 @@ Early versions of the tool relied upon the use of the [MATLAB Engine for Python]
 
 ## Installation and Test Setup
 
-1. ```pip3 install pyqt5```
-2. ```sudo apt install gnuradio``` (Ubuntu) or ```sudo dnf install gnuradio``` (Fedora)
-3. From the home directory (or wherever you want to store your copy of the project), ```git clone https://github.com/threexc/ANTS```
-4. Set ```install.sh``` executable with `chmod +x install.sh` then run `sudo ./install.sh`;
-5. (Optional) If running the test from a single machine, run the ```utils/setup_routing.py``` script to configure network interfaces and routing appropriately;
-6. Run ANTS by typing ```ants``` from anywhere on the system;
-7. Set test parameters and press "Run";
-8. Collect the results.
+Due to the size of the raw data files created, it is recommended that a significant amount of storage space (120GB or more) is allocated for the ANTS suite to operate. For a fresh installation of Ubuntu 16.04, the following must be performed in order to make ANTS operational:
+
+1. ```sudo apt install git python3-numpy python3-matplotlib python3-pip gnuradio iperf```
+2. ```pip3 install pyqt5``` (this may need to be run with sudo)
+3. From the home directory (or wherever you want to store your copy of the project), ```git clone https://github.com/CarletonWirelessLab/ANTS```
+4. (Optional) If running the test from a single machine, run the ```utils/setup_routing.py``` script to configure network interfaces and routing appropriately;
+5. Run ANTS by typing ```python3 ants/ants``` from the main ANTS directory;
+6. Set test parameters and press "Run";
+7. Collect the results.
 
 ## Test Outputs
 
