@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
 from PyQt5.QtWidgets import QGroupBox
 from PyQt5.QtCore import Qt, QRegExp, QSettings
-from PyQt5.QtGui import QRegExpValidator, QPixmap
+from PyQt5.QtGui import QRegExpValidator, QPixmap, QIntValidator
 
 # The parent "table" class that holds all of the functional tabs
 class ANTS_Table(QWidget):
@@ -137,6 +137,7 @@ class ANTS_Results_Tab(QWidget):
             self.ants_controller.run_time = value / 2.0
         self.runtime_label.setText("Runtime " + str(self.ants_controller.run_time) + " seconds")
 
+
     def run_button_clicked(self):
         self.ants_controller.start_usrp_iperf()
         self.ants_controller.make_plots()
@@ -216,11 +217,39 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_groupbox = QGroupBox("USRP Settings")
         self.usrp_gridbox = QGridLayout(self)
         self.usrp_groupbox.setLayout(self.usrp_gridbox)
+        self.usrp_sample_rate_slider = QSlider(Qt.Horizontal,self)
+        self.usrp_sample_rate_slider.setFocusPolicy(Qt.NoFocus)
+        self.usrp_sample_rate_slider.valueChanged[int].connect(self.usrp_slider_value)
+        self.usrp_sample_rate_slider.setMinimum(0)
+        self.usrp_sample_rate_slider.setMaximum(20)
+        self.usrp_sample_rate_slider.setTickInterval(1)
+        self.usrp_sample_rate_slider.setToolTip("Sample rate for USRP is between 1MS/s and20 MS/s")
+        self.usrp_sample_rate_text = "Sample rate " + str(1) + "MS/s"
+        self.usrp_sample_rate_label = QLabel(self.usrp_sample_rate_text,self)
+        self.usrp_gridbox.addWidget(self.usrp_sample_rate_label,0,0)
+        self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider,1,0)
 
         self.plotting_groupbox = QGroupBox("Plot Settings")
         self.plotting_gridbox = QGridLayout(self)
         self.plotting_groupbox.setLayout(self.plotting_gridbox)
 
+        self.general_settings_groupbox = QGroupBox("General Settings")
+        self.general_settings_gridbox = QGridLayout(self)
+        self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
+        self.gs_timestamp_checkbox = QCheckBox("Timestamp Files",self)
+        self.gs_debuginfo_checkbox = QCheckBox("Extended Debug Info",self)
+
+        self.gs_number_of_runs_validator = QIntValidator(self)
+        self.gs_number_of_runs_lineedit = QLineEdit(self)
+        self.gs_number_of_runs_lineedit.setToolTip("Please enter an integer")
+        self.gs_number_of_runs_lineedit_label = QLabel("Number of test runs",self)
+        self.gs_number_of_runs_lineedit.setValidator(self.gs_number_of_runs_validator)
+
+        self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox,0,0)
+        self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox,1,0)
+        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label,2,0)
+        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit,2,1)
+        self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
 
         # Create the GroupBox object for the access category buttons
         self.ac_groupbox = QGroupBox("Access Category")
@@ -267,12 +296,14 @@ class ANTS_Settings_Tab(QWidget):
         self.server_gridbox.addWidget(self.iperf_server_lineedit, 0, 1)
         self.server_groupbox.setLayout(self.server_gridbox)
 
+
         # Add the groupbox widgets to the main tab grid
         self.layout.addWidget(self.ac_groupbox, 0, 0)
         self.layout.addWidget(self.usrp_groupbox, 1, 0)
         self.layout.addWidget(self.client_groupbox, 0, 1)
         self.layout.addWidget(self.server_groupbox, 1, 1)
         self.layout.addWidget(self.plotting_groupbox, 0, 2)
+        self.layout.addWidget(self.general_settings_groupbox,1,2)
 
     # Action methods for access category radio buttons
     def on_ac_voice_clicked(self):
@@ -315,6 +346,16 @@ class ANTS_Settings_Tab(QWidget):
 
     def on_iperf_bandwidth_field_change(self, text):
         pass
+
+    def usrp_slider_value(self,value):
+        if value == 0:
+            self.ants_controller.usrp_sample_rate_value = 1
+        elif value == 20:
+            self.ants_controller.usrp_sample_rate_value = 20
+        else:
+            self.ants_controller.usrp_sample_rate_value = value
+        self.usrp_sample_rate_label.setText("Sample rate " + str(self.ants_controller.usrp_sample_rate_value) + "MS/s")
+
 
 class ANTS_About_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
