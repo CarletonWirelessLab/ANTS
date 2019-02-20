@@ -186,8 +186,8 @@ class ANTS_Plotter():
 
         self.prob = self.b/sum(self.b)
         self.nz_prob = self.prob[np.where(self.prob > 0)]
-        self.kbl = -sum(np.multiply(self.nz_prob, np.log10(self.nz_prob/(1/self.n))))
-        self.dist_factor = 1 - np.exp(self.kbl)
+        self.kbl = sum(np.multiply(self.nz_prob, np.log10(self.nz_prob/(1/self.n))))
+        self.dist_factor = 1 - np.exp(-1 * self.kbl)
         self.kk = numpy.arange((self.n - 1)/2, - (self.n - 1)/2-1, -1)
         accum = sum(np.multiply(self.b, self.kk))
         avrg = accum / self.blen
