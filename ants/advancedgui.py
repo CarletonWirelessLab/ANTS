@@ -324,6 +324,18 @@ class ANTS_Settings_Tab(QWidget):
         self.access_category_field_label = QLabel("Access Category", self)
         self.access_category_field.activated[str].connect(self.on_access_category_change)
 
+        # Button for flushing iptables configuration
+        self.flush_routing_button = QPushButton("Flush Network Routing", self)
+        self.flush_routing_button.setToolTip("Clear iptables Settings")
+        self.flush_routing_button.resize(self.flush_routing_button.sizeHint())
+        self.flush_routing_button.clicked.connect(self.flush_routing_button_clicked)
+
+        # Button for Configuring single-machine network routing
+        self.set_routing_button = QPushButton("Set Network Routing", self)
+        self.set_routing_button.setToolTip("Clear iptables Settings")
+        self.set_routing_button.resize(self.set_routing_button.sizeHint())
+        self.set_routing_button.clicked.connect(self.set_routing_button_clicked)
+
         # Add the general settings tools to the groupbox
         self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox, 2, 0)
         self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox, 3, 0)
@@ -436,6 +448,12 @@ class ANTS_Settings_Tab(QWidget):
         else: # Put voice in as the default in case something unexpected happens
             self.ants_controller.access_category = 0
             print("Access category set to Voice\n")
+
+    def set_routing_button_clicked(self):
+        pass
+
+    def flush_routing_button_clicked(self):
+        pass
 
 
 class ANTS_About_Tab(QWidget):
