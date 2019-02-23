@@ -158,7 +158,7 @@ class ANTS_Controller():
         self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
         # Wait for 3 seconds to ensure the iperf data has begun transferring
-        time.sleep(3)
+        time.sleep(self.usrp_run_delay)
         # Start the USRP
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
