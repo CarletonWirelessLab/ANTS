@@ -255,13 +255,6 @@ class ANTS_Settings_Tab(QWidget):
         self.iperf_gridbox.addWidget(self.iperf_server_lineedit, 3, 1)
         self.iperf_groupbox.setLayout(self.iperf_gridbox)
 
-        # Create the iperf server groupbox widget and fill it
-        #self.server_groupbox = QGroupBox("iperf Server Settings")
-        #self.server_gridbox = QGridLayout(self)
-        #self.server_gridbox.addWidget(self.iperf_server_lineedit_label, 0, 0)
-        #self.server_gridbox.addWidget(self.iperf_server_lineedit, 0, 1)
-        #self.server_groupbox.setLayout(self.server_gridbox)
-
         # Create the USRP settings groupbox and fill it
         self.usrp_groupbox = QGroupBox("USRP Settings")
         self.usrp_gridbox = QGridLayout(self)
@@ -276,8 +269,8 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_sample_rate_slider.setToolTip("Sample rate for USRP is between 1MS/s and20 MS/s")
         self.usrp_sample_rate_text = "Sample rate " + str(self.usrp_sample_rate_slider.value()) + "MS/s"
         self.usrp_sample_rate_label = QLabel(self.usrp_sample_rate_text,self)
-        self.usrp_gridbox.addWidget(self.usrp_sample_rate_label,0,0)
-        self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider,1,0)
+        self.usrp_gridbox.addWidget(self.usrp_sample_rate_label, 0, 0)
+        self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider, 0, 1)
 
         # Create the plotting groupbox and fill it
         self.plotting_groupbox = QGroupBox("Plot Settings")
@@ -302,48 +295,28 @@ class ANTS_Settings_Tab(QWidget):
         self.gs_number_of_runs_lineedit_label = QLabel("Number of test runs",self)
         self.gs_number_of_runs_lineedit.setValidator(self.gs_number_of_runs_validator)
 
+        # Combo box for the access category
+        self.access_category_field = QComboBox(self)
+        self.access_category_field.addItem("Voice")
+        self.access_category_field.addItem("Video")
+        self.access_category_field.addItem("Best Effort")
+        self.access_category_field.addItem("Background")
+        self.access_category_field_label = QLabel("Access Category", self)
+        self.access_category_field.activated[str].connect(self.on_access_category_change)
+
         # Add the general settings tools to the groupbox
-        self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox,0,0)
-        self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox,1,0)
-        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label,2,0)
-        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit,2,1)
+        self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox, 2, 0)
+        self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox, 3, 0)
+        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label, 4, 0)
+        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit, 4, 1)
+        self.general_settings_gridbox.addWidget(self.access_category_field_label, 1, 0)
+        self.general_settings_gridbox.addWidget(self.access_category_field, 1, 1)
         self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
 
-        # Create the GroupBox object for the access category buttons
-        self.ac_groupbox = QGroupBox("Access Category")
-
-        # Buttons for access category. These will be added to the ac_groupbox
-        self.ac_voice_button = QRadioButton("Voice", self)
-        self.ac_video_button = QRadioButton("Video", self)
-        self.ac_besteffort_button = QRadioButton("Best Effort", self)
-        self.ac_background_button = QRadioButton("Background", self)
-        self.ac_voice_button.setChecked(True)
-
-        # Create a vertical layout for the ac_groupbox
-        self.ac_vbox = QVBoxLayout(self)
-
-        # Add the widgets to the ac_groupbox vbox
-        self.ac_vbox.addWidget(self.ac_voice_button)
-        self.ac_vbox.addWidget(self.ac_video_button)
-        self.ac_vbox.addWidget(self.ac_besteffort_button)
-        self.ac_vbox.addWidget(self.ac_background_button)
-
-        # Set the ac_groupbox layout to the vbox created
-        self.ac_groupbox.setLayout(self.ac_vbox)
-
-        # Link the access category buttons to the functions to set the value in
-        # the ANTS controller
-        self.ac_voice_button.clicked.connect(self.on_ac_voice_clicked)
-        self.ac_video_button.clicked.connect(self.on_ac_video_clicked)
-        self.ac_besteffort_button.clicked.connect(self.on_ac_besteffort_clicked)
-        self.ac_background_button.clicked.connect(self.on_ac_background_clicked)
-
         # Add the groupbox widgets to the main tab grid
-        self.layout.addWidget(self.ac_groupbox, 0, 0)
-        self.layout.addWidget(self.usrp_groupbox, 1, 0)
+        self.layout.addWidget(self.usrp_groupbox, 0, 2, 2, 1)
         self.layout.addWidget(self.iperf_groupbox, 0, 1, 2, 1)
-        #self.layout.addWidget(self.server_groupbox, 1, 1)
-        self.layout.addWidget(self.general_settings_groupbox, 0, 2, 2, 1)
+        self.layout.addWidget(self.general_settings_groupbox, 0, 0, 2, 1)
 
     # Action methods for access category radio buttons
     def on_ac_voice_clicked(self):
@@ -407,6 +380,23 @@ class ANTS_Settings_Tab(QWidget):
             pass
         else:
             pass
+
+    def on_access_category_change(self, text):
+        if text == "Voice":
+            self.ants_controller.access_category = 0
+            print("Access category set to Voice\n")
+        elif text == "Video":
+            self.ants_controller.access_category = 1
+            print("Access category set to Video\n")
+        elif text == "Best Effort":
+            self.ants_controller.access_category = 2
+            print("Access category set to Best Effort\n")
+        elif text == "Background":
+            self.ants_controller.access_category = 3
+            print("Access category set to Background\n")
+        else: # Put voice in as the default in case something unexpected happens
+            self.ants_controller.access_category = 0
+            print("Access category set to Voice\n")
 
 
 class ANTS_About_Tab(QWidget):
