@@ -143,20 +143,29 @@ class ANTS_Results_Tab(QWidget):
         self.ants_controller.make_plots()
 
         # Set up the graphics for the main display
-        #self.graphic_label = QLabel(self)
-        self.bin_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_bin_probability.png"
 
+        # The general path for the data files. This is passed to each pixmap for further use
+        self.general_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac
+
+        # The path for the bin distribution image
+        self.bin_pixmap_path = self.general_pixmap_path + "_bin_probability.png"
         self.bin_pixmap = QPixmap(self.bin_pixmap_path)
-        self.interframe_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_interframe_spacing_histogram.png"
 
+        # The path for the interframe spacing image
+        self.interframe_pixmap_path = self.general_pixmap_path + "_interframe_spacing_histogram.png"
         self.interframe_pixmap = QPixmap(self.interframe_pixmap_path)
-        self.raw_signal_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_signal_magnitude_plot.png"
 
+        # The path for the raw signal image
+        self.raw_signal_pixmap_path = self.general_pixmap_path + "_signal_magnitude_plot.png"
         self.raw_signal_pixmap = QPixmap(self.raw_signal_pixmap_path)
-        self.txop_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac + "_txop_durations_histogram.png"
 
+        # The path for the transmission opportunity image
+        self.txop_pixmap_path = self.general_pixmap_path + "_txop_durations_histogram.png"
         self.txop_pixmap = QPixmap(self.txop_pixmap_path)
+
         print("Plots are saved as .png files at {0}.\n".format(self.ants_controller.data_dir))
+
+        # Set the pixmap window to be a gray background if there is no data from a previous run
         self.graphic_label.setStyleSheet("""
             background-color: grey;
             color: white;
@@ -233,23 +242,25 @@ class ANTS_Settings_Tab(QWidget):
         self.iperf_bandwidth_field_label = QLabel("Bandwidth", self)
         self.iperf_bandwidth_field.textChanged[str].connect(self.on_iperf_bandwidth_field_change)
 
-        # Create the iperf client groupbox widget and fill it
-        self.client_groupbox = QGroupBox("iperf Client Settings")
-        self.client_gridbox = QGridLayout(self)
-        self.client_gridbox.addWidget(self.iperf_client_lineedit_label, 0, 0)
-        self.client_gridbox.addWidget(self.iperf_client_lineedit, 0, 1)
-        self.client_gridbox.addWidget(self.iperf_TOS_field_label, 1, 0)
-        self.client_gridbox.addWidget(self.iperf_TOS_field, 1, 1)
-        self.client_gridbox.addWidget(self.iperf_bandwidth_field_label, 2, 0)
-        self.client_gridbox.addWidget(self.iperf_bandwidth_field, 2, 1)
-        self.client_groupbox.setLayout(self.client_gridbox)
+        # Create the iperf groupbox widget and fill it
+        self.iperf_groupbox = QGroupBox("iperf Settings")
+        self.iperf_gridbox = QGridLayout(self)
+        self.iperf_gridbox.addWidget(self.iperf_client_lineedit_label, 0, 0)
+        self.iperf_gridbox.addWidget(self.iperf_client_lineedit, 0, 1)
+        self.iperf_gridbox.addWidget(self.iperf_TOS_field_label, 1, 0)
+        self.iperf_gridbox.addWidget(self.iperf_TOS_field, 1, 1)
+        self.iperf_gridbox.addWidget(self.iperf_bandwidth_field_label, 2, 0)
+        self.iperf_gridbox.addWidget(self.iperf_bandwidth_field, 2, 1)
+        self.iperf_gridbox.addWidget(self.iperf_server_lineedit_label, 3, 0)
+        self.iperf_gridbox.addWidget(self.iperf_server_lineedit, 3, 1)
+        self.iperf_groupbox.setLayout(self.iperf_gridbox)
 
         # Create the iperf server groupbox widget and fill it
-        self.server_groupbox = QGroupBox("iperf Server Settings")
-        self.server_gridbox = QGridLayout(self)
-        self.server_gridbox.addWidget(self.iperf_server_lineedit_label, 0, 0)
-        self.server_gridbox.addWidget(self.iperf_server_lineedit, 0, 1)
-        self.server_groupbox.setLayout(self.server_gridbox)
+        #self.server_groupbox = QGroupBox("iperf Server Settings")
+        #self.server_gridbox = QGridLayout(self)
+        #self.server_gridbox.addWidget(self.iperf_server_lineedit_label, 0, 0)
+        #self.server_gridbox.addWidget(self.iperf_server_lineedit, 0, 1)
+        #self.server_groupbox.setLayout(self.server_gridbox)
 
         # Create the USRP settings groupbox and fill it
         self.usrp_groupbox = QGroupBox("USRP Settings")
@@ -268,22 +279,30 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_gridbox.addWidget(self.usrp_sample_rate_label,0,0)
         self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider,1,0)
 
+        # Create the plotting groupbox and fill it
         self.plotting_groupbox = QGroupBox("Plot Settings")
         self.plotting_gridbox = QGridLayout(self)
         self.plotting_groupbox.setLayout(self.plotting_gridbox)
 
+        # Create the general (i.e. system-level) settings groupbox
         self.general_settings_groupbox = QGroupBox("General Settings")
         self.general_settings_gridbox = QGridLayout(self)
         self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
-        self.gs_timestamp_checkbox = QCheckBox("Timestamp Files",self)
+
+        # Checkbox to turn on or off timestamping of test run folders
+        self.gs_timestamp_checkbox = QCheckBox("Timestamp Test Folders",self)
+
+        # Checkbox to turn on or off extended debug info
         self.gs_debuginfo_checkbox = QCheckBox("Extended Debug Info",self)
 
+        # Text box for specifying the number of sequential test runs to perform
         self.gs_number_of_runs_validator = QIntValidator(self)
         self.gs_number_of_runs_lineedit = QLineEdit(self)
         self.gs_number_of_runs_lineedit.setToolTip("Please enter an integer")
         self.gs_number_of_runs_lineedit_label = QLabel("Number of test runs",self)
         self.gs_number_of_runs_lineedit.setValidator(self.gs_number_of_runs_validator)
 
+        # Add the general settings tools to the groupbox
         self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox,0,0)
         self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox,1,0)
         self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label,2,0)
@@ -322,10 +341,9 @@ class ANTS_Settings_Tab(QWidget):
         # Add the groupbox widgets to the main tab grid
         self.layout.addWidget(self.ac_groupbox, 0, 0)
         self.layout.addWidget(self.usrp_groupbox, 1, 0)
-        self.layout.addWidget(self.client_groupbox, 0, 1)
-        self.layout.addWidget(self.server_groupbox, 1, 1)
-        self.layout.addWidget(self.plotting_groupbox, 0, 2)
-        self.layout.addWidget(self.general_settings_groupbox,1,2)
+        self.layout.addWidget(self.iperf_groupbox, 0, 1, 2, 1)
+        #self.layout.addWidget(self.server_groupbox, 1, 1)
+        self.layout.addWidget(self.general_settings_groupbox, 0, 2, 2, 1)
 
     # Action methods for access category radio buttons
     def on_ac_voice_clicked(self):
@@ -358,7 +376,7 @@ class ANTS_Settings_Tab(QWidget):
         elif self.iperf_server_lineedit.hasAcceptableInput():
             self.ants_controller.iperf_server_addr = text
 
-    # Set file name based on what's in the box
+    # Set file name for the test run based on what's in the box
     def on_name_change(self, text):
 
         self.ants_controller.file_name = text
@@ -378,6 +396,18 @@ class ANTS_Settings_Tab(QWidget):
             self.ants_controller.usrp_sample_rate_value = value
         self.usrp_sample_rate_label.setText("Sample rate " + str(self.ants_controller.usrp_sample_rate_value) + "MS/s")
 
+    def on_timestamp_checkbox_checked(self, state):
+        if state == Qt.Checked:
+            pass
+        else:
+            pass
+
+    def on_debug_info_checkbox_checked(self, state):
+        if state == Qt.Checked:
+            pass
+        else:
+            pass
+
 
 class ANTS_About_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
@@ -386,9 +416,9 @@ class ANTS_About_Tab(QWidget):
         self.layout = QVBoxLayout(self)
         self.ants_message = QLabel()
         self.ants_message.setText("ANTS (the Automated Networking Test Suite) is an application written \
-by Trevor Gamblin (tvgamblin@gmail.com) with the goal of automating and simplifying compliance testing of \
-wireless devices. For more information, or if you have suggestions or bugs to report, visit \
-https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.\n")
+by the Broadband Networks Laboratory at Carleton University, with the goal of automating and simplifying \
+compliance testing of wireless devices. For more information, or if you have suggestions or bugs to report, \
+visit https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.\n")
 
         self.ants_message.setMargin(10)
         self.ants_message.setWordWrap(1)
