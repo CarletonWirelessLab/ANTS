@@ -137,7 +137,7 @@ class ANTS_Results_Tab(QWidget):
             self.ants_controller.run_time = value / 2.0
         self.runtime_label.setText("Runtime " + str(self.ants_controller.run_time) + " seconds")
 
-
+    # Run the test sequence by making calls to the control.py module. run_button_clicked generates QPixmap objects to hold the .png data plots generated with matplotlib
     def run_button_clicked(self):
         self.ants_controller.start_usrp_iperf()
         self.ants_controller.make_plots()
@@ -169,26 +169,33 @@ class ANTS_Results_Tab(QWidget):
         """)
         self.graphic_label.setPixmap(self.bin_pixmap)
 
+    # When the bin distribution button is clicked, display the bin distribution QPixmap contents
     def bin_button_clicked(self):
         self.bin_pixmap.load(self.bin_pixmap_path)
         self.graphic_label.setPixmap(self.bin_pixmap)
 
+    # When the interframe spacing button is clicked, display the bin distribution QPixmap contents
     def interframe_button_clicked(self):
         self.interframe_pixmap.load(self.interframe_pixmap_path)
         self.graphic_label.setPixmap(self.interframe_pixmap)
 
+    # When the raw signal button is clicked display the raw signal data QPixmap contents
     def raw_signal_button_clicked(self):
         self.raw_signal_pixmap.load(self.raw_signal_pixmap_path)
         self.graphic_label.setPixmap(self.raw_signal_pixmap)
 
+    # When the TXOP button is clicked, display the transmission opportunity distribution QPixmap contents
     def txop_button_clicked(self):
         self.txop_pixmap.load(self.txop_pixmap_path)
         self.graphic_label.setPixmap(self.txop_pixmap)
 
+# The catch-all tab widget for settings related to ANTS. Data entered here should be passed to the ANTS controller object
 class ANTS_Settings_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
+
+        # Define tab layout and set column structure
         self.layout = QGridLayout(self)
         self.setLayout(self.layout)
         self.layout.setColumnStretch(0, 1)
@@ -199,21 +206,52 @@ class ANTS_Settings_Tab(QWidget):
         self.ip_range = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])"
         self.ip_regex = QRegExp("^" + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "$")
         self.ip_validator = QRegExpValidator(self.ip_regex, self)
+
+        # Text box for specifying the iperf client IPv4 address. Uses the ip validator object to verify a valid IP is given
         self.iperf_client_lineedit = QLineEdit(self)
         self.iperf_client_lineedit_label = QLabel("Client IP", self)
         self.iperf_client_lineedit.setValidator(self.ip_validator)
         self.iperf_client_lineedit.textChanged[str].connect(self.on_client_ip)
+
+        # Text box for specifying the iperf server IPv4 address. Uses the ip validator object to verify a valid IP is given
         self.iperf_server_lineedit = QLineEdit(self)
         self.iperf_server_lineedit_label = QLabel("Server IP", self)
         self.iperf_server_lineedit.setValidator(self.ip_validator)
         self.iperf_server_lineedit.textChanged[str].connect(self.on_server_ip)
-        self.iperf_IP_TOS_field = QLineEdit(self)
+
+        # Specify the iperf type-of-service value (client only)
+        self.iperf_TOS_field = QComboBox(self)
+        self.iperf_TOS_field.addItem("Minimize delay (0x10)")
+        self.iperf_TOS_field.addItem("Maximize throughput (0x08)")
+        self.iperf_TOS_field.addItem("Maximize reliability (0x04)")
+        self.iperf_TOS_field.addItem("Minimize cost (0x02)")
         self.iperf_TOS_field_label = QLabel("TOS", self)
-        self.iperf_IP_TOS_field.textChanged[str].connect(self.on_iperf_IP_TOS_field_change)
+        self.iperf_TOS_field.activated[str].connect(self.on_iperf_TOS_field_change)
+
+        # Set the iperf bandwidth value (client only)
         self.iperf_bandwidth_field = QLineEdit(self)
         self.iperf_bandwidth_field_label = QLabel("Bandwidth", self)
         self.iperf_bandwidth_field.textChanged[str].connect(self.on_iperf_bandwidth_field_change)
 
+        # Create the iperf client groupbox widget and fill it
+        self.client_groupbox = QGroupBox("iperf Client Settings")
+        self.client_gridbox = QGridLayout(self)
+        self.client_gridbox.addWidget(self.iperf_client_lineedit_label, 0, 0)
+        self.client_gridbox.addWidget(self.iperf_client_lineedit, 0, 1)
+        self.client_gridbox.addWidget(self.iperf_TOS_field_label, 1, 0)
+        self.client_gridbox.addWidget(self.iperf_TOS_field, 1, 1)
+        self.client_gridbox.addWidget(self.iperf_bandwidth_field_label, 2, 0)
+        self.client_gridbox.addWidget(self.iperf_bandwidth_field, 2, 1)
+        self.client_groupbox.setLayout(self.client_gridbox)
+
+        # Create the iperf server groupbox widget and fill it
+        self.server_groupbox = QGroupBox("iperf Server Settings")
+        self.server_gridbox = QGridLayout(self)
+        self.server_gridbox.addWidget(self.iperf_server_lineedit_label, 0, 0)
+        self.server_gridbox.addWidget(self.iperf_server_lineedit, 0, 1)
+        self.server_groupbox.setLayout(self.server_gridbox)
+
+        # Create the USRP settings groupbox and fill it
         self.usrp_groupbox = QGroupBox("USRP Settings")
         self.usrp_gridbox = QGridLayout(self)
         self.usrp_groupbox.setLayout(self.usrp_gridbox)
@@ -223,8 +261,9 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_sample_rate_slider.setMinimum(0)
         self.usrp_sample_rate_slider.setMaximum(20)
         self.usrp_sample_rate_slider.setTickInterval(1)
+        self.usrp_sample_rate_slider.setValue(20)
         self.usrp_sample_rate_slider.setToolTip("Sample rate for USRP is between 1MS/s and20 MS/s")
-        self.usrp_sample_rate_text = "Sample rate " + str(1) + "MS/s"
+        self.usrp_sample_rate_text = "Sample rate " + str(self.usrp_sample_rate_slider.value()) + "MS/s"
         self.usrp_sample_rate_label = QLabel(self.usrp_sample_rate_text,self)
         self.usrp_gridbox.addWidget(self.usrp_sample_rate_label,0,0)
         self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider,1,0)
@@ -280,23 +319,6 @@ class ANTS_Settings_Tab(QWidget):
         self.ac_besteffort_button.clicked.connect(self.on_ac_besteffort_clicked)
         self.ac_background_button.clicked.connect(self.on_ac_background_clicked)
 
-        self.client_groupbox = QGroupBox("iperf Client Settings")
-        self.client_gridbox = QGridLayout(self)
-        self.client_gridbox.addWidget(self.iperf_client_lineedit_label, 0, 0)
-        self.client_gridbox.addWidget(self.iperf_client_lineedit, 0, 1)
-        self.client_gridbox.addWidget(self.iperf_TOS_field_label, 1, 0)
-        self.client_gridbox.addWidget(self.iperf_IP_TOS_field, 1, 1)
-        self.client_gridbox.addWidget(self.iperf_bandwidth_field_label, 2, 0)
-        self.client_gridbox.addWidget(self.iperf_bandwidth_field, 2, 1)
-        self.client_groupbox.setLayout(self.client_gridbox)
-
-        self.server_groupbox = QGroupBox("iperf Server Settings")
-        self.server_gridbox = QGridLayout(self)
-        self.server_gridbox.addWidget(self.iperf_server_lineedit_label, 0, 0)
-        self.server_gridbox.addWidget(self.iperf_server_lineedit, 0, 1)
-        self.server_groupbox.setLayout(self.server_gridbox)
-
-
         # Add the groupbox widgets to the main tab grid
         self.layout.addWidget(self.ac_groupbox, 0, 0)
         self.layout.addWidget(self.usrp_groupbox, 1, 0)
@@ -341,7 +363,7 @@ class ANTS_Settings_Tab(QWidget):
 
         self.ants_controller.file_name = text
 
-    def on_iperf_IP_TOS_field_change(self, text):
+    def on_iperf_TOS_field_change(self, text):
         pass
 
     def on_iperf_bandwidth_field_change(self, text):
