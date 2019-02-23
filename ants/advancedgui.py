@@ -259,6 +259,9 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_groupbox = QGroupBox("USRP Settings")
         self.usrp_gridbox = QGridLayout(self)
         self.usrp_groupbox.setLayout(self.usrp_gridbox)
+
+        # The label and slider for setting the USRP sample rate
+        self.usrp_sample_rate_label = QLabel(None, self)
         self.usrp_sample_rate_slider = QSlider(Qt.Horizontal, self)
         self.usrp_sample_rate_slider.setFocusPolicy(Qt.NoFocus)
         self.usrp_sample_rate_slider.valueChanged[int].connect(self.usrp_slider_value)
@@ -268,8 +271,10 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_sample_rate_slider.setValue(20)
         self.usrp_sample_rate_slider.setToolTip("Sample rate for USRP is between 1MS/s and20 MS/s")
         self.usrp_sample_rate_text = "Sample rate: " + str(self.usrp_sample_rate_slider.value()) + "MS/s"
-        self.usrp_sample_rate_label = QLabel(self.usrp_sample_rate_text,self)
+        self.usrp_sample_rate_label.setText(self.usrp_sample_rate_text)
 
+        # The label and slider for setting the delay between the iperf traffic start and USRP process start time
+        self.usrp_run_delay_label = QLabel(None, self)
         self.usrp_run_delay_slider = QSlider(Qt.Horizontal, self)
         self.usrp_run_delay_slider.setFocusPolicy(Qt.NoFocus)
         self.usrp_run_delay_slider.valueChanged[int].connect(self.usrp_run_delay_value)
@@ -279,7 +284,8 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_run_delay_slider.setValue(3)
         self.usrp_run_delay_slider.setToolTip("Sample rate for USRP is between 1MS/s and20 MS/s")
         self.usrp_run_delay_text = "Run delay: " + str(self.usrp_run_delay_slider.value()) + " seconds"
-        self.usrp_run_delay_label = QLabel(self.usrp_run_delay_text, self)
+        self.usrp_run_delay_label.setText(self.usrp_run_delay_text)
+
 
         self.usrp_gridbox.addWidget(self.usrp_sample_rate_label, 0, 0)
         self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider, 0, 1)
@@ -376,27 +382,31 @@ class ANTS_Settings_Tab(QWidget):
 
     def usrp_slider_value(self, value):
         if value == 0:
-            self.ants_controller.usrp_sample_rate_value = 1
-            print("Sample rate set to {0} MS/s\n".format(self.ants_controller.usrp_sample_rate_value))
+            self.ants_controller.usrp_sample_rate = 1
+            print("Sample rate set to {0} MS/s\n".format(self.ants_controller.usrp_sample_rate))
+            self.usrp_sample_rate_label.setText("Sample rate: " + str(self.ants_controller.usrp_sample_rate) + "seconds")
         elif value == 20:
-            self.ants_controller.usrp_sample_rate_value = 20
-            print("Sample rate set to {0} MS/s\n".format(self.ants_controller.usrp_sample_rate_value))
+            self.ants_controller.usrp_sample_rate = 20
+            print("Sample rate set to {0} MS/s\n".format(self.ants_controller.usrp_sample_rate))
+            self.usrp_sample_rate_label.setText("Sample rate: " + str(self.ants_controller.usrp_sample_rate) + "seconds")
         else:
-            self.ants_controller.usrp_sample_rate_value = value
-            print("Sample rate set to {0} MS/s\n".format(self.ants_controller.usrp_sample_rate_value))
-        self.usrp_sample_rate_label.setText("Sample rate: " + str(self.ants_controller.usrp_sample_rate_value) + "MS/s")
+            self.ants_controller.usrp_sample_rate = value
+            print("Sample rate set to {0} MS/s\n".format(self.ants_controller.usrp_sample_rate))
+            self.usrp_sample_rate_label.setText("Run delay: " + str(self.ants_controller.usrp_sample_rate) + "seconds")
 
     def usrp_run_delay_value(self, value):
         if value == 0:
             self.ants_controller.usrp_run_delay = 1
             print("Run delay set to {0} seconds\n".format(self.ants_controller.usrp_run_delay))
+            self.usrp_run_delay_label.setText("Run delay: " + str(self.ants_controller.usrp_run_delay) + "seconds")
         elif value == 20:
             self.ants_controller.usrp_run_delay = 10
             print("Run delay set to {0} seconds\n".format(self.ants_controller.usrp_run_delay))
+            self.usrp_run_delay_label.setText("Run delay: " + str(self.ants_controller.usrp_run_delay) + "seconds")
         else:
             self.ants_controller.usrp_run_delay = value
             print("Run delay set to {0} seconds\n".format(self.ants_controller.usrp_run_delay))
-        self.usrp_run_delay_label.setText("Run delay: " + str(self.ants_controller.usrp_run_delay) + "seconds")
+            self.usrp_run_delay_label.setText("Run delay: " + str(self.ants_controller.usrp_run_delay) + "seconds")
 
     def on_timestamp_checkbox_checked(self, state):
         if state == Qt.Checked:

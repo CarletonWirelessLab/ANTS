@@ -35,6 +35,9 @@ class ANTS_Controller():
         # The delay between the time that the iperf traffic starts and when the USRP process begins. Default to 3 seconds
         self.usrp_run_delay = 3
 
+        # The sample rate in 20MS/s
+        self.usrp_sample_rate = 20
+
         # Output/conversion file name. Set to "no_name" as default in case the
         # user has not yet given a file name to the run in the GUI
         self.file_name = "no_name"
