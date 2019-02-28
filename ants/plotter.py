@@ -141,7 +141,6 @@ class ANTS_Plotter():
         	if a != 0:
         		self.txop_durations.append(a)
         self.txop_durations = np.concatenate(self.txop_durations)
-
         self.min_back_off = min(self.interframe_spacing)
         self.mean_txop = np.mean(self.txop_durations)
         self.max_txop = np.max(self.txop_durations)
@@ -268,7 +267,7 @@ class ANTS_Plotter():
         outfile.close()
 
     def plot_results(self):
-
+        #plt.rcParams['agg.path.chunksize'] = 10*len(self.time)
         # generate a plot for the power of the signal and the packet indicators
         plt.figure(1)
         plt.plot(self.time, np.sqrt(self.power_data), 'b-', self.time, self.packet_indicator, 'r-')#, time, packet_indicator, 'r-')
@@ -276,8 +275,8 @@ class ANTS_Plotter():
         plt.xlabel("Time (sec)")
         plt.ylabel("Signal magnitude") #find out if the power is in Watts or dB?
         plt.draw()
-        plt.savefig(self.test_name + '_' + self.access_category + '_signal_magnitude_plot.png')
-
+        plt.savefig(self.test_name + '_' + self.access_category + '_signal_magnitude_plot.svg')
+        plt.close()
         plt.figure(2)
         plt.xlim((0,300))
         plt.hist(self.interframe_spacing, bins=500)
@@ -285,17 +284,16 @@ class ANTS_Plotter():
         plt.xlabel("Inter-frame spacing (microsecond)")
         plt.ylabel("Frequency")
         plt.draw()
-        plt.savefig(self.test_name + '_' + self.access_category + '_interframe_spacing_histogram.png')
-
+        plt.savefig(self.test_name + '_' + self.access_category + '_interframe_spacing_histogram.svg')
+        plt.close()
         plt.figure(3)
-
         plt.hist(self.txop_durations, bins=100)
         plt.title("Histogram of the Txop durations")
         plt.xlabel("Txop duration (milli second)")
         plt.ylabel("Frequency")
         plt.draw()
-        plt.savefig(self.test_name + '_' + self.access_category + '_txop_durations_histogram.png')
-
+        plt.savefig(self.test_name + '_' + self.access_category + '_txop_durations_histogram.svg')
+        plt.close()
         plt.figure(4)
         t = np.linspace(0, self.kp1-1, num=self.kp1)
         plt.bar(t, self.p, color='b', width=0.25)
@@ -306,9 +304,10 @@ class ANTS_Plotter():
         Gender = ['Bin Probability', 'Compliance Upper threshold']
         plt.legend(Gender, loc=2)
         plt.draw()
-        plt.savefig(self.test_name + '_' + self.access_category + '_bin_probability.png')
+        plt.savefig(self.test_name + '_' + self.access_category + '_bin_probability.svg')
 
         plt.close()
+        #
         #plt.show(block=False)
 
 

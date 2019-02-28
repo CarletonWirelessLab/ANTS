@@ -148,22 +148,22 @@ class ANTS_Results_Tab(QWidget):
         self.general_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac
 
         # The path for the bin distribution image
-        self.bin_pixmap_path = self.general_pixmap_path + "_bin_probability.png"
+        self.bin_pixmap_path = self.general_pixmap_path + "_bin_probability.svg"
         self.bin_pixmap = QPixmap(self.bin_pixmap_path)
 
         # The path for the interframe spacing image
-        self.interframe_pixmap_path = self.general_pixmap_path + "_interframe_spacing_histogram.png"
+        self.interframe_pixmap_path = self.general_pixmap_path + "_interframe_spacing_histogram.svg"
         self.interframe_pixmap = QPixmap(self.interframe_pixmap_path)
 
         # The path for the raw signal image
-        self.raw_signal_pixmap_path = self.general_pixmap_path + "_signal_magnitude_plot.png"
+        self.raw_signal_pixmap_path = self.general_pixmap_path + "_signal_magnitude_plot.svg"
         self.raw_signal_pixmap = QPixmap(self.raw_signal_pixmap_path)
 
         # The path for the transmission opportunity image
-        self.txop_pixmap_path = self.general_pixmap_path + "_txop_durations_histogram.png"
+        self.txop_pixmap_path = self.general_pixmap_path + "_txop_durations_histogram.svg"
         self.txop_pixmap = QPixmap(self.txop_pixmap_path)
 
-        print("Plots are saved as .png files at {0}.\n".format(self.ants_controller.data_dir))
+        print("Plots are saved as .svg files at {0}.\n".format(self.ants_controller.data_dir))
 
         # Set the pixmap window to be a gray background if there is no data from a previous run
         self.graphic_label.setStyleSheet("""
