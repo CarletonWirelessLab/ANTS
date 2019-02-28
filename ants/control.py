@@ -8,6 +8,7 @@ import queue
 import os
 import datetime
 from plotter import *
+import setup_routing
 
 class ANTS_Controller():
 
@@ -137,20 +138,16 @@ class ANTS_Controller():
 
         # Set the arguments to be used to run the USRP
         self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
-
-        # Ensure that the client and server addresses are set to something other than "None"
-        if self.iperf_client_addr == None:
-            self.iperf_client_addr = "10.1.11.115"
-
-        if self.iperf_server_addr == None:
-            self.iperf_server_addr = "10.1.1.120"
+        
+        # Setup routing and get the ip addresses for client and server and their virtual
+        self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = setup_routing.setup_routing()    
 
         # The arguments to run the iperf client
-        self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "10.2.1.120", "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+        self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
         print("iperf client args are:\n")
         print(self.iperf_client_args)
         # The arguments to run the iperf server
-        self.iperf_server_args = ["iperf", "-B", "{0}".format(str(self.iperf_server_addr)), "-s", "-u", "-t 1000000000000000", "-i 1"]
+        self.iperf_server_args = ["iperf", "-B", "{0}".format(str(self.iperf_server_addr)), "-s", "-u", "-t 1000000000000000", "-i 0.5"]
         print("iperf server args are:\n")
         print(self.iperf_server_args)
 
@@ -158,7 +155,7 @@ class ANTS_Controller():
         print("iperf server IP is {0}\n".format(self.iperf_server_addr))
         print("iperf client IP is {0}\n".format(self.iperf_client_addr))
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=None, shell=False)
 
         # Wait for 3 seconds to ensure the iperf data has begun transferring
         time.sleep(self.usrp_run_delay)
