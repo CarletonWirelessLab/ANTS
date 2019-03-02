@@ -245,6 +245,13 @@ class ANTS_Settings_Tab(QWidget):
         self.iperf_server_lineedit.setValidator(self.ip_validator)
         self.iperf_server_lineedit.textChanged[str].connect(self.on_server_ip)
 
+        # Text box for specifying the IP address of the access point to be used for testing
+
+        self.iperf_ap_lineedit = QLineEdit(self)
+        self.iperf_ap_lineedit_label = QLabel("Access Point IP", self)
+        self.iperf_ap_lineedit.setValidator(self.ip_validator)
+        self.iperf_ap_lineedit.textChanged[str].connect(self.on_ap_ip)
+
         # Specify the iperf type-of-service value (client only)
         self.iperf_TOS_field = QComboBox(self)
         self.iperf_TOS_field.addItem("Minimize delay (0x10)")
@@ -262,14 +269,21 @@ class ANTS_Settings_Tab(QWidget):
         # Create the iperf groupbox widget and fill it
         self.iperf_groupbox = QGroupBox("iperf Settings")
         self.iperf_gridbox = QGridLayout(self)
+
         self.iperf_gridbox.addWidget(self.iperf_client_lineedit_label, 0, 0)
         self.iperf_gridbox.addWidget(self.iperf_client_lineedit, 0, 1)
+
         self.iperf_gridbox.addWidget(self.iperf_TOS_field_label, 1, 0)
         self.iperf_gridbox.addWidget(self.iperf_TOS_field, 1, 1)
+
         self.iperf_gridbox.addWidget(self.iperf_bandwidth_field_label, 2, 0)
         self.iperf_gridbox.addWidget(self.iperf_bandwidth_field, 2, 1)
+
         self.iperf_gridbox.addWidget(self.iperf_server_lineedit_label, 3, 0)
         self.iperf_gridbox.addWidget(self.iperf_server_lineedit, 3, 1)
+
+        self.iperf_gridbox.addWidget(self.iperf_ap_lineedit_label, 4, 0)
+        self.iperf_gridbox.addWidget(self.iperf_ap_lineedit, 4, 1)
         self.iperf_groupbox.setLayout(self.iperf_gridbox)
 
         # Create the USRP settings groupbox and fill it
@@ -342,16 +356,16 @@ class ANTS_Settings_Tab(QWidget):
         self.access_category_field.activated[str].connect(self.on_access_category_change)
 
         # Button for flushing iptables configuration
-        self.flush_routing_button = QPushButton("Flush Network Routing", self)
-        self.flush_routing_button.setToolTip("Clear iptables Settings")
-        self.flush_routing_button.resize(self.flush_routing_button.sizeHint())
-        self.flush_routing_button.clicked.connect(self.flush_routing_button_clicked)
+        #self.flush_routing_button = QPushButton("Flush Network Routing", self)
+        #self.flush_routing_button.setToolTip("Clear iptables Settings")
+        #self.flush_routing_button.resize(self.flush_routing_button.sizeHint())
+        #self.flush_routing_button.clicked.connect(self.flush_routing_button_clicked)
 
         # Button for Configuring single-machine network routing
-        self.set_routing_button = QPushButton("Set Network Routing", self)
-        self.set_routing_button.setToolTip("Clear iptables Settings")
-        self.set_routing_button.resize(self.set_routing_button.sizeHint())
-        self.set_routing_button.clicked.connect(self.set_routing_button_clicked)
+        #self.set_routing_button = QPushButton("Set Network Routing", self)
+        #self.set_routing_button.setToolTip("Clear iptables Settings")
+        #self.set_routing_button.resize(self.set_routing_button.sizeHint())
+        #self.set_routing_button.clicked.connect(self.set_routing_button_clicked)
 
         # Add the general settings tools to the groupbox
         self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox, 2, 0)
@@ -397,6 +411,13 @@ class ANTS_Settings_Tab(QWidget):
             self.iperf_server_lineedit.text = "10.1.1.120"
         elif self.iperf_server_lineedit.hasAcceptableInput():
             self.ants_controller.iperf_server_addr = text
+
+    # Checks to make sure iperf_ap_addr is set to a realistic IP value
+    def on_ap_ip(self, text):
+        if self.iperf_ap_lineedit.text == "":
+            self.iperf_ap_lineedit.text = "10.1.1.120"
+        elif self.iperf_ap_lineedit.hasAcceptableInput():
+            self.ants_controller.iperf_ap_addr = text
 
     # Set file name for the test run based on what's in the box
     def on_name_change(self, text):

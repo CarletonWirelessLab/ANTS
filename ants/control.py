@@ -27,6 +27,7 @@ class ANTS_Controller():
         # iperf -c [IP] -u -b[100]M -S [0x00]  -t10000000000
         self.iperf_client_addr = None
         self.iperf_server_addr = None
+        self.iperf_ap_addr = None
         self.iperf_rate = None
         self.iperf_mem_addr = None
 
@@ -153,13 +154,16 @@ class ANTS_Controller():
         if self.iperf_server_addr == None:
             self.iperf_server_addr = "10.1.1.12"
 
+        if self.iperf_ap_addr == None:
+            self.iperf_ap_addr = "10.1.1.10"
+
 
         # The arguments to run the iperf client. If configure_routing is True, then automating routing has been performed and a virtual destination IP is required for the iperf client
         if self.configure_routing == True:
             self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
         else:
             self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_server_addr)), "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
-            
+
         print("iperf client args are:\n")
         print(self.iperf_client_args)
         # The arguments to run the iperf server
