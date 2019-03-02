@@ -90,6 +90,17 @@ class ANTS_Results_Tab(QWidget):
 
         self.layout.addWidget(self.run_btn, 4, 6, 1, 1)
 
+        # The checkbox for confirming that automatic network routing should be performed
+        self.routing_checkbox = QCheckBox("Perform Auto Routing", self)
+        self.routing_checkbox.setToolTip("Allow ANTS to perform custom networking setup (requires root permissions). Off by default")
+        self.routing_checkbox.stateChanged.connect(self.configure_routing)
+
+
+        self.layout.addWidget(self.routing_checkbox, 5, 6, 1, 1)
+
+        self.layout.setColumnStretch(6, 1)
+        self.layout.setRowStretch(4, 1)
+
         # The following four buttons are specifically for displaying one of the
         # four plot types
 
@@ -177,6 +188,12 @@ class ANTS_Results_Tab(QWidget):
             border-color: white;
         """)
         self.graphic_label.setPixmap(self.bin_pixmap)
+
+    def configure_routing(self, state):
+        if state == Qt.Checked:
+            self.ants_controller.configure_routing = True
+        else:
+            self.ants_controller.configure_routing = False
 
     # When the bin distribution button is clicked, display the bin distribution QPixmap contents
     def bin_button_clicked(self):

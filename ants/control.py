@@ -47,6 +47,9 @@ class ANTS_Controller():
         # best effort, '3' is background
         self.access_category = 0
 
+        # State variable to determine whether or not to configure network routing
+        self.configure_routing = False
+
         # Path of project directory for use in calls to scripts in utils/
         #self.working_dir = os.getcwd()
         self.working_dir = os.path.dirname(os.path.abspath(__file__))
@@ -138,12 +141,25 @@ class ANTS_Controller():
 
         # Set the arguments to be used to run the USRP
         self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
-        
-        # Setup routing and get the ip addresses for client and server and their virtual
-        self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking("10.1.1.10")    
 
-        # The arguments to run the iperf client
-        self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+        # Setup routing and get the ip addresses for client and server and their virtual
+        if self.configure_routing == True:
+            self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking("10.1.1.10")
+
+        # Ensure that there is a default IP address for both the client and server if it hasn't already been configured
+        if self.iperf_client_addr == None:
+            self.iperf_client_addr = "10.1.1.11"
+
+        if self.iperf_server_addr == None:
+            self.iperf_server_addr = "10.1.1.12"
+
+
+        # The arguments to run the iperf client. If configure_routing is True, then automating routing has been performed and a virtual destination IP is required for the iperf client
+        if self.configure_routing == True:
+            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+        else:
+            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_server_addr)), "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+            
         print("iperf client args are:\n")
         print(self.iperf_client_args)
         # The arguments to run the iperf server
