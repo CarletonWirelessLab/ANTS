@@ -90,6 +90,18 @@ class ANTS_Results_Tab(QWidget):
 
         self.layout.addWidget(self.run_btn, 4, 6, 1, 1)
 
+        # The checkbox for confirming that automatic network routing should be performed
+        self.routing_checkbox = QCheckBox("Perform Auto Routing", self)
+        self.routing_checkbox.toggle() 
+        self.routing_checkbox.setToolTip("Allow ANTS to perform custom networking setup (requires root permissions). Off by default")
+        self.routing_checkbox.stateChanged.connect(self.configure_routing)
+
+
+        self.layout.addWidget(self.routing_checkbox, 5, 6, 1, 1)
+
+        self.layout.setColumnStretch(6, 1)
+        self.layout.setRowStretch(4, 1)
+
         # The following four buttons are specifically for displaying one of the
         # four plot types
 
@@ -139,8 +151,8 @@ class ANTS_Results_Tab(QWidget):
 
     # Run the test sequence by making calls to the control.py module. run_button_clicked generates QPixmap objects to hold the .png data plots generated with matplotlib
     def run_button_clicked(self):
-        self.ants_controller.start_usrp_iperf()
-        self.ants_controller.make_plots()
+
+        self.ants_controller.run_n_times()
 
         # Set up the graphics for the main display
 
@@ -148,22 +160,22 @@ class ANTS_Results_Tab(QWidget):
         self.general_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac
 
         # The path for the bin distribution image
-        self.bin_pixmap_path = self.general_pixmap_path + "_bin_probability.png"
+        self.bin_pixmap_path = self.general_pixmap_path + "_bin_probability.svg"
         self.bin_pixmap = QPixmap(self.bin_pixmap_path)
 
         # The path for the interframe spacing image
-        self.interframe_pixmap_path = self.general_pixmap_path + "_interframe_spacing_histogram.png"
+        self.interframe_pixmap_path = self.general_pixmap_path + "_interframe_spacing_histogram.svg"
         self.interframe_pixmap = QPixmap(self.interframe_pixmap_path)
 
         # The path for the raw signal image
-        self.raw_signal_pixmap_path = self.general_pixmap_path + "_signal_magnitude_plot.png"
+        self.raw_signal_pixmap_path = self.general_pixmap_path + "_signal_magnitude_plot.svg"
         self.raw_signal_pixmap = QPixmap(self.raw_signal_pixmap_path)
 
         # The path for the transmission opportunity image
-        self.txop_pixmap_path = self.general_pixmap_path + "_txop_durations_histogram.png"
+        self.txop_pixmap_path = self.general_pixmap_path + "_txop_durations_histogram.svg"
         self.txop_pixmap = QPixmap(self.txop_pixmap_path)
 
-        print("Plots are saved as .png files at {0}.\n".format(self.ants_controller.data_dir))
+        print("Plots are saved as .svg files at {0}.\n".format(self.ants_controller.data_dir))
 
         # Set the pixmap window to be a gray background if there is no data from a previous run
         self.graphic_label.setStyleSheet("""
@@ -177,6 +189,12 @@ class ANTS_Results_Tab(QWidget):
             border-color: white;
         """)
         self.graphic_label.setPixmap(self.bin_pixmap)
+
+    def configure_routing(self, state):
+        if state == Qt.Checked:
+            self.ants_controller.configure_routing = True
+        else:
+            self.ants_controller.configure_routing = False
 
     # When the bin distribution button is clicked, display the bin distribution QPixmap contents
     def bin_button_clicked(self):
@@ -204,6 +222,9 @@ class ANTS_Settings_Tab(QWidget):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
 
+        # Always run at least once
+        self.num_runs = 1
+
         # Define tab layout and set column structure
         self.layout = QGridLayout(self)
         self.setLayout(self.layout)
@@ -228,6 +249,13 @@ class ANTS_Settings_Tab(QWidget):
         self.iperf_server_lineedit.setValidator(self.ip_validator)
         self.iperf_server_lineedit.textChanged[str].connect(self.on_server_ip)
 
+        # Text box for specifying the IP address of the access point to be used for testing
+
+        self.iperf_ap_lineedit = QLineEdit(self)
+        self.iperf_ap_lineedit_label = QLabel("Access Point IP", self)
+        self.iperf_ap_lineedit.setValidator(self.ip_validator)
+        self.iperf_ap_lineedit.textChanged[str].connect(self.on_ap_ip)
+
         # Specify the iperf type-of-service value (client only)
         self.iperf_TOS_field = QComboBox(self)
         self.iperf_TOS_field.addItem("Minimize delay (0x10)")
@@ -245,14 +273,21 @@ class ANTS_Settings_Tab(QWidget):
         # Create the iperf groupbox widget and fill it
         self.iperf_groupbox = QGroupBox("iperf Settings")
         self.iperf_gridbox = QGridLayout(self)
+
         self.iperf_gridbox.addWidget(self.iperf_client_lineedit_label, 0, 0)
         self.iperf_gridbox.addWidget(self.iperf_client_lineedit, 0, 1)
+
         self.iperf_gridbox.addWidget(self.iperf_TOS_field_label, 1, 0)
         self.iperf_gridbox.addWidget(self.iperf_TOS_field, 1, 1)
+
         self.iperf_gridbox.addWidget(self.iperf_bandwidth_field_label, 2, 0)
         self.iperf_gridbox.addWidget(self.iperf_bandwidth_field, 2, 1)
+
         self.iperf_gridbox.addWidget(self.iperf_server_lineedit_label, 3, 0)
         self.iperf_gridbox.addWidget(self.iperf_server_lineedit, 3, 1)
+
+        self.iperf_gridbox.addWidget(self.iperf_ap_lineedit_label, 4, 0)
+        self.iperf_gridbox.addWidget(self.iperf_ap_lineedit, 4, 1)
         self.iperf_groupbox.setLayout(self.iperf_gridbox)
 
         # Create the USRP settings groupbox and fill it
@@ -314,6 +349,7 @@ class ANTS_Settings_Tab(QWidget):
         self.gs_number_of_runs_lineedit.setToolTip("Please enter an integer")
         self.gs_number_of_runs_lineedit_label = QLabel("Number of test runs",self)
         self.gs_number_of_runs_lineedit.setValidator(self.gs_number_of_runs_validator)
+        self.gs_number_of_runs_lineedit.textChanged[str].connect(self.on_num_runs)
 
         # Combo box for the access category
         self.access_category_field = QComboBox(self)
@@ -325,16 +361,16 @@ class ANTS_Settings_Tab(QWidget):
         self.access_category_field.activated[str].connect(self.on_access_category_change)
 
         # Button for flushing iptables configuration
-        self.flush_routing_button = QPushButton("Flush Network Routing", self)
-        self.flush_routing_button.setToolTip("Clear iptables Settings")
-        self.flush_routing_button.resize(self.flush_routing_button.sizeHint())
-        self.flush_routing_button.clicked.connect(self.flush_routing_button_clicked)
+        #self.flush_routing_button = QPushButton("Flush Network Routing", self)
+        #self.flush_routing_button.setToolTip("Clear iptables Settings")
+        #self.flush_routing_button.resize(self.flush_routing_button.sizeHint())
+        #self.flush_routing_button.clicked.connect(self.flush_routing_button_clicked)
 
         # Button for Configuring single-machine network routing
-        self.set_routing_button = QPushButton("Set Network Routing", self)
-        self.set_routing_button.setToolTip("Clear iptables Settings")
-        self.set_routing_button.resize(self.set_routing_button.sizeHint())
-        self.set_routing_button.clicked.connect(self.set_routing_button_clicked)
+        #self.set_routing_button = QPushButton("Set Network Routing", self)
+        #self.set_routing_button.setToolTip("Clear iptables Settings")
+        #self.set_routing_button.resize(self.set_routing_button.sizeHint())
+        #self.set_routing_button.clicked.connect(self.set_routing_button_clicked)
 
         # Add the general settings tools to the groupbox
         self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox, 2, 0)
@@ -367,6 +403,15 @@ class ANTS_Settings_Tab(QWidget):
         self.ants_controller.access_category = 3
         print("Access category set to background\n")
 
+    # Allow the user to specify how many test sequences in a row to run. Set the minimum to 1
+    def on_num_runs(self):
+        if self.gs_number_of_runs_lineedit.text() == "":
+            self.ants_controller.num_runs = 1
+        elif int(self.gs_number_of_runs_lineedit.text()) < 1:
+            self.ants_controller.num_runs = 1
+        elif self.gs_number_of_runs_lineedit.hasAcceptableInput():
+            self.ants_controller.num_runs = int(self.gs_number_of_runs_lineedit.text())
+
     # Checks to make sure iperf_client_addr is set to a realistic IP value
     def on_client_ip(self, text):
         if self.iperf_client_lineedit.text == "":
@@ -380,6 +425,13 @@ class ANTS_Settings_Tab(QWidget):
             self.iperf_server_lineedit.text = "10.1.1.120"
         elif self.iperf_server_lineedit.hasAcceptableInput():
             self.ants_controller.iperf_server_addr = text
+
+    # Checks to make sure iperf_ap_addr is set to a realistic IP value
+    def on_ap_ip(self, text):
+        if self.iperf_ap_lineedit.text == "":
+            self.iperf_ap_lineedit.text = "10.1.1.120"
+        elif self.iperf_ap_lineedit.hasAcceptableInput():
+            self.ants_controller.iperf_ap_addr = text
 
     # Set file name for the test run based on what's in the box
     def on_name_change(self, text):

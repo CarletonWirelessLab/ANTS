@@ -8,6 +8,7 @@ import queue
 import os
 import datetime
 from plotter import *
+from initialize_networking import *
 
 class ANTS_Controller():
 
@@ -26,6 +27,7 @@ class ANTS_Controller():
         # iperf -c [IP] -u -b[100]M -S [0x00]  -t10000000000
         self.iperf_client_addr = None
         self.iperf_server_addr = None
+        self.iperf_ap_addr = None
         self.iperf_rate = None
         self.iperf_mem_addr = None
 
@@ -46,6 +48,9 @@ class ANTS_Controller():
         # best effort, '3' is background
         self.access_category = 0
 
+        # State variable to determine whether or not to configure network routing
+        self.configure_routing = False
+
         # Path of project directory for use in calls to scripts in utils/
         #self.working_dir = os.getcwd()
         self.working_dir = os.path.dirname(os.path.abspath(__file__))
@@ -57,6 +62,11 @@ class ANTS_Controller():
         # Path for calling scripts in simulation mode
         self.sim_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'utils/sim'))
         self.sim_dir = self.sim_dir + '/'
+
+        # The number of times that the process should be run for an average. Minimum 1
+
+        self.num_runs = 1
+        self.ping_max = 15
 
 
     # Make the timestamped data directory, and then return the full path for
@@ -138,19 +148,44 @@ class ANTS_Controller():
         # Set the arguments to be used to run the USRP
         self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
 
-        # Ensure that the client and server addresses are set to something other than "None"
+        # Setup routing and get the ip addresses for client and server and their virtual
+        if self.configure_routing == True:
+            self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking(self.iperf_ap_addr)
+            ping_args = "ping -w 1 {0}".format(self.iperf_virtual_server_addr).split(" ")
+            ping_count = 0
+            print("WAITING FOR VIRTUAL CONNECTION TO BE CONFIGURED\n")
+            while ping_count < self.ping_max:
+                ping_process = subprocess.Popen(ping_args)
+                ping_process.communicate()[0]
+                rc = ping_process.returncode
+                if int(rc) == 0:
+                    print("PING SUCCEEDED AFTER {0} RUNS\n".format(ping_count))
+                    break
+                ping_count = ping_count + 1
+            if ping_count == self.ping_max:
+                print("FAILED TO COMMUNICATE WITH ACCESS POINT AFTER {0} ATTEMPTS\n".format(self.ping_max))
+
+        # Ensure that there is a default IP address for both the client and server if it hasn't already been configured
         if self.iperf_client_addr == None:
-            self.iperf_client_addr = "10.1.11.115"
+            self.iperf_client_addr = "10.1.1.11"
 
         if self.iperf_server_addr == None:
-            self.iperf_server_addr = "10.1.1.120"
+            self.iperf_server_addr = "10.1.1.12"
 
-        # The arguments to run the iperf client
-        self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "10.2.1.120", "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+        if self.iperf_ap_addr == None:
+            self.iperf_ap_addr = "10.1.1.10"
+
+
+        # The arguments to run the iperf client. If configure_routing is True, then automating routing has been performed and a virtual destination IP is required for the iperf client
+        if self.configure_routing == True:
+            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+        else:
+            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_server_addr)), "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+
         print("iperf client args are:\n")
         print(self.iperf_client_args)
         # The arguments to run the iperf server
-        self.iperf_server_args = ["iperf", "-B", "{0}".format(str(self.iperf_server_addr)), "-s", "-u", "-t 1000000000000000", "-i 1"]
+        self.iperf_server_args = ["iperf", "-B", "{0}".format(str(self.iperf_server_addr)), "-s", "-u", "-t 1000000000000000", "-i 0.5"]
         print("iperf server args are:\n")
         print(self.iperf_server_args)
 
@@ -158,7 +193,7 @@ class ANTS_Controller():
         print("iperf server IP is {0}\n".format(self.iperf_server_addr))
         print("iperf client IP is {0}\n".format(self.iperf_client_addr))
         self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+        self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=None, shell=False)
 
         # Wait for 3 seconds to ensure the iperf data has begun transferring
         time.sleep(self.usrp_run_delay)
@@ -178,6 +213,45 @@ class ANTS_Controller():
 
         return
 
+    def run_n_times(self):
+
+        # Compliance and aggression values list and variables, for averaging over multiple runs
+        self.stats_list = []
+        self.run_compliance_count = 0
+        self.run_aggression_count = 0
+        self.run_submission_count = 0
+
+        self.run_compliance_total = 0
+        self.run_aggression_total = 0
+        self.run_submission_total = 0
+
+        for run in range(0, self.num_runs):
+            self.start_usrp_iperf()
+            self.stats_list.append(self.make_plots())
+
+        for index in range(0, len(self.stats_list)):
+            self.run_compliance_total = self.run_compliance_total + self.stats_list[index][0]
+            self.run_compliance_count = self.run_compliance_count + 1
+
+            ag_val = self.stats_list[index][1]
+            if ag_val > 0:
+                self.run_aggression_total = self.run_aggression_total + ag_val
+                self.run_aggression_count = self.run_aggression_count + 1
+            else:
+                self.run_submission_total = self.run_submission_total + ag_val
+                self.run_submission_count = self.run_submission_count + 1
+
+        compliance_avg = abs(self.run_compliance_total)/self.run_compliance_count
+        print("Device was {0} percent compliant (average) over {1} total compliance calculations\n".format(compliance_avg, self.run_compliance_count))
+        if self.run_aggression_count > 0:
+            aggression_avg = abs(self.run_aggression_total * 100)/self.run_aggression_count
+            print("Device was {0} percent aggressive (average) on {1} out of {2} runs\n".format(aggression_avg, self.run_aggression_count, self.run_compliance_count))
+        if self.run_submission_count > 0:
+            submission_avg = abs(self.run_submission_total * 100)/self.run_submission_count
+            print("Device was {0} percent submissive (average) on {1} out of {2} runs\n".format(submission_avg, self.run_submission_count, self.run_compliance_count))
+
+
+
     #Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
     def make_plots(self):
         if hasattr(self, "plotter"):
@@ -188,8 +262,7 @@ class ANTS_Controller():
         self.plotter = ANTS_Plotter(self.plotter_ac, self.test_path, 20e6)
         self.plotter.read_and_parse()
         self.plotter.setup_packet_data()
-        self.plotter.write_results_to_file()
+        results = self.plotter.output_results()
         self.plotter.plot_results()
 
-        # Delete the current plotter when done to avoid excessive memory usage
-        #del self.plotter
+        return results
