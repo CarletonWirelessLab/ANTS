@@ -151,6 +151,8 @@ class ANTS_Controller():
         if self.configure_routing == True:
             self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking("10.1.1.10")
 
+        print("NOW WAITING FOR 12 SECONDS FOR WIRELESS INTERFACE TO REFRESH")
+        time.sleep(12)
         # Ensure that there is a default IP address for both the client and server if it hasn't already been configured
         if self.iperf_client_addr == None:
             self.iperf_client_addr = "10.1.1.11"
