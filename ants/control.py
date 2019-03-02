@@ -63,6 +63,10 @@ class ANTS_Controller():
         self.sim_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'utils/sim'))
         self.sim_dir = self.sim_dir + '/'
 
+        # The number of times that the process should be run for an average. Minimum 1
+
+        self.num_runs = 1
+
 
     # Make the timestamped data directory, and then return the full path for
     # writing data files to
@@ -195,6 +199,45 @@ class ANTS_Controller():
 
         return
 
+    def run_n_times(self):
+
+        # Compliance and aggression values list and variables, for averaging over multiple runs
+        self.stats_list = []
+        self.run_compliance_count = 0
+        self.run_aggression_count = 0
+        self.run_submission_count = 0
+
+        self.run_compliance_total = 0
+        self.run_aggression_total = 0
+        self.run_submission_total = 0
+
+        for run in range(0, self.num_runs):
+            self.start_usrp_iperf()
+            self.stats_list.append(self.make_plots())
+
+        for index in range(0, len(self.stats_list)):
+            self.run_compliance_total = self.run_compliance_total + self.stats_list[index][0]
+            self.run_compliance_count = self.run_compliance_count + 1
+
+            ag_val = self.stats_list[index][1]
+            if ag_val > 0:
+                self.run_aggression_total = self.run_aggression_total + ag_val
+                self.run_aggression_count = self.run_aggression_count + 1
+            else:
+                self.run_submission_total = self.run_submission_total + ag_val
+                self.run_submission_count = self.run_submission_count + 1
+
+        compliance_avg = abs(self.run_compliance_total)/self.run_compliance_count
+        print("Device was {0} percent compliant (average) over {1} total compliance calculations\n".format(compliance_avg, self.run_compliance_count))
+        if self.run_aggression_count > 0:
+            aggression_avg = abs(self.run_aggression_total * 100)/self.run_aggression_count
+            print("Device was {0} percent aggressive (average) on {1} out of {2} runs\n".format(aggression_avg, self.run_aggression_count, self.run_compliance_count))
+        if self.run_submission_count > 0:
+            submission_avg = abs(self.run_submission_total * 100)/self.run_submission_count
+            print("Device was {0} percent submissive (average) on {1} out of {2} runs\n".format(submission_avg, self.run_submission_count, self.run_compliance_count))
+
+
+
     #Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
     def make_plots(self):
         if hasattr(self, "plotter"):
@@ -205,8 +248,7 @@ class ANTS_Controller():
         self.plotter = ANTS_Plotter(self.plotter_ac, self.test_path, 20e6)
         self.plotter.read_and_parse()
         self.plotter.setup_packet_data()
-        self.plotter.write_results_to_file()
+        results = self.plotter.output_results()
         self.plotter.plot_results()
 
-        # Delete the current plotter when done to avoid excessive memory usage
-        #del self.plotter
+        return results

@@ -230,7 +230,7 @@ class ANTS_Plotter():
         	for i in range(1, 4):
         		self.p_max[i] = self.p_max[0] + i * 0.25
 
-    def write_results_to_file(self):
+    def output_results(self):
         with open(self.output_file_name, "w") as outfile:
 
             outfile.write("Found " + str(len(self.packet_end_indices)) + " packets, " + str(len(self.interframe_spacing)) + " IFSs"+"\n")
@@ -259,12 +259,18 @@ class ANTS_Plotter():
             print("GF: " + str(self.geometric_factor))
 
             if self.ag_factor > 0:
-                print(str(abs(self.ag_factor)*100) + " Aggressive and " + str(self.norm_factor_percent) + " Compliant")
+                self.aggression = abs(self.ag_factor)*100
+                print(str(self.aggression) + " Aggressive and " + str(self.norm_factor_percent) + " Compliant")
                 outfile.write(str(abs(self.ag_factor) * 100) + " Aggressive and " + str(self.norm_factor_percent) + " Compliant"+"\n")
             else:
-                print(str(abs(self.ag_factor) * 100) + " Submissive and " + str(self.norm_factor_percent) + " Compliant")
+                self.submission = abs(self.ag_factor)*100
+                print(str(self.submission) + " Submissive and " + str(self.norm_factor_percent) + " Compliant")
                 outfile.write(str(abs(self.ag_factor) * 100) + " Submissive and " + str(self.norm_factor_percent) + " Compliant"+"\n")
         outfile.close()
+
+        self.out_tuple = (self.norm_factor_percent, self.ag_factor)
+
+        return self.out_tuple
 
     def plot_results(self):
         #plt.rcParams['agg.path.chunksize'] = 10*len(self.time)

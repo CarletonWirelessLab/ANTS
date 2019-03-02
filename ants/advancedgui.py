@@ -150,8 +150,8 @@ class ANTS_Results_Tab(QWidget):
 
     # Run the test sequence by making calls to the control.py module. run_button_clicked generates QPixmap objects to hold the .png data plots generated with matplotlib
     def run_button_clicked(self):
-        self.ants_controller.start_usrp_iperf()
-        self.ants_controller.make_plots()
+
+        self.ants_controller.run_n_times()
 
         # Set up the graphics for the main display
 
@@ -220,6 +220,9 @@ class ANTS_Settings_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
+
+        # Always run at least once
+        self.num_runs = 1
 
         # Define tab layout and set column structure
         self.layout = QGridLayout(self)
@@ -345,6 +348,7 @@ class ANTS_Settings_Tab(QWidget):
         self.gs_number_of_runs_lineedit.setToolTip("Please enter an integer")
         self.gs_number_of_runs_lineedit_label = QLabel("Number of test runs",self)
         self.gs_number_of_runs_lineedit.setValidator(self.gs_number_of_runs_validator)
+        self.gs_number_of_runs_lineedit.textChanged[str].connect(self.on_num_runs)
 
         # Combo box for the access category
         self.access_category_field = QComboBox(self)
@@ -397,6 +401,15 @@ class ANTS_Settings_Tab(QWidget):
     def on_ac_background_clicked(self):
         self.ants_controller.access_category = 3
         print("Access category set to background\n")
+
+    # Allow the user to specify how many test sequences in a row to run. Set the minimum to 1
+    def on_num_runs(self):
+        if self.gs_number_of_runs_lineedit.text() == "":
+            self.ants_controller.num_runs = 1
+        elif int(self.gs_number_of_runs_lineedit.text()) < 1:
+            self.ants_controller.num_runs = 1
+        elif self.gs_number_of_runs_lineedit.hasAcceptableInput():
+            self.ants_controller.num_runs = int(self.gs_number_of_runs_lineedit.text())
 
     # Checks to make sure iperf_client_addr is set to a realistic IP value
     def on_client_ip(self, text):
