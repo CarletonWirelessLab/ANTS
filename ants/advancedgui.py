@@ -92,6 +92,7 @@ class ANTS_Results_Tab(QWidget):
 
         # The checkbox for confirming that automatic network routing should be performed
         self.routing_checkbox = QCheckBox("Perform Auto Routing", self)
+        self.routing_checkbox.toggle() 
         self.routing_checkbox.setToolTip("Allow ANTS to perform custom networking setup (requires root permissions). Off by default")
         self.routing_checkbox.stateChanged.connect(self.configure_routing)
 

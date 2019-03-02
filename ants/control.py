@@ -66,6 +66,7 @@ class ANTS_Controller():
         # The number of times that the process should be run for an average. Minimum 1
 
         self.num_runs = 1
+        self.ping_max = 15
 
 
     # Make the timestamped data directory, and then return the full path for
@@ -149,10 +150,21 @@ class ANTS_Controller():
 
         # Setup routing and get the ip addresses for client and server and their virtual
         if self.configure_routing == True:
-            self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking("10.1.1.10")
+            self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking(self.iperf_ap_addr)
+            ping_args = "ping -w 1 {0}".format(self.iperf_virtual_server_addr).split(" ")
+            ping_count = 0
+            print("WAITING FOR VIRTUAL CONNECTION TO BE CONFIGURED\n")
+            while ping_count < self.ping_max:
+                ping_process = subprocess.Popen(ping_args)
+                ping_process.communicate()[0]
+                rc = ping_process.returncode
+                if int(rc) == 0:
+                    print("PING SUCCEEDED AFTER {0} RUNS\n".format(ping_count))
+                    break
+                ping_count = ping_count + 1
+            if ping_count == self.ping_max:
+                print("FAILED TO COMMUNICATE WITH ACCESS POINT AFTER {0} ATTEMPTS\n".format(self.ping_max))
 
-        print("NOW WAITING FOR 12 SECONDS FOR WIRELESS INTERFACE TO REFRESH")
-        time.sleep(12)
         # Ensure that there is a default IP address for both the client and server if it hasn't already been configured
         if self.iperf_client_addr == None:
             self.iperf_client_addr = "10.1.1.11"
