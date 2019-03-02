@@ -49,7 +49,7 @@ class ANTS_Controller():
         self.access_category = 0
 
         # State variable to determine whether or not to configure network routing
-        self.configure_routing = False
+        self.configure_routing = True
 
         # Path of project directory for use in calls to scripts in utils/
         #self.working_dir = os.getcwd()
