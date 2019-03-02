@@ -8,7 +8,7 @@ import queue
 import os
 import datetime
 from plotter import *
-import setup_routing
+from initialize_networking import *
 
 class ANTS_Controller():
 
@@ -140,7 +140,7 @@ class ANTS_Controller():
         self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
         
         # Setup routing and get the ip addresses for client and server and their virtual
-        self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = setup_routing.setup_routing()    
+        self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking("10.1.1.10")    
 
         # The arguments to run the iperf client
         self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
