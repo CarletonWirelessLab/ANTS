@@ -61,8 +61,7 @@ By default, ANTS will provide six outputs in a time-stamped folder matching the 
 ## To-Do List
 
 * Increase test customization by enabling more parameters for the software-defined radio and ```iperf``` to be set via the GUI;
-* Support more complete networking configuration from inside the GUI;
-* Add the ability to automate and provide an aggregate of the compliance results from multiple test runs;
+* Better diagnostics and self-analysis of network performance while running;
 * Build an alternative command-line interface for scripting tests;
 * Add support for additional software-defined radios and other testing devices;
 * Provide interactive documentation in the form of descriptive tool-tips in the GUI;
@@ -71,9 +70,9 @@ By default, ANTS will provide six outputs in a time-stamped folder matching the 
 
 ## Authors
 
-* **Trevor Gamblin** - [threexc](https://github.com/threexc) - Primary developer and project manager
-* **Ammar Alhosainy** - Original MATLAB scripts and some Python tools
-* **Kareem Attiah** - Original MATLAB scripts and some Python tools
-* **Shady Elkamhawy** - Initial MATLAB-to-Python script conversion
-* **Ahmad Al-Talabi** - Initial MATLAB-to-Python script conversion
-* **Xinrui Zhang** - GUI and functional enhancements
+* **Trevor Gamblin** - [threexc](https://github.com/threexc)
+* **Ammar Alhosainy**
+* **Kareem Attiah**
+* **Shady Elkamhawy**
+* **Ahmad Al-Talabi**
+* **Xinrui Zhang**
