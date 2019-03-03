@@ -38,8 +38,8 @@ Early versions of the tool relied upon the use of the [MATLAB Engine for Python]
 
 Due to the size of the raw data files created, it is recommended that a significant amount of storage space (120GB or more) is allocated for the ANTS suite to operate. For a fresh installation of Ubuntu 16.04, the following must be performed in order to make ANTS operational:
 
-1. ```sudo apt install git python3-numpy python3-matplotlib python3-pip gnuradio iperf```
-2. ```pip3 install pyqt5``` (this may need to be run with sudo)
+1. ```sudo apt install git python3-numpy python3-matplotlib python3-pip gnuradio iperf python3-dev```
+2. ```pip3 install pyqt5 netifaces``` (this may need to be run with sudo)
 3. From the home directory (or wherever you want to store your copy of the project), ```git clone https://github.com/CarletonWirelessLab/ANTS```
 4. (Optional) If running the test from a single machine, run the ```utils/setup_routing.py``` script to configure network interfaces and routing appropriately;
 5. Run ANTS by typing ```python3 ants/ants``` from the main ANTS directory;
