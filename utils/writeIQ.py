@@ -27,7 +27,7 @@ class writeIQ(gr.top_block):
 		# Define variables and their default values
 		self.samp_rate = 20e6
 		self.cbw = 20e6
-		self.gain = 60
+		self.gain = 40
 		self.cfreq = 5.765e9 #2.412e9
 		self.antenna = "RX2"
 		self.file_name = name + '_' + access_category + '.bin'
