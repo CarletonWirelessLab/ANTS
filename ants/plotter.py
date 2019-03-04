@@ -276,7 +276,8 @@ class ANTS_Plotter():
         #plt.rcParams['agg.path.chunksize'] = 10*len(self.time)
         # generate a plot for the power of the signal and the packet indicators
         plt.figure(1)
-        plt.plot(self.time, np.sqrt(self.power_data), 'b-', self.time, self.packet_indicator, 'r-')#, time, packet_indicator, 'r-')
+        plt.plot(self.time, np.sqrt(self.power_data), 'b-', self.time, 0.5*self.packet_indicator, 'r-')#, time, packet_indicator, 'r-')
+        plt.xlim(0.25,0.2515)
         plt.title("Plot of the magnitude of the signal vs Time")
         plt.xlabel("Time (sec)")
         plt.ylabel("Signal magnitude") #find out if the power is in Watts or dB?

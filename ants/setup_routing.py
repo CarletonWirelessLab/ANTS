@@ -19,23 +19,22 @@ def setup_routing(client_device_name, client_mac_address, server_device_name, se
 
 	ip_route_two_args = "ip route add " + virtual_server_ip_address + " dev " + client_device_name
 	arp_two_args = "arp -i " + client_device_name + " -s " + virtual_server_ip_address + " " + server_mac_address
-	flush_route = "route -F".split(" ")
+	flush_route = "ip route flush table main".split(" ")
+	show_route = "ip route show table main".split(" ")
+
 	subprocess.call(flush_route)
 	subprocess.call(iptables_flush)
 	subprocess.call(server_ip_args)
 	subprocess.call(client_ip_args)
-
 	subprocess.call(iptables_two_args.split(" "))
 	subprocess.call(iptables_three_args.split(" "))
 	subprocess.call(iptables_four_args.split(" "))
 	subprocess.call(iptables_five_args.split(" "))
-
 	subprocess.call(ip_route_one_args.split(" "))
 	subprocess.call(arp_one_args.split(" "))
-	subprocess.call(ip_route_two_args.split(" "))
+	subprocess.call(ip_route_two_args.split(" "))	
 	subprocess.call(arp_two_args.split(" "))
-
 	subprocess.call(iptables_one_args)
+	subprocess.call(show_route)
 
 	print("Network routing should now be ready for use with ANTS.\n")
-

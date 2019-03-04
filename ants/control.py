@@ -178,9 +178,9 @@ class ANTS_Controller():
 
         # The arguments to run the iperf client. If configure_routing is True, then automating routing has been performed and a virtual destination IP is required for the iperf client
         if self.configure_routing == True:
-            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", "100M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
         else:
-            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_server_addr)), "-u", "-b", "150M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_server_addr)), "-u", "-b", "100M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
 
         print("iperf client args are:\n")
         print(self.iperf_client_args)
@@ -196,7 +196,7 @@ class ANTS_Controller():
         self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=None, shell=False)
 
         # Wait for 3 seconds to ensure the iperf data has begun transferring
-        time.sleep(self.usrp_run_delay)
+        time.sleep(2*self.usrp_run_delay)
         # Start the USRP
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
@@ -207,8 +207,10 @@ class ANTS_Controller():
                 break
 
         # Close the iperf processes as soon as the USRP is done sensing the medium
-        self.iperf_client_proc.kill()
-        self.iperf_server_proc.kill()
+        self.iperf_server_proc.terminate()
+        self.iperf_client_proc.terminate()
+
+
         print("Done sampling the medium. iperf processes killed.\n")
 
         return
@@ -228,6 +230,11 @@ class ANTS_Controller():
         for run in range(0, self.num_runs):
             self.start_usrp_iperf()
             self.stats_list.append(self.make_plots())
+            # initialize networking is called again after every test.
+            # It was found that the test works if the routing has been done an odd number of times before running iperf_rate
+            # each loop has a sequence of routing, iperf, routing
+            # 2 iterations in a row would be: {routing,iperf,routing},{routing,iperf,routing}
+            self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking(self.iperf_ap_addr)
 
         for index in range(0, len(self.stats_list)):
             self.run_compliance_total = self.run_compliance_total + self.stats_list[index][0]
@@ -249,8 +256,6 @@ class ANTS_Controller():
         if self.run_submission_count > 0:
             submission_avg = abs(self.run_submission_total * 100)/self.run_submission_count
             print("Device was {0} percent submissive (average) on {1} out of {2} runs\n".format(submission_avg, self.run_submission_count, self.run_compliance_count))
-
-
 
     #Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
     def make_plots(self):
