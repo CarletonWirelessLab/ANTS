@@ -29,23 +29,15 @@ def initialize_networking(ap_ip_address):
 		virtual_server_ip_address = str(ip_address(server_ip_address) + (256*256))
 		print("VIRTUAL SERVER IP ADDRESS is: " , virtual_server_ip_address)
 
-	eth_name, eth_mac, wlan_name, wlan_mac = interfaces_scan()
+	eth_name, eth_mac, wlan_name, wlan_mac, wlan_internal_name = interfaces_scan()
 
 	route_show_args = "ip route show"
 	p = Popen(route_show_args.split(" "), stdout=PIPE, stderr=PIPE)
 	data, error = p.communicate()
 	data = str(data)
 
-	# if wlan_name in data or "linkdown" in data:
-	# 	print("BAD")
-	# 	essid = network_scan(wlan_name)
-	# 	network_connect(eth_name, client_ip_address, wlan_name, server_ip_address, essid)
-	# 	setup_routing(eth_name, eth_mac, wlan_name, wlan_mac, client_ip_address, virtual_client_ip_address, server_ip_address, virtual_server_ip_address)
-	# else:
-	# 	print("GOOD")
-
 	essid = network_scan(wlan_name)
-	network_connect(eth_name, client_ip_address, wlan_name, server_ip_address, essid)
+	network_connect(eth_name, client_ip_address, wlan_name, server_ip_address, essid, wlan_internal_name)
 	setup_routing(eth_name, eth_mac, wlan_name, wlan_mac, client_ip_address, virtual_client_ip_address, server_ip_address, virtual_server_ip_address)
 
-	return client_ip_address, server_ip_address, virtual_server_ip_address
+	return eth_name, client_ip_address, server_ip_address, virtual_server_ip_address

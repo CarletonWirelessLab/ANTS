@@ -34,7 +34,7 @@ def get_name(s):
 		return m.group(1)
 	return None
 
-# returns the last two devices 1 ether and 1 wireless	
+# returns the last two devices 1 ether and 1 wireless
 def get_devices(s):
 	arr = s.split("*-network")
 	for a in arr:
@@ -44,14 +44,16 @@ def get_devices(s):
 				dev_eth = Dev("eth", get_serial(a), get_id(a), get_name(a))
 			elif "Wireless" in t and get_id(a) != "0":
 				dev_wlan = Dev("wlan", get_serial(a), get_id(a), get_name(a))
-	return dev_eth, dev_wlan
-			
+			elif "Wireless" in t and get_id(a) == "0":
+				dev_wlan_internal = Dev("wlan", get_serial(a), get_id(a), get_name(a))
+	return dev_eth, dev_wlan, dev_wlan_internal
+
 
 def interfaces_scan():
     p = Popen(['lshw','-class','network'], stdout=PIPE, stderr=PIPE)
     data, error = p.communicate()
     data = str(data)
-    dev_eth, dev_wlan = get_devices(data)
+    dev_eth, dev_wlan, dev_wlan_internal = get_devices(data)
     print(dev_eth)
     print("THE LOGICAL NAME OF THE ETHERNET INTERFACE IS: ")
     print(dev_eth.name)
@@ -60,6 +62,6 @@ def interfaces_scan():
     print("THE LOGICAL NAME OF THE WIRELSS INTERFACE IS: ")
     print(dev_wlan.name)
     print("THE MAC ADDRESS OF THE WIRELESS INTERFACE IS: ")
-    print(dev_wlan.mac_addr)        
-	    
-    return dev_eth.name, dev_eth.mac_addr, dev_wlan.name, dev_wlan.mac_addr
+    print(dev_wlan.mac_addr)
+
+    return dev_eth.name, dev_eth.mac_addr, dev_wlan.name, dev_wlan.mac_addr, dev_wlan_internal.name

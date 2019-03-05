@@ -21,8 +21,7 @@ def setup_routing(client_device_name, client_mac_address, server_device_name, se
 	arp_two_args = "arp -i " + client_device_name + " -s " + virtual_server_ip_address + " " + server_mac_address
 	flush_route = "ip route flush table main".split(" ")
 	show_route = "ip route show table main".split(" ")
-	subprocess.call(show_route)
-	subprocess.call(flush_route)
+	#subprocess.call(flush_route)
 	subprocess.call(iptables_flush)
 	subprocess.call(server_ip_args)
 	subprocess.call(client_ip_args)

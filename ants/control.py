@@ -68,7 +68,7 @@ class ANTS_Controller():
         # The number of times that the process should be run for an average. Minimum 1
 
         self.num_runs = 1
-        self.ping_max = 15
+        self.ping_max = 10000
 
 
     # Make the timestamped data directory, and then return the full path for
@@ -169,54 +169,57 @@ class ANTS_Controller():
 
         # Setup routing and get the ip addresses for client and server and their virtual
         if self.configure_routing == True:
-            self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking(self.iperf_ap_addr)
-            ping_args = "ping -w 1 {0}".format(self.iperf_virtual_server_addr).split(" ")
+            self.eth_name, self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking(self.iperf_ap_addr)
+            ping_args = "ping -c 1 -I {0} {1}".format(self.eth_name, self.iperf_virtual_server_addr).split(" ")
             ping_count = 0
             print("WAITING FOR VIRTUAL CONNECTION TO BE CONFIGURED\n")
+            communication_success = 0
             while ping_count < self.ping_max:
                 ping_process = subprocess.Popen(ping_args)
                 ping_process.communicate()[0]
                 rc = ping_process.returncode
                 if int(rc) == 0:
                     print("PING SUCCEEDED AFTER {0} RUNS\n".format(ping_count))
+                    communication_success = 1
                     break
                 ping_count = ping_count + 1
             if ping_count == self.ping_max:
                 print("FAILED TO COMMUNICATE WITH ACCESS POINT AFTER {0} ATTEMPTS\n".format(self.ping_max))
+                communication_success = 0
 
 
         # The arguments to run the iperf client. If configure_routing is True, then automating routing has been performed and a virtual destination IP is required for the iperf client
         if self.configure_routing == True:
             self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", " {0}M".format(self.iperf_bw), "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
         else:
-            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_server_addr)), "-u", "-b", " {0}M".format(self.iperf_bw), "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", " {0}M".format(self.iperf_bw), "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
 
         # The arguments to run the iperf server
         self.iperf_server_args = ["iperf", "-B", "{0}".format(str(self.iperf_server_addr)), "-s", "-u", "-t 1000000000000000", "-i 0.5"]
+        if communication_success:
+            # Run the iperf commands and print debug information
+            print("iperf server IP is {0}\n".format(self.iperf_server_addr))
+            print("iperf client IP is {0}\n".format(self.iperf_client_addr))
+            self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+            self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=None, shell=False)
 
-        # Run the iperf commands and print debug information
-        print("iperf server IP is {0}\n".format(self.iperf_server_addr))
-        print("iperf client IP is {0}\n".format(self.iperf_client_addr))
-        self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-        self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=None, shell=False)
+            # Wait for 3 seconds to ensure the iperf data has begun transferring
+            time.sleep(2*self.usrp_run_delay)
+            # Start the USRP
+            self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
 
-        # Wait for 3 seconds to ensure the iperf data has begun transferring
-        time.sleep(2*self.usrp_run_delay)
-        # Start the USRP
-        self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+            # Continuously check to see if the USRP is running, then break out when it has stopped
+            while True:
+                self.usrp_proc.poll()
+                if self.usrp_proc.returncode is not None:
+                    break
 
-        # Continuously check to see if the USRP is running, then break out when it has stopped
-        while True:
-            self.usrp_proc.poll()
-            if self.usrp_proc.returncode is not None:
-                break
-
-        # Close the iperf processes as soon as the USRP is done sensing the medium
-        self.iperf_server_proc.terminate()
-        self.iperf_client_proc.terminate()
+            # Close the iperf processes as soon as the USRP is done sensing the medium
+            self.iperf_server_proc.terminate()
+            self.iperf_client_proc.terminate()
 
 
-        print("Done sampling the medium. iperf processes killed.\n")
+            print("Done sampling the medium. iperf processes killed.\n")
 
         return
 
@@ -235,11 +238,6 @@ class ANTS_Controller():
         for run in range(0, self.num_runs):
             self.start_usrp_iperf()
             self.stats_list.append(self.make_plots())
-            # initialize networking is called again after every test.
-            # It was found that the test works if the routing has been done an odd number of times before running iperf_rate
-            # each loop has a sequence of routing, iperf, routing
-            # 2 iterations in a row would be: {routing,iperf,routing},{routing,iperf,routing}
-            self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking(self.iperf_ap_addr)
 
         for index in range(0, len(self.stats_list)):
             self.run_compliance_total = self.run_compliance_total + self.stats_list[index][0]
