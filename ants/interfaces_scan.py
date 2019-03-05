@@ -50,18 +50,15 @@ def get_devices(s):
 
 
 def interfaces_scan():
-    p = Popen(['lshw','-class','network'], stdout=PIPE, stderr=PIPE)
-    data, error = p.communicate()
-    data = str(data)
-    dev_eth, dev_wlan, dev_wlan_internal = get_devices(data)
-    print(dev_eth)
-    print("THE LOGICAL NAME OF THE ETHERNET INTERFACE IS: ")
-    print(dev_eth.name)
-    print("THE MAC ADDRESS OF THE ETHERNET INTERFACE IS: ")
-    print(dev_eth.mac_addr)
-    print("THE LOGICAL NAME OF THE WIRELSS INTERFACE IS: ")
-    print(dev_wlan.name)
-    print("THE MAC ADDRESS OF THE WIRELESS INTERFACE IS: ")
-    print(dev_wlan.mac_addr)
+	print("SCANNING HW NETWORK INTERFACES")
+	p = Popen(['lshw','-class','network'], stdout=PIPE, stderr=PIPE)
+	data, error = p.communicate()
+	data = str(data)
+	dev_eth, dev_wlan, dev_wlan_internal = get_devices(data)
+	print("THE LOGICAL NAME OF THE INTERNAL WIRELESS INTERFACE IS:", dev_wlan_internal.name)
+	print("THE LOGICAL NAME OF THE ETHERNET INTERFACE IS:", dev_eth.name)
+	print("THE MAC ADDRESS OF THE ETHERNET INTERFACE IS:", dev_eth.mac_addr)
+	print("THE LOGICAL NAME OF THE WIRELSS INTERFACE IS:", dev_wlan.name)
+	print("THE MAC ADDRESS OF THE WIRELESS INTERFACE IS:", dev_wlan.mac_addr)
 
-    return dev_eth.name, dev_eth.mac_addr, dev_wlan.name, dev_wlan.mac_addr, dev_wlan_internal.name
+	return dev_eth.name, dev_eth.mac_addr, dev_wlan.name, dev_wlan.mac_addr, dev_wlan_internal.name

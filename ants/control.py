@@ -68,7 +68,7 @@ class ANTS_Controller():
         # The number of times that the process should be run for an average. Minimum 1
 
         self.num_runs = 1
-        self.ping_max = 10000
+        self.ping_max = 10
 
 
     # Make the timestamped data directory, and then return the full path for
@@ -170,12 +170,12 @@ class ANTS_Controller():
         # Setup routing and get the ip addresses for client and server and their virtual
         if self.configure_routing == True:
             self.eth_name, self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking(self.iperf_ap_addr)
-            ping_args = "ping -c 1 -I {0} {1}".format(self.eth_name, self.iperf_virtual_server_addr).split(" ")
+            ping_args = "ping -c 10 -I {0} {1}".format(self.eth_name, self.iperf_virtual_server_addr).split(" ")
             ping_count = 0
-            print("WAITING FOR VIRTUAL CONNECTION TO BE CONFIGURED\n")
+            print("WAITING FOR PING SUCCESS OF THE VIRTUAL SERVER THROUGH THE CLIENT INTERFACE")
             communication_success = 0
             while ping_count < self.ping_max:
-                ping_process = subprocess.Popen(ping_args)
+                ping_process = subprocess.Popen(ping_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 ping_process.communicate()[0]
                 rc = ping_process.returncode
                 if int(rc) == 0:
@@ -184,7 +184,7 @@ class ANTS_Controller():
                     break
                 ping_count = ping_count + 1
             if ping_count == self.ping_max:
-                print("FAILED TO COMMUNICATE WITH ACCESS POINT AFTER {0} ATTEMPTS\n".format(self.ping_max))
+                print("PING FAILED AFTER {0} ATTEMPTS\n".format(self.ping_max))
                 communication_success = 0
 
 

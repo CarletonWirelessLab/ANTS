@@ -44,11 +44,11 @@ def max_cell_level(arr):
 
 
 def network_scan(device_name):
+    print("SCANNING NETWORKS ON THE WIRELESS INTERFACE", device_name)
     p = Popen(['iwlist', device_name, 'scan'], stdout=PIPE, stderr=PIPE)
     data, error = p.communicate()
     data = str(data)
     cells = get_cells(data)
     c = max_cell_level(cells)
-    print("THE CELL WITH MAXIMUM SIGNAL LEVEL is:")
-    print(c.essid)
+    print("NETWORK ESSID", c.essid, "HAS MAXIMUM SIGNAL LEVEL OF", c.level)
     return c.essid
