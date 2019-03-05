@@ -7,6 +7,7 @@ import time
 import queue
 import os
 import datetime
+import statistics as stat
 from plotter import *
 from initialize_networking import *
 
@@ -30,6 +31,7 @@ class ANTS_Controller():
         self.iperf_ap_addr = None
         self.iperf_rate = None
         self.iperf_mem_addr = None
+        self.iperf_bw = None
 
         # Default run time length to 0.5 seconds if no time is provided
         self.run_time = 0.5
@@ -148,6 +150,23 @@ class ANTS_Controller():
         # Set the arguments to be used to run the USRP
         self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
 
+        # Ensure that there is a default IP address for both the client and server if it hasn't already been configured
+        if self.iperf_client_addr == None:
+            self.iperf_client_addr = "10.1.1.11"
+            print("No IP was entered for the iperf client. IP has defaulted to 10.1.1.11\n")
+
+        if self.iperf_server_addr == None:
+            self.iperf_server_addr = "10.1.1.12"
+            print("No IP was entered for the iperf server. IP has defaulted to 10.1.1.12\n")
+
+        if self.iperf_ap_addr == None:
+            self.iperf_ap_addr = "10.1.1.10"
+            print("No IP was entered for the iperf access point. IP has defaulted to 10.1.1.10\n")
+
+        if self.iperf_bw == None:
+            self.iperf_bw = "100M"
+            print("No bandwidth was entered for the iperf client. Bandwidth has defaulted to 100Mbit/s\n")
+
         # Setup routing and get the ip addresses for client and server and their virtual
         if self.configure_routing == True:
             self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking(self.iperf_ap_addr)
@@ -165,29 +184,15 @@ class ANTS_Controller():
             if ping_count == self.ping_max:
                 print("FAILED TO COMMUNICATE WITH ACCESS POINT AFTER {0} ATTEMPTS\n".format(self.ping_max))
 
-        # Ensure that there is a default IP address for both the client and server if it hasn't already been configured
-        if self.iperf_client_addr == None:
-            self.iperf_client_addr = "10.1.1.11"
-
-        if self.iperf_server_addr == None:
-            self.iperf_server_addr = "10.1.1.12"
-
-        if self.iperf_ap_addr == None:
-            self.iperf_ap_addr = "10.1.1.10"
-
 
         # The arguments to run the iperf client. If configure_routing is True, then automating routing has been performed and a virtual destination IP is required for the iperf client
         if self.configure_routing == True:
-            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", "100M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", " {0}M".format(self.iperf_bw), "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
         else:
-            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_server_addr)), "-u", "-b", "100M", "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
+            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_server_addr)), "-u", "-b", " {0}M".format(self.iperf_bw), "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
 
-        print("iperf client args are:\n")
-        print(self.iperf_client_args)
         # The arguments to run the iperf server
         self.iperf_server_args = ["iperf", "-B", "{0}".format(str(self.iperf_server_addr)), "-s", "-u", "-t 1000000000000000", "-i 0.5"]
-        print("iperf server args are:\n")
-        print(self.iperf_server_args)
 
         # Run the iperf commands and print debug information
         print("iperf server IP is {0}\n".format(self.iperf_server_addr))
@@ -248,14 +253,14 @@ class ANTS_Controller():
                 self.run_submission_total = self.run_submission_total + ag_val
                 self.run_submission_count = self.run_submission_count + 1
 
-        compliance_avg = abs(self.run_compliance_total)/self.run_compliance_count
-        print("Device was {0} percent compliant (average) over {1} total compliance calculations\n".format(compliance_avg, self.run_compliance_count))
+        self.compliance_avg = abs(self.run_compliance_total)/self.run_compliance_count
+        print("Device was {0} percent compliant (average) over {1} total test runs\n".format(self.compliance_avg, self.run_compliance_count))
         if self.run_aggression_count > 0:
-            aggression_avg = abs(self.run_aggression_total * 100)/self.run_aggression_count
-            print("Device was {0} percent aggressive (average) on {1} out of {2} runs\n".format(aggression_avg, self.run_aggression_count, self.run_compliance_count))
+            self.aggression_avg = abs(self.run_aggression_total * 100)/self.run_aggression_count
+            print("Device was {0} percent aggressive (average) on {1} out of {2} runs\n".format(self.aggression_avg, self.run_aggression_count, self.run_compliance_count))
         if self.run_submission_count > 0:
-            submission_avg = abs(self.run_submission_total * 100)/self.run_submission_count
-            print("Device was {0} percent submissive (average) on {1} out of {2} runs\n".format(submission_avg, self.run_submission_count, self.run_compliance_count))
+            self.submission_avg = abs(self.run_submission_total * 100)/self.run_submission_count
+            print("Device was {0} percent submissive (average) on {1} out of {2} runs\n".format(self.submission_avg, self.run_submission_count, self.run_compliance_count))
 
     #Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
     def make_plots(self):

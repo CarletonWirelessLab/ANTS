@@ -61,11 +61,8 @@ class ANTS_Results_Tab(QWidget):
         self.file_name_lineedit = QLineEdit(self)
         self.file_name_lineedit.textChanged[str].connect(self.on_name_change)
         self.file_name_lineedit.setToolTip("The filename for the USRP to output the data to")
-        self.file_name_text = "Filename"
+        self.file_name_text = "Test Name"
         self.file_name_label = QLabel(self.file_name_text, self)
-        self.layout.addWidget(self.file_name_label, 0, 6, 1, 1)
-        self.layout.addWidget(self.file_name_lineedit, 1, 6, 1, 1)
-        self.layout.addWidget(self.graphic_label, 0, 0, 5, 5)
 
         # Run time slider set up
         self.runtime_slider = QSlider(Qt.Horizontal, self)
@@ -79,8 +76,7 @@ class ANTS_Results_Tab(QWidget):
         self.runtime_text = "Runtime " + str(0.5) + " seconds"
         self.runtime_label = QLabel(self.runtime_text, self)
 
-        self.layout.addWidget(self.runtime_label, 2, 6, 1, 1)
-        self.layout.addWidget(self.runtime_slider, 3, 6, 1, 1)
+
 
         # The button for running the entire sequence
         self.run_btn = QPushButton('Run', self)
@@ -88,16 +84,29 @@ class ANTS_Results_Tab(QWidget):
         self.run_btn.resize(self.run_btn.sizeHint())
         self.run_btn.clicked.connect(self.run_button_clicked)
 
-        self.layout.addWidget(self.run_btn, 4, 6, 1, 1)
-
         # The checkbox for confirming that automatic network routing should be performed
         self.routing_checkbox = QCheckBox("Perform Auto Routing", self)
-        self.routing_checkbox.toggle() 
+        self.routing_checkbox.toggle()
         self.routing_checkbox.setToolTip("Allow ANTS to perform custom networking setup (requires root permissions). Off by default")
         self.routing_checkbox.stateChanged.connect(self.configure_routing)
 
+        self.compliance_label = QLabel("Compliance (%): N/A")
+        self.aggression_label = QLabel("Aggression (%): N/A")
+        self.submission_label = QLabel("Submission (%): N/A")
 
-        self.layout.addWidget(self.routing_checkbox, 5, 6, 1, 1)
+        # The blank graphic box where the plots will be painted
+        self.layout.addWidget(self.graphic_label, 0, 0, 5, 5)
+
+        # The widgets in the information/run bar on the right side of the GUI
+        self.layout.addWidget(self.file_name_label, 0, 6, 1, 1)
+        self.layout.addWidget(self.file_name_lineedit, 1, 6, 1, 1)
+        self.layout.addWidget(self.compliance_label, 3, 6, 1, 1)
+        self.layout.addWidget(self.aggression_label, 4, 6, 1, 1)
+        self.layout.addWidget(self.submission_label, 5, 6, 1, 1)
+        self.layout.addWidget(self.runtime_label, 6, 6, 1, 1)
+        self.layout.addWidget(self.runtime_slider, 7, 6, 1, 1)
+        self.layout.addWidget(self.run_btn, 8, 6, 1, 1)
+        self.layout.addWidget(self.routing_checkbox, 9, 6, 1, 1)
 
         self.layout.setColumnStretch(6, 1)
         self.layout.setRowStretch(4, 1)
@@ -152,7 +161,15 @@ class ANTS_Results_Tab(QWidget):
     # Run the test sequence by making calls to the control.py module. run_button_clicked generates QPixmap objects to hold the .png data plots generated with matplotlib
     def run_button_clicked(self):
 
+        # Run the test sequence
         self.ants_controller.run_n_times()
+
+        # Update the statistics labels with the latest test sequence data
+        self.compliance_label.setText("Compliance: {0}% average over {1} runs".format(self.ants_controller.compliance_avg, self.ants_controller.run_compliance_count))
+        if self.ants_controller.run_aggression_count > 0:
+            self.aggression_label.setText("Aggression: {0}% average over {1} runs".format(self.ants_controller.aggression_avg, self.ants_controller.run_aggression_count))
+        if self.ants_controller.run_aggression_count > 0:
+            self.submission_label.setText("Submission: {0}% average over {1} runs".format(self.ants_controller.submission_avg, self.ants_controller.run_submission_count))
 
         # Set up the graphics for the main display
 
@@ -270,6 +287,8 @@ class ANTS_Settings_Tab(QWidget):
         self.iperf_bandwidth_field_label = QLabel("Bandwidth", self)
         self.iperf_bandwidth_field.textChanged[str].connect(self.on_iperf_bandwidth_field_change)
 
+        self.iperf_bandwidth_rate_label = QLabel("Mbit/s", self)
+
         # Create the iperf groupbox widget and fill it
         self.iperf_groupbox = QGroupBox("iperf Settings")
         self.iperf_gridbox = QGridLayout(self)
@@ -282,6 +301,7 @@ class ANTS_Settings_Tab(QWidget):
 
         self.iperf_gridbox.addWidget(self.iperf_bandwidth_field_label, 2, 0)
         self.iperf_gridbox.addWidget(self.iperf_bandwidth_field, 2, 1)
+        self.iperf_gridbox.addWidget(self.iperf_bandwidth_rate_label, 2, 2)
 
         self.iperf_gridbox.addWidget(self.iperf_server_lineedit_label, 3, 0)
         self.iperf_gridbox.addWidget(self.iperf_server_lineedit, 3, 1)
@@ -360,18 +380,6 @@ class ANTS_Settings_Tab(QWidget):
         self.access_category_field_label = QLabel("Access Category", self)
         self.access_category_field.activated[str].connect(self.on_access_category_change)
 
-        # Button for flushing iptables configuration
-        #self.flush_routing_button = QPushButton("Flush Network Routing", self)
-        #self.flush_routing_button.setToolTip("Clear iptables Settings")
-        #self.flush_routing_button.resize(self.flush_routing_button.sizeHint())
-        #self.flush_routing_button.clicked.connect(self.flush_routing_button_clicked)
-
-        # Button for Configuring single-machine network routing
-        #self.set_routing_button = QPushButton("Set Network Routing", self)
-        #self.set_routing_button.setToolTip("Clear iptables Settings")
-        #self.set_routing_button.resize(self.set_routing_button.sizeHint())
-        #self.set_routing_button.clicked.connect(self.set_routing_button_clicked)
-
         # Add the general settings tools to the groupbox
         self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox, 2, 0)
         self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox, 3, 0)
@@ -442,7 +450,7 @@ class ANTS_Settings_Tab(QWidget):
         pass
 
     def on_iperf_bandwidth_field_change(self, text):
-        pass
+        self.ants_controller.iperf_bw = text
 
     def usrp_slider_value(self, value):
         if value == 0:

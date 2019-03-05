@@ -46,6 +46,12 @@ Due to the size of the raw data files created, it is recommended that a signific
 6. Set test parameters and press "Run";
 7. Collect the results.
 
+Depending on the Ubuntu version (i.e. 18.04 or later) you may need to additionally install ```ifconfig``` and related legacy test tools.
+
+When using a laptop as the test machine, the internal wireless card should be disabled **unless** it is the device under test, otherwise the test sequence may not perform as expected.
+
+An attenuator of 30dB (50 Ohms) is recommended between the access point and the splitter.
+
 ## Test Outputs
 
 By default, ANTS will provide six outputs in a time-stamped folder matching the name of the test given by the user and the access category (i.e. "voice", "video", "best effort", or "background"). These files are:
@@ -66,6 +72,7 @@ By default, ANTS will provide six outputs in a time-stamped folder matching the 
 * Add support for additional software-defined radios and other testing devices;
 * Provide interactive documentation in the form of descriptive tool-tips in the GUI;
 * Increase comment completeness in the code;
+* Remove mixed dependence on legacy and modern networking tools
 * Windows support (low-priority right now).
 
 ## Authors
