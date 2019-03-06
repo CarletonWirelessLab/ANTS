@@ -258,6 +258,16 @@ class ANTS_Plotter():
             print("NF: " + str(self.norm_factor))
             print("GF: " + str(self.geometric_factor))
 
+            if any(self.p > self.p_max):
+                print("Bin probability violation")
+            else:
+                print("Bin probability compliant")
+
+            if any(self.txop_durations > self.txop_limit):
+                print("Txop duration violation")
+            else:
+                print("Txop duration compliant")
+
             if self.ag_factor > 0:
                 self.aggression = abs(self.ag_factor)*100
                 print(str(self.aggression) + " Aggressive and " + str(self.norm_factor_percent) + " Compliant")
@@ -285,8 +295,8 @@ class ANTS_Plotter():
         plt.savefig(self.test_name + '_' + self.access_category + '_signal_magnitude_plot.svg')
         plt.close()
         plt.figure(2)
-        plt.xlim((0,300))
-        plt.hist(self.interframe_spacing, bins=500)
+        plt.xlim((0,250))
+        plt.hist(self.interframe_spacing, bins=750)
         plt.title("Histogram of the inter-frame spacing")
         plt.xlabel("Inter-frame spacing (microsecond)")
         plt.ylabel("Frequency")
@@ -294,10 +304,16 @@ class ANTS_Plotter():
         plt.savefig(self.test_name + '_' + self.access_category + '_interframe_spacing_histogram.svg')
         plt.close()
         plt.figure(3)
-        plt.hist(self.txop_durations, bins=100)
+
+        compliant_txop_durations = self.txop_durations[self.txop_durations < self.txop_limit]
+        violating_txop_durations = self.txop_durations[self.txop_durations >= self.txop_limit]
+        plt.hist(compliant_txop_durations, bins=50)
+        plt.hist(violating_txop_durations, bins=50, color='red')
         plt.title("Histogram of the Txop durations")
         plt.xlabel("Txop duration (milli second)")
         plt.ylabel("Frequency")
+        Gender = ['Compliant Txop', 'Violating Txop']
+        plt.legend(Gender, loc=2)
         plt.draw()
         plt.savefig(self.test_name + '_' + self.access_category + '_txop_durations_histogram.svg')
         plt.close()

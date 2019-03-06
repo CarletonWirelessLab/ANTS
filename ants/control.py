@@ -164,7 +164,7 @@ class ANTS_Controller():
             print("No IP was entered for the iperf access point. IP has defaulted to 10.1.1.10\n")
 
         if self.iperf_bw == None:
-            self.iperf_bw = "100M"
+            self.iperf_bw = "150"
             print("No bandwidth was entered for the iperf client. Bandwidth has defaulted to 100Mbit/s\n")
 
         # Setup routing and get the ip addresses for client and server and their virtual
