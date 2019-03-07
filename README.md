@@ -67,6 +67,15 @@ By default, ANTS will provide six outputs in a time-stamped folder matching the 
 5. A text file containing the resultant statistics of the collected data;
 6. The raw data file with the extension ```.bin```.
 
+## Known Configuration Details for Devices
+
+| #   | Device    | Power Level | Attenuator |
+|:---:|-----------|:-----------:|:----------:|
+| 1   | Ericsson  | 15 dBm      | 30 dB      |
+| 2   | Asus      | 1%          | 30 dB      |
+| 3   | BelAir    | 14 dBm      | 30 dB      |
+| 4   | TP Link   | High        | 60 dB      |
+
 
 ## To-Do List
 
