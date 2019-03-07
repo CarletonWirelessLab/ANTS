@@ -40,13 +40,16 @@ def get_devices(s):
 	for a in arr:
 		t = get_type(a)
 		if t:
-			if "Ethernet" in t:
-				dev_eth = Dev("eth", get_serial(a), get_id(a), get_name(a))
+			if "Ethernet" in t and get_id(a) == "0.3":
+				data, error = Popen(['ip','link','show','dev',get_name(a)], stdout=PIPE, stderr=PIPE).communicate()
+				data = str(data)
+				if "state UP" in data:
+					dev_eth = Dev("eth", get_serial(a), get_id(a), get_name(a))
 			elif "Wireless" in t and get_id(a) != "0":
 				dev_wlan = Dev("wlan", get_serial(a), get_id(a), get_name(a))
-			elif "Wireless" in t and get_id(a) == "0":
-				dev_wlan_internal = Dev("wlan", get_serial(a), get_id(a), get_name(a))
-	return dev_eth, dev_wlan, dev_wlan_internal
+			#elif "Wireless" in t and get_id(a) == "0":
+				#dev_wlan_internal = Dev("wlan", get_serial(a), get_id(a), get_name(a))
+	return dev_eth, dev_wlan#, dev_wlan_internal
 
 
 def interfaces_scan():
@@ -54,11 +57,12 @@ def interfaces_scan():
 	p = Popen(['lshw','-class','network'], stdout=PIPE, stderr=PIPE)
 	data, error = p.communicate()
 	data = str(data)
-	dev_eth, dev_wlan, dev_wlan_internal = get_devices(data)
-	print("THE LOGICAL NAME OF THE INTERNAL WIRELESS INTERFACE IS:", dev_wlan_internal.name)
+	#dev_eth, dev_wlan, dev_wlan_internal = get_devices(data)
+	dev_eth, dev_wlan = get_devices(data)
+	#print("THE LOGICAL NAME OF THE INTERNAL WIRELESS INTERFACE IS:", dev_wlan_internal.name)
 	print("THE LOGICAL NAME OF THE ETHERNET INTERFACE IS:", dev_eth.name)
 	print("THE MAC ADDRESS OF THE ETHERNET INTERFACE IS:", dev_eth.mac_addr)
 	print("THE LOGICAL NAME OF THE WIRELSS INTERFACE IS:", dev_wlan.name)
 	print("THE MAC ADDRESS OF THE WIRELESS INTERFACE IS:", dev_wlan.mac_addr)
 
-	return dev_eth.name, dev_eth.mac_addr, dev_wlan.name, dev_wlan.mac_addr, dev_wlan_internal.name
+	return dev_eth.name, dev_eth.mac_addr, dev_wlan.name, dev_wlan.mac_addr#, dev_wlan_internal.name
