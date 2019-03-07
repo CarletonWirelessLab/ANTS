@@ -8,16 +8,15 @@ def is_associated(wlan_name, essid):
 		return 1
 	return 0
 
-#def network_connect(eth_name, client_ip_address, wlan_name, server_ip_address, essid, wlan_internal_name):
-def network_connect(eth_name, client_ip_address, wlan_name, server_ip_address, essid):
+def network_connect(eth_name, client_ip_address, wlan_name, server_ip_address, essid, wlan_internal_name):
+#def network_connect(eth_name, client_ip_address, wlan_name, server_ip_address, essid):
 	show_route = "ip route show table main".split(" ")
 	flush_route = "ip route flush table main".split(" ")
-	#print("BRINGING",wlan_internal_name,"DOWN")
-	#call(['ifconfig', wlan_internal_name, 'down'])
+	if wlan_internal_name is not None:
+		print("BRINGING",wlan_internal_name,"DOWN")
+		call(['ifconfig', wlan_internal_name, 'down'])
 	print("FLUSHING IP ROUTE TABLE")
 	call(flush_route)
-	#print("BRINGING",eth_name,"DOWN")
-	#call(['ifconfig', eth_name, 'down'])
 	print("BRINGING",wlan_name,"DOWN")
 	call(['ifconfig', wlan_name, 'down'])
 	print("BRINGING",eth_name,"UP")

@@ -296,7 +296,7 @@ class ANTS_Plotter():
         plt.close()
         plt.figure(2)
         plt.xlim((0,250))
-        plt.hist(self.interframe_spacing, bins=750)
+        plt.hist(self.interframe_spacing, bins=500)
         plt.title("Histogram of the inter-frame spacing")
         plt.xlabel("Inter-frame spacing (microsecond)")
         plt.ylabel("Frequency")
@@ -307,8 +307,8 @@ class ANTS_Plotter():
 
         compliant_txop_durations = self.txop_durations[self.txop_durations < self.txop_limit]
         violating_txop_durations = self.txop_durations[self.txop_durations >= self.txop_limit]
-        plt.hist(compliant_txop_durations, bins=50)
-        plt.hist(violating_txop_durations, bins=50, color='red')
+        plt.hist(compliant_txop_durations, bins=30)
+        plt.hist(violating_txop_durations, bins=30, color='red')
         plt.title("Histogram of the Txop durations")
         plt.xlabel("Txop duration (milli second)")
         plt.ylabel("Frequency")
