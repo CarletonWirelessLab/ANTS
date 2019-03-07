@@ -52,6 +52,10 @@ When using a laptop as the test machine, the internal wireless card should be di
 
 An attenuator of 30dB (50 Ohms) is recommended between the access point and the splitter.
 
+The following is a diagram showing how to connect the test hardware for testing without an anechoic chamber:
+
+![alt text](docs/images/single_machine_setup.jpg "Single Machine Configuration")
+
 ## Test Outputs
 
 By default, ANTS will provide six outputs in a time-stamped folder matching the name of the test given by the user and the access category (i.e. "voice", "video", "best effort", or "background"). These files are:
