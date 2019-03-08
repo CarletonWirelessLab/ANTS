@@ -42,7 +42,7 @@ Due to the size of the raw data files created, it is recommended that a signific
 2. ```pip3 install pyqt5 netifaces``` (this may need to be run with sudo)
 3. From the home directory (or wherever you want to store your copy of the project), ```git clone https://github.com/CarletonWirelessLab/ANTS```
 4. (Optional) If running the test from a single machine, run the ```utils/setup_routing.py``` script to configure network interfaces and routing appropriately;
-5. Run ANTS by typing ```python3 ants/ants``` from the main ANTS directory;
+5. Run ANTS by typing ```sudo python3 ants/ants``` from the main ANTS directory;
 6. Set test parameters and press "Run";
 7. Collect the results.
 
@@ -51,6 +51,8 @@ Depending on the Ubuntu version (i.e. 18.04 or later) you may need to additional
 When using a laptop as the test machine, the internal wireless card should be disabled **unless** it is the device under test, otherwise the test sequence may not perform as expected.
 
 An attenuator of 30dB (50 Ohms) is recommended between the access point and the splitter.
+
+The majority of the current testing has been performed using an ASUS USB-AC56 USB WiFi device. Note that the driver for this device for Ubuntu 16.04 is located [here](https://github.com/abperiasamy/rtl8812AU_8821AU_linux).
 
 The following is a diagram showing how to connect the test hardware for testing without an anechoic chamber:
 
