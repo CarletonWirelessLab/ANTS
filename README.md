@@ -76,7 +76,7 @@ By default, ANTS will provide six outputs in a time-stamped folder matching the 
 | 1   | Asus RT-AC68U     | MIN | 20 dB | 20 dB |
 | 2   | BelAir 20E-11R | MAX      | 20 dB      | 20 dB |
 | 3   | TP Link Archer C50  | MAX        | 0 dB      | 0 dB |
-| 4   | Ericsson AP6321 | MAX     | don't care      | don't care |
+| 4   | Ericsson AP6321 | MAX     | 0 dB      | 0 dB |
 
 ## To-Do List
 
