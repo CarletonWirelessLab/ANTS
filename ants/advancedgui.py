@@ -295,8 +295,6 @@ class ANTS_Settings_Tab(QWidget):
         self.iperf_bandwidth_slider_text = "Bandwidth: " + str(self.iperf_bandwidth_slider.value()) + "Mbit/s"
         self.iperf_bandwidth_slider_label.setText(self.iperf_bandwidth_slider_text)
 
-        self.iperf_bandwidth_rate_label = QLabel("Mbit/s", self)
-
         # Create the iperf groupbox widget and fill it
         self.iperf_groupbox = QGroupBox("iperf Settings")
         self.iperf_gridbox = QGridLayout(self)
@@ -309,7 +307,7 @@ class ANTS_Settings_Tab(QWidget):
 
         self.iperf_gridbox.addWidget(self.iperf_bandwidth_slider_label, 2, 0)
         self.iperf_gridbox.addWidget(self.iperf_bandwidth_slider, 2, 1)
-        self.iperf_gridbox.addWidget(self.iperf_bandwidth_slider_label, 2, 2)
+        #self.iperf_gridbox.addWidget(self.iperf_bandwidth_slider_label, 2, 2)
 
         self.iperf_gridbox.addWidget(self.iperf_server_lineedit_label, 3, 0)
         self.iperf_gridbox.addWidget(self.iperf_server_lineedit, 3, 1)
