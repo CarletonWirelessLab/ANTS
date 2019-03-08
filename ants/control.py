@@ -170,22 +170,22 @@ class ANTS_Controller():
         # Setup routing and get the ip addresses for client and server and their virtual
         if self.configure_routing == True:
             self.eth_name, self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking(self.iperf_ap_addr)
-            ping_args = "ping -c 10 -I {0} {1}".format(self.eth_name, self.iperf_virtual_server_addr).split(" ")
-            ping_count = 0
-            print("WAITING FOR PING SUCCESS OF THE VIRTUAL SERVER THROUGH THE CLIENT INTERFACE")
+        ping_args = "ping -c 10 -I {0} {1}".format(self.eth_name, self.iperf_virtual_server_addr).split(" ")
+        ping_count = 0
+        print("WAITING FOR PING SUCCESS OF THE VIRTUAL SERVER THROUGH THE CLIENT INTERFACE")
+        communication_success = 0
+        while ping_count < self.ping_max:
+            ping_process = subprocess.Popen(ping_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            ping_process.communicate()[0]
+            rc = ping_process.returncode
+            if int(rc) == 0:
+                print("PING SUCCEEDED AFTER {0} RUNS\n".format(ping_count))
+                communication_success = 1
+                break
+            ping_count = ping_count + 1
+        if ping_count == self.ping_max:
+            print("PING FAILED AFTER {0} ATTEMPTS\n".format(self.ping_max))
             communication_success = 0
-            while ping_count < self.ping_max:
-                ping_process = subprocess.Popen(ping_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                ping_process.communicate()[0]
-                rc = ping_process.returncode
-                if int(rc) == 0:
-                    print("PING SUCCEEDED AFTER {0} RUNS\n".format(ping_count))
-                    communication_success = 1
-                    break
-                ping_count = ping_count + 1
-            if ping_count == self.ping_max:
-                print("PING FAILED AFTER {0} ATTEMPTS\n".format(self.ping_max))
-                communication_success = 0
 
 
         # The arguments to run the iperf client. If configure_routing is True, then automating routing has been performed and a virtual destination IP is required for the iperf client
@@ -200,6 +200,7 @@ class ANTS_Controller():
             # Run the iperf commands and print debug information
             print("iperf server IP is {0}\n".format(self.iperf_server_addr))
             print("iperf client IP is {0}\n".format(self.iperf_client_addr))
+            print("iperf client bandwidth is {0}\n".format(self.iperf_bw)) 
             self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
             self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=None, shell=False)
 
