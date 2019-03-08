@@ -71,10 +71,10 @@ By default, ANTS will provide six outputs in a time-stamped folder matching the 
 
 | #   | Device    | Power Level | Attenuator |
 |:---:|-----------|:-----------:|:----------:|
-| 1   | Ericsson  | 15 dBm      | 30 dB      |
-| 2   | Asus      | 1%          | 30 dB      |
-| 3   | BelAir    | 14 dBm      | 30 dB      |
-| 4   | TP Link   | High        | 60 dB      |
+| 1   | Ericsson AP6321 | 15 dBm      | 30 dB      |
+| 2   | Asus RT-AC68U     | 1%          | 30 dB      |
+| 3   | BelAir 20E-11R   | 14 dBm      | 30 dB      |
+| 4   | TP Link Archer C50  | High        | 60 dB      |
 
 
 ## To-Do List
