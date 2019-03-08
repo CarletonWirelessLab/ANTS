@@ -165,11 +165,11 @@ class ANTS_Results_Tab(QWidget):
         self.ants_controller.run_n_times()
 
         # Update the statistics labels with the latest test sequence data
-        self.compliance_label.setText("Compliance: {0}% average over {1} runs".format(self.ants_controller.compliance_avg, self.ants_controller.run_compliance_count))
+        self.compliance_label.setText("Compliance: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.compliance_avg)), self.ants_controller.run_compliance_count))
         if self.ants_controller.run_aggression_count > 0:
-            self.aggression_label.setText("Aggression: {0}% average over {1} runs".format(float("{0:.2f}".format(self.ants_controller.aggression_avg)), self.ants_controller.run_aggression_count))
+            self.aggression_label.setText("Aggression: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.aggression_avg)), self.ants_controller.run_aggression_count))
         if self.ants_controller.run_submission_count > 0:
-            self.submission_label.setText("Submission: {0}% average over {1} runs".format(float("{0:.2f}".format(self.ants_controller.submission_avg)), self.ants_controller.run_submission_count))
+            self.submission_label.setText("Submission: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.submission_avg)), self.ants_controller.run_submission_count))
 
         # Set up the graphics for the main display
 
@@ -283,9 +283,17 @@ class ANTS_Settings_Tab(QWidget):
         self.iperf_TOS_field.activated[str].connect(self.on_iperf_TOS_field_change)
 
         # Set the iperf bandwidth value (client only)
-        self.iperf_bandwidth_field = QLineEdit(self)
-        self.iperf_bandwidth_field_label = QLabel("Bandwidth", self)
-        self.iperf_bandwidth_field.textChanged[str].connect(self.on_iperf_bandwidth_field_change)
+        self.iperf_bandwidth_slider_label = QLabel(None, self)
+        self.iperf_bandwidth_slider = QSlider(Qt.Horizontal, self)
+        self.iperf_bandwidth_slider.setFocusPolicy(Qt.NoFocus)
+        self.iperf_bandwidth_slider.valueChanged[int].connect(self.iperf_bandwidth_slider_value)
+        self.iperf_bandwidth_slider.setMinimum(10)
+        self.iperf_bandwidth_slider.setMaximum(150)
+        self.iperf_bandwidth_slider.setTickInterval(10)
+        self.iperf_bandwidth_slider.setValue(100)
+        self.iperf_bandwidth_slider.setToolTip("Bandwidth for iperf traffic, from 10Mbit/s to 150Mbit/s")
+        self.iperf_bandwidth_slider_text = "Bandwidth: " + str(self.iperf_bandwidth_slider.value()) + "Mbit/s"
+        self.iperf_bandwidth_slider_label.setText(self.iperf_bandwidth_slider_text)
 
         self.iperf_bandwidth_rate_label = QLabel("Mbit/s", self)
 
@@ -299,9 +307,9 @@ class ANTS_Settings_Tab(QWidget):
         self.iperf_gridbox.addWidget(self.iperf_TOS_field_label, 1, 0)
         self.iperf_gridbox.addWidget(self.iperf_TOS_field, 1, 1)
 
-        self.iperf_gridbox.addWidget(self.iperf_bandwidth_field_label, 2, 0)
-        self.iperf_gridbox.addWidget(self.iperf_bandwidth_field, 2, 1)
-        self.iperf_gridbox.addWidget(self.iperf_bandwidth_rate_label, 2, 2)
+        self.iperf_gridbox.addWidget(self.iperf_bandwidth_slider_label, 2, 0)
+        self.iperf_gridbox.addWidget(self.iperf_bandwidth_slider, 2, 1)
+        self.iperf_gridbox.addWidget(self.iperf_bandwidth_slider_label, 2, 2)
 
         self.iperf_gridbox.addWidget(self.iperf_server_lineedit_label, 3, 0)
         self.iperf_gridbox.addWidget(self.iperf_server_lineedit, 3, 1)
@@ -320,7 +328,7 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_sample_rate_slider = QSlider(Qt.Horizontal, self)
         self.usrp_sample_rate_slider.setFocusPolicy(Qt.NoFocus)
         self.usrp_sample_rate_slider.valueChanged[int].connect(self.usrp_slider_value)
-        self.usrp_sample_rate_slider.setMinimum(0)
+        self.usrp_sample_rate_slider.setMinimum(1)
         self.usrp_sample_rate_slider.setMaximum(20)
         self.usrp_sample_rate_slider.setTickInterval(1)
         self.usrp_sample_rate_slider.setValue(20)
@@ -333,11 +341,11 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_run_delay_slider = QSlider(Qt.Horizontal, self)
         self.usrp_run_delay_slider.setFocusPolicy(Qt.NoFocus)
         self.usrp_run_delay_slider.valueChanged[int].connect(self.usrp_run_delay_value)
-        self.usrp_run_delay_slider.setMinimum(0)
+        self.usrp_run_delay_slider.setMinimum(1)
         self.usrp_run_delay_slider.setMaximum(10)
         self.usrp_run_delay_slider.setTickInterval(1)
         self.usrp_run_delay_slider.setValue(3)
-        self.usrp_run_delay_slider.setToolTip("Sample rate for USRP is between 1MS/s and20 MS/s")
+        self.usrp_run_delay_slider.setToolTip("Set a delay between the time the iperf traffic starts and when the USRP runs")
         self.usrp_run_delay_text = "Run delay: " + str(self.usrp_run_delay_slider.value()) + " seconds"
         self.usrp_run_delay_label.setText(self.usrp_run_delay_text)
 
@@ -479,6 +487,20 @@ class ANTS_Settings_Tab(QWidget):
             self.ants_controller.usrp_run_delay = value
             print("Run delay set to {0} seconds\n".format(self.ants_controller.usrp_run_delay))
             self.usrp_run_delay_label.setText("Run delay: " + str(self.ants_controller.usrp_run_delay) + "seconds")
+
+    def iperf_bandwidth_slider_value(self, value):
+        if value == 10:
+            self.ants_controller.iperf_bw = 10
+            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.iperf_bw))
+            self.iperf_bandwidth_slider_label.setText("Sample rate: " + str(self.ants_controller.iperf_bw) + "Mbit/s")
+        elif value == 150:
+            self.ants_controller.iperf_bw = 150
+            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.iperf_bw))
+            self.iperf_bandwidth_slider_label.setText("Sample rate: " + str(self.ants_controller.iperf_bw) + "Mbit/s")
+        else:
+            self.ants_controller.iperf_bw = value
+            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.iperf_bw))
+            self.iperf_bandwidth_slider_label.setText("Run delay: " + str(self.ants_controller.iperf_bw) + "Mbit/s")
 
     def on_timestamp_checkbox_checked(self, state):
         if state == Qt.Checked:

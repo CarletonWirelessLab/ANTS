@@ -200,7 +200,7 @@ class ANTS_Controller():
             # Run the iperf commands and print debug information
             print("iperf server IP is {0}\n".format(self.iperf_server_addr))
             print("iperf client IP is {0}\n".format(self.iperf_client_addr))
-            print("iperf client bandwidth is {0}\n".format(self.iperf_bw)) 
+            print("iperf client bandwidth is {0}\n".format(self.iperf_bw))
             self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
             self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=None, shell=False)
 
