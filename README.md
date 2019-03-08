@@ -52,6 +52,8 @@ When using a laptop as the test machine, the internal wireless card should be di
 
 An attenuator of 30dB (50 Ohms) is recommended between the access point and the splitter.
 
+The majority of the current testing has been performed using an ASUS USB-AC56 USB WiFi device. Note that the driver for this device for Ubuntu 16.04 is located [here](https://github.com/abperiasamy/rtl8812AU_8821AU_linux).
+
 The following is a diagram showing how to connect the test hardware for testing without an anechoic chamber:
 
 ![alt text](docs/images/single_machine_setup.jpg "Single Machine Configuration")
