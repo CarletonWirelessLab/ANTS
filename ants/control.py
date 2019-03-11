@@ -179,12 +179,12 @@ class ANTS_Controller():
             ping_process.communicate()[0]
             rc = ping_process.returncode
             if int(rc) == 0:
-                print("PING SUCCEEDED AFTER {0} RUNS\n".format(ping_count))
+                print("PING SUCCEEDED AFTER {0} RUNS".format(ping_count+1))
                 communication_success = 1
                 break
             ping_count = ping_count + 1
         if ping_count == self.ping_max:
-            print("PING FAILED AFTER {0} ATTEMPTS\n".format(self.ping_max))
+            print("PING FAILED AFTER {0} ATTEMPTS".format(self.ping_max))
             communication_success = 0
 
 

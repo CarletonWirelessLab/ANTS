@@ -1,17 +1,16 @@
 import re
-from subprocess import Popen, PIPE
-
+from subprocess import *
 class Cell:
-    def __init__(self, e, l):
+    def __init__(self, e, a):
         self.essid = e
-        self.level = l
+        self.address = a
     def __str__(self):
-        return self.essid + ", " + self.level
+        return self.essid + ", " + self.address
 
-def get_level(s):
-    m = re.search("Signal level=([0-9]{1,3})/100", s)
+def get_address(s):
+    m = re.search("Address: (([0-9A-Fa-f]{2}[:]){5})", s)
     if m:
-        return m.group(1)
+        return m.group(1).lower()
     return None
 
 def get_essid(s):
@@ -26,29 +25,28 @@ def get_cells(s):
     index = 0
     for a in arr:
         if index != 0:
-            c = Cell(get_essid(a), get_level(a))
+            c = Cell(get_essid(a), get_address(a))
             cells.append(c)
         index = index + 1
     return cells
 
-def max_cell_level(arr):
+def match_address(arr,bridge_id):
     mx = 0
     index = 0
     i = 0
     for a in arr:
-        if int(a.level) > mx:
-            mx = int(a.level)
+        if a.address in bridge_id:
             index = i
         i = i + 1
     return arr[index]
 
 
-def network_scan(device_name):
+def network_scan(device_name, bridge_id):
     print("SCANNING NETWORKS ON THE WIRELESS INTERFACE", device_name)
     p = Popen(['iwlist', device_name, 'scan'], stdout=PIPE, stderr=PIPE)
     data, error = p.communicate()
     data = str(data)
     cells = get_cells(data)
-    c = max_cell_level(cells)
-    print("NETWORK ESSID", c.essid, "HAS MAXIMUM SIGNAL LEVEL OF", c.level)
+    c = match_address(cells,bridge_id)
+    print("NETWORK ESSID", c.essid, "HAS A MATCHING ADDRESS{0}:xx".format(c.address))
     return c.essid
