@@ -40,6 +40,21 @@ def match_address(arr,bridge_id):
         i = i + 1
     return arr[index]
 
+def get_all_networks(device_name):
+    print("BRINGING",device_name,"UP")
+    call(['ifconfig', device_name, 'up'])
+    call(['ip', 'addr', 'flush', 'dev', device_name])
+    print("SCANNING NETWORKS ON THE WIRELESS INTERFACE", device_name)
+    p = Popen(['iwlist', device_name, 'scan'], stdout=PIPE, stderr=PIPE)
+    data, error = p.communicate()
+    data = str(data)
+    cells = get_cells(data)
+    networks = []
+    for c in cells:
+        networks.append(c.essid)
+
+    print('NETWORK SCAN COMPLETE')
+    return networks
 
 def network_scan(device_name, bridge_id):
     print("SCANNING NETWORKS ON THE WIRELESS INTERFACE", device_name)

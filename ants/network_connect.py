@@ -4,7 +4,7 @@ def is_associated(wlan_name, essid):
 	p = Popen(['iwconfig',wlan_name],stdout=PIPE, stderr=PIPE)
 	data = str(p.communicate()[0])
 	if essid in data:
-		print(wlan_name, "ASSOCIATED TO ESSID:" , essid)
+		print(wlan_name, "ASSOCIATED TO ESSID:" , essid)#)
 		return 1
 	return 0
 
@@ -15,15 +15,15 @@ def network_connect(wlan_name, server_ip_address, essid, wlan_internal_name):
 	call(['ifconfig', wlan_internal_name, 'down'])
 	print("FLUSHING IP ROUTE TABLE")
 	call(flush_route)
-	
+
 	print("BRINGING",wlan_name,"DOWN")
 	call(['ifconfig', wlan_name, 'down'])
-	
+
 	print("BRINGING",wlan_name,"UP")
 	call(['ifconfig', wlan_name, 'up'])
 	call(['ip', 'addr', 'flush', 'dev', wlan_name])
-	
-	
+
+
 	print("ASSOCIATING", wlan_name, "TO ESSID", essid)
 	call(['iwconfig', wlan_name, 'essid', essid])
 	print("WAITING FOR" , wlan_name, "TO ASSOCIATE TO ESSID", essid)

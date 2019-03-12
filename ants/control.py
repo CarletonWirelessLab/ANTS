@@ -9,11 +9,14 @@ import os
 import datetime
 import statistics as stat
 from plotter import *
-from initialize_networking import *
-
+from network_connect import *
+from setup_routing import *
+from ipaddress import *
 class ANTS_Controller():
 
     def __init__(self):
+
+        self.essid = None
 
         # Class variables used for the subprocesses run, if any, of the tools
         # run when their checkboxes are selected
@@ -167,9 +170,37 @@ class ANTS_Controller():
             self.iperf_bw = "150"
             print("No bandwidth was entered for the iperf client. Bandwidth has defaulted to 100Mbit/s\n")
 
+
+
         # Setup routing and get the ip addresses for client and server and their virtual
         if self.configure_routing == True:
-            self.eth_name, self.iperf_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr = initialize_networking(self.iperf_ap_addr)
+            # real
+            self.iperf_client_addr = str(ip_address(self.iperf_ap_addr) + 1)
+            print("CLIENT IP ADDRESS is: " , self.iperf_client_addr)
+            self.iperf_server_addr = str(ip_address(self.iperf_ap_addr) + 2)
+            print("SERVER IP ADDRESS is: " , self.iperf_server_addr)
+            # virtual
+            self.iperf_virtual_client_addr = str(ip_address(self.iperf_client_addr) + (256))
+            print("VIRTUAL CLIENT IP ADDRESS is: " , self.iperf_virtual_client_addr)
+            self.iperf_virtual_server_addr = str(ip_address(self.iperf_server_addr) + (256))
+            print("VIRTUAL SERVER IP ADDRESS is: " , self.iperf_virtual_server_addr)
+
+            print("BRINGING",self.wlan_name,"DOWN")
+            call(['ifconfig', self.wlan_name, 'down'])
+            call(['ip', 'addr', 'flush', 'dev', self.wlan_name])
+
+            print("BRINGING",self.eth_name,"UP")
+            call(['ifconfig', self.eth_name, 'up'])
+            call(['ip', 'addr', 'flush', 'dev', self.eth_name])
+
+            print("ASSIGNING",self.eth_name,"TO IP:", self.iperf_client_addr)
+            call(['ifconfig', self.eth_name, 'inet', self.iperf_client_addr, 'up'])
+            time.sleep(10)
+
+
+            network_connect(self.wlan_name, self.iperf_server_addr, self.essid, self.wlan_internal_name)
+            setup_routing(self.eth_name, self.eth_mac, self.wlan_name, self.wlan_mac, self.iperf_client_addr, self.iperf_virtual_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr)
+
         ping_args = "ping -c 10 -I {0} {1}".format(self.eth_name, self.iperf_virtual_server_addr).split(" ")
         ping_count = 0
         print("WAITING FOR PING SUCCESS OF THE VIRTUAL SERVER THROUGH THE CLIENT INTERFACE")

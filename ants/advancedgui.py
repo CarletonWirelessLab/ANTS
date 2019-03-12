@@ -7,7 +7,8 @@ from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
 from PyQt5.QtWidgets import QGroupBox
 from PyQt5.QtCore import Qt, QRegExp, QSettings
 from PyQt5.QtGui import QRegExpValidator, QPixmap, QIntValidator
-
+from network_scan import *
+from interfaces_scan import *
 # The parent "table" class that holds all of the functional tabs
 class ANTS_Table(QWidget):
 
@@ -23,13 +24,13 @@ class ANTS_Table(QWidget):
 
         # Instantiate all of the tab objects needed for the GUI
         self.results_tab = ANTS_Results_Tab(self, self.ants_controller)
-        self.settings_tab = ANTS_Settings_Tab(self, self.ants_controller)
+        self.settings_tab = ANTS_Settings_Tab(self, self.results_tab, self.ants_controller, self.tabs)
         self.about_tab = ANTS_About_Tab(self, self.ants_controller)
         self.license_tab = ANTS_License_Tab(self, self.ants_controller)
         self.tabs.resize(300, 200)
 
-        self.tabs.addTab(self.results_tab, "Results")
         self.tabs.addTab(self.settings_tab, "Control Settings")
+        self.tabs.addTab(self.results_tab, "Results")
         self.tabs.addTab(self.about_tab, "About")
         self.tabs.addTab(self.license_tab, "License")
 
@@ -56,40 +57,6 @@ class ANTS_Results_Tab(QWidget):
             border-color: white;
         """)
 
-        # Create a text box to take the filename used by the USRP and converter
-        # tools
-        self.file_name_lineedit = QLineEdit(self)
-        self.file_name_lineedit.textChanged[str].connect(self.on_name_change)
-        self.file_name_lineedit.setToolTip("The filename for the USRP to output the data to")
-        self.file_name_text = "Test Name"
-        self.file_name_label = QLabel(self.file_name_text, self)
-
-        # Run time slider set up
-        self.runtime_slider = QSlider(Qt.Horizontal, self)
-        self.runtime_slider.setFocusPolicy(Qt.NoFocus)
-        self.runtime_slider.setGeometry(380,70,100,30)
-        self.runtime_slider.valueChanged[int].connect(self.change_value)
-        self.runtime_slider.setMinimum(0)
-        self.runtime_slider.setMaximum(20)
-        self.runtime_slider.setTickInterval(1)
-        self.runtime_slider.setToolTip("Sense/injection duration for the USRP and signal generator")
-        self.runtime_text = "Runtime " + str(0.5) + " seconds"
-        self.runtime_label = QLabel(self.runtime_text, self)
-
-
-
-        # The button for running the entire sequence
-        self.run_btn = QPushButton('Run', self)
-        self.run_btn.setToolTip('Run the test sequences selected')
-        self.run_btn.resize(self.run_btn.sizeHint())
-        self.run_btn.clicked.connect(self.run_button_clicked)
-
-        # The checkbox for confirming that automatic network routing should be performed
-        self.routing_checkbox = QCheckBox("Perform Auto Routing", self)
-        self.routing_checkbox.toggle()
-        self.routing_checkbox.setToolTip("Allow ANTS to perform custom networking setup (requires root permissions). Off by default")
-        self.routing_checkbox.stateChanged.connect(self.configure_routing)
-
         self.compliance_label = QLabel("Compliance (%): N/A")
         self.aggression_label = QLabel("Aggression (%): N/A")
         self.submission_label = QLabel("Submission (%): N/A")
@@ -98,15 +65,10 @@ class ANTS_Results_Tab(QWidget):
         self.layout.addWidget(self.graphic_label, 0, 0, 5, 5)
 
         # The widgets in the information/run bar on the right side of the GUI
-        self.layout.addWidget(self.file_name_label, 0, 6, 1, 1)
-        self.layout.addWidget(self.file_name_lineedit, 1, 6, 1, 1)
+
         self.layout.addWidget(self.compliance_label, 3, 6, 1, 1)
         self.layout.addWidget(self.aggression_label, 4, 6, 1, 1)
         self.layout.addWidget(self.submission_label, 5, 6, 1, 1)
-        self.layout.addWidget(self.runtime_label, 6, 6, 1, 1)
-        self.layout.addWidget(self.runtime_slider, 7, 6, 1, 1)
-        self.layout.addWidget(self.run_btn, 8, 6, 1, 1)
-        self.layout.addWidget(self.routing_checkbox, 9, 6, 1, 1)
 
         self.layout.setColumnStretch(6, 1)
         self.layout.setRowStretch(4, 1)
@@ -140,79 +102,6 @@ class ANTS_Results_Tab(QWidget):
 
         self.setLayout(self.layout)
 
-    # Set file name based on what's in the box
-    def on_name_change(self, text):
-
-        self.ants_controller.file_name = text
-
-    # Controls changing the value pointed to by the slider. The slider should
-    # allow ranges between 0.5 and 10, but since the class only supports
-    # integers, some math must be done to the actual value when it is moved
-    def change_value(self, value):
-
-        if value == 0:
-            self.ants_controller.run_time = 0.5
-        elif value == 20:
-            self.ants_controller.run_time = 10
-        else:
-            self.ants_controller.run_time = value / 2.0
-        self.runtime_label.setText("Runtime " + str(self.ants_controller.run_time) + " seconds")
-
-    # Run the test sequence by making calls to the control.py module. run_button_clicked generates QPixmap objects to hold the .png data plots generated with matplotlib
-    def run_button_clicked(self):
-
-        # Run the test sequence
-        self.ants_controller.run_n_times()
-
-        # Update the statistics labels with the latest test sequence data
-        self.compliance_label.setText("Compliance: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.compliance_avg)), self.ants_controller.run_compliance_count))
-        if self.ants_controller.run_aggression_count > 0:
-            self.aggression_label.setText("Aggression: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.aggression_avg)), self.ants_controller.run_aggression_count))
-        if self.ants_controller.run_submission_count > 0:
-            self.submission_label.setText("Submission: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.submission_avg)), self.ants_controller.run_submission_count))
-
-        # Set up the graphics for the main display
-
-        # The general path for the data files. This is passed to each pixmap for further use
-        self.general_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac
-
-        # The path for the bin distribution image
-        self.bin_pixmap_path = self.general_pixmap_path + "_bin_probability.svg"
-        self.bin_pixmap = QPixmap(self.bin_pixmap_path)
-
-        # The path for the interframe spacing image
-        self.interframe_pixmap_path = self.general_pixmap_path + "_interframe_spacing_histogram.svg"
-        self.interframe_pixmap = QPixmap(self.interframe_pixmap_path)
-
-        # The path for the raw signal image
-        self.raw_signal_pixmap_path = self.general_pixmap_path + "_signal_magnitude_plot.svg"
-        self.raw_signal_pixmap = QPixmap(self.raw_signal_pixmap_path)
-
-        # The path for the transmission opportunity image
-        self.txop_pixmap_path = self.general_pixmap_path + "_txop_durations_histogram.svg"
-        self.txop_pixmap = QPixmap(self.txop_pixmap_path)
-
-        print("Plots are saved as .svg files at {0}.\n".format(self.ants_controller.data_dir))
-
-        # Set the pixmap window to be a gray background if there is no data from a previous run
-        self.graphic_label.setStyleSheet("""
-            background-color: grey;
-            color: white;
-            font: bold;
-            padding: 1px;
-            border-width: 1px;
-            border-style: panel;
-            border-radius: 1px;
-            border-color: white;
-        """)
-        self.graphic_label.setPixmap(self.bin_pixmap)
-
-    def configure_routing(self, state):
-        if state == Qt.Checked:
-            self.ants_controller.configure_routing = True
-        else:
-            self.ants_controller.configure_routing = False
-
     # When the bin distribution button is clicked, display the bin distribution QPixmap contents
     def bin_button_clicked(self):
         self.bin_pixmap.load(self.bin_pixmap_path)
@@ -235,10 +124,11 @@ class ANTS_Results_Tab(QWidget):
 
 # The catch-all tab widget for settings related to ANTS. Data entered here should be passed to the ANTS controller object
 class ANTS_Settings_Tab(QWidget):
-    def __init__(self, tabs_object, ants_controller):
+    def __init__(self, tabs_object, results_tab, ants_controller, ants_table):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
-
+        self.ants_table = ants_table
+        self.results_tab = results_tab
         # Always run at least once
         self.num_runs = 1
 
@@ -254,67 +144,103 @@ class ANTS_Settings_Tab(QWidget):
         self.ip_regex = QRegExp("^" + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "\\." + self.ip_range + "$")
         self.ip_validator = QRegExpValidator(self.ip_regex, self)
 
-        # Text box for specifying the iperf client IPv4 address. Uses the ip validator object to verify a valid IP is given
-        self.iperf_client_lineedit = QLineEdit(self)
-        self.iperf_client_lineedit_label = QLabel("Client IP", self)
-        self.iperf_client_lineedit.setValidator(self.ip_validator)
-        self.iperf_client_lineedit.textChanged[str].connect(self.on_client_ip)
+        # The button for running the entire sequence
+        self.run_btn = QPushButton('Run', self)
+        self.run_btn.setToolTip('Run the test sequences selected')
+        self.run_btn.resize(self.run_btn.sizeHint())
+        self.run_btn.clicked.connect(self.run_button_clicked, 5)
 
-        # Text box for specifying the iperf server IPv4 address. Uses the ip validator object to verify a valid IP is given
-        self.iperf_server_lineedit = QLineEdit(self)
-        self.iperf_server_lineedit_label = QLabel("Server IP", self)
-        self.iperf_server_lineedit.setValidator(self.ip_validator)
-        self.iperf_server_lineedit.textChanged[str].connect(self.on_server_ip)
+        # The button for scanning the entire sequence
+        self.scan_btn = QPushButton('Scan Wi-Fi', self)
+        self.scan_btn.setToolTip('Scan the Wi-Fi networks')
+        self.scan_btn.resize(self.scan_btn.sizeHint())
+        self.scan_btn.clicked.connect(self.scan_button_clicked, 5)
+
+        # The checkbox for confirming that automatic network routing should be performed
+        self.routing_checkbox = QCheckBox("Perform Auto Routing", self)
+        self.routing_checkbox.toggle()
+        self.routing_checkbox.setToolTip("Allow ANTS to perform custom networking setup (requires root permissions). Off by default")
+        self.routing_checkbox.stateChanged.connect(self.configure_routing)
+
+
+        # Create a text box to take the filename used by the USRP and converter
+        # tools
+        self.file_name_lineedit = QLineEdit(self)
+        self.file_name_lineedit.textChanged[str].connect(self.on_name_change)
+        self.file_name_lineedit.setToolTip("The filename for the USRP to output the data to")
+        self.file_name_text = "Test Name"
+        self.file_name_label = QLabel(self.file_name_text, self)
+
+        # Run time slider set up
+        self.runtime_slider = QSlider(Qt.Horizontal, self)
+        self.runtime_slider.setFocusPolicy(Qt.NoFocus)
+        self.runtime_slider.setGeometry(380,70,100,30)
+        self.runtime_slider.valueChanged[int].connect(self.change_value)
+        self.runtime_slider.setMinimum(0)
+        self.runtime_slider.setMaximum(20)
+        self.runtime_slider.setTickInterval(1)
+        self.runtime_slider.setToolTip("Sense/injection duration for the USRP and signal generator")
+        self.runtime_text = "Runtime " + str(0.5) + " seconds"
+        self.runtime_label = QLabel(self.runtime_text, self)
+
 
         # Text box for specifying the IP address of the access point to be used for testing
-
-        self.iperf_ap_lineedit = QLineEdit(self)
-        self.iperf_ap_lineedit_label = QLabel("Access Point IP", self)
-        self.iperf_ap_lineedit.setValidator(self.ip_validator)
-        self.iperf_ap_lineedit.textChanged[str].connect(self.on_ap_ip)
+        self.network_ap_lineedit = QLineEdit(self)
+        self.network_ap_lineedit_label = QLabel("Access Point IP", self)
+        self.network_ap_lineedit.setValidator(self.ip_validator)
+        self.network_ap_lineedit.setText('192.168.1.1')
+        self.ants_controller.iperf_ap_addr = '192.168.1.1'
+        self.network_ap_lineedit.textChanged[str].connect(self.on_ap_ip)
 
         # Specify the iperf type-of-service value (client only)
-        self.iperf_TOS_field = QComboBox(self)
-        self.iperf_TOS_field.addItem("Minimize delay (0x10)")
-        self.iperf_TOS_field.addItem("Maximize throughput (0x08)")
-        self.iperf_TOS_field.addItem("Maximize reliability (0x04)")
-        self.iperf_TOS_field.addItem("Minimize cost (0x02)")
-        self.iperf_TOS_field_label = QLabel("TOS", self)
-        self.iperf_TOS_field.activated[str].connect(self.on_iperf_TOS_field_change)
+        self.network_WiFi = QComboBox(self)
+        self.network_WiFi_label = QLabel("Wi-Fi Networks", self)
+        self.network_WiFi.activated[str].connect(self.on_network_WiFi_change)
 
         # Set the iperf bandwidth value (client only)
-        self.iperf_bandwidth_slider_label = QLabel(None, self)
-        self.iperf_bandwidth_slider = QSlider(Qt.Horizontal, self)
-        self.iperf_bandwidth_slider.setFocusPolicy(Qt.NoFocus)
-        self.iperf_bandwidth_slider.valueChanged[int].connect(self.iperf_bandwidth_slider_value)
-        self.iperf_bandwidth_slider.setMinimum(10)
-        self.iperf_bandwidth_slider.setMaximum(150)
-        self.iperf_bandwidth_slider.setTickInterval(10)
-        self.iperf_bandwidth_slider.setValue(100)
-        self.iperf_bandwidth_slider.setToolTip("Bandwidth for iperf traffic, from 10Mbit/s to 150Mbit/s")
-        self.iperf_bandwidth_slider_text = "Bandwidth: " + str(self.iperf_bandwidth_slider.value()) + "Mbit/s"
-        self.iperf_bandwidth_slider_label.setText(self.iperf_bandwidth_slider_text)
+        self.network_bandwidth_slider_label = QLabel(None, self)
+        self.network_bandwidth_slider = QSlider(Qt.Horizontal, self)
+        self.network_bandwidth_slider.setFocusPolicy(Qt.NoFocus)
+        self.network_bandwidth_slider.valueChanged[int].connect(self.network_bandwidth_slider_value)
+        self.network_bandwidth_slider.setMinimum(10)
+        self.network_bandwidth_slider.setMaximum(150)
+        self.network_bandwidth_slider.setTickInterval(10)
+        self.network_bandwidth_slider.setValue(100)
+        self.network_bandwidth_slider.setToolTip("Bandwidth for iperf traffic, from 10Mbit/s to 150Mbit/s")
+        self.network_bandwidth_slider_text = "Bandwidth: " + str(self.network_bandwidth_slider.value()) + "Mbit/s"
+        self.network_bandwidth_slider_label.setText(self.network_bandwidth_slider_text)
+
+        # Combo box for the access category
+        self.access_category_field = QComboBox(self)
+        self.access_category_field.addItem("Voice")
+        self.access_category_field.addItem("Video")
+        self.access_category_field.addItem("Best Effort")
+        self.access_category_field.addItem("Background")
+        self.access_category_field_label = QLabel("Access Category", self)
+        self.access_category_field.activated[str].connect(self.on_access_category_change)
 
         # Create the iperf groupbox widget and fill it
-        self.iperf_groupbox = QGroupBox("iperf Settings")
-        self.iperf_gridbox = QGridLayout(self)
+        self.network_groupbox = QGroupBox("Network Settings")
+        self.network_gridbox = QGridLayout(self)
 
-        self.iperf_gridbox.addWidget(self.iperf_client_lineedit_label, 0, 0)
-        self.iperf_gridbox.addWidget(self.iperf_client_lineedit, 0, 1)
 
-        self.iperf_gridbox.addWidget(self.iperf_TOS_field_label, 1, 0)
-        self.iperf_gridbox.addWidget(self.iperf_TOS_field, 1, 1)
 
-        self.iperf_gridbox.addWidget(self.iperf_bandwidth_slider_label, 2, 0)
-        self.iperf_gridbox.addWidget(self.iperf_bandwidth_slider, 2, 1)
-        #self.iperf_gridbox.addWidget(self.iperf_bandwidth_slider_label, 2, 2)
+        self.network_gridbox.addWidget(self.network_bandwidth_slider_label, 0, 0)
+        self.network_gridbox.addWidget(self.network_bandwidth_slider, 0, 1)
 
-        self.iperf_gridbox.addWidget(self.iperf_server_lineedit_label, 3, 0)
-        self.iperf_gridbox.addWidget(self.iperf_server_lineedit, 3, 1)
+        self.network_gridbox.addWidget(self.access_category_field_label, 1, 0)
+        self.network_gridbox.addWidget(self.access_category_field, 1, 1)
 
-        self.iperf_gridbox.addWidget(self.iperf_ap_lineedit_label, 4, 0)
-        self.iperf_gridbox.addWidget(self.iperf_ap_lineedit, 4, 1)
-        self.iperf_groupbox.setLayout(self.iperf_gridbox)
+        self.network_gridbox.addWidget(self.network_ap_lineedit_label, 2, 0)
+        self.network_gridbox.addWidget(self.network_ap_lineedit, 2, 1)
+
+        self.network_gridbox.addWidget(self.network_WiFi_label, 3, 0)
+        self.network_gridbox.addWidget(self.network_WiFi, 3, 1)
+
+        self.network_gridbox.addWidget(self.routing_checkbox, 4, 0)
+        self.network_gridbox.addWidget(self.scan_btn, 4, 1)
+        self.network_groupbox.setLayout(self.network_gridbox)
+
 
         # Create the USRP settings groupbox and fill it
         self.usrp_groupbox = QGroupBox("USRP Settings")
@@ -359,12 +285,10 @@ class ANTS_Settings_Tab(QWidget):
         self.plotting_groupbox.setLayout(self.plotting_gridbox)
 
         # Create the general (i.e. system-level) settings groupbox
+
         self.general_settings_groupbox = QGroupBox("General Settings")
         self.general_settings_gridbox = QGridLayout(self)
         self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
-
-        # Checkbox to turn on or off timestamping of test run folders
-        self.gs_timestamp_checkbox = QCheckBox("Timestamp Test Folders",self)
 
         # Checkbox to turn on or off extended debug info
         self.gs_debuginfo_checkbox = QCheckBox("Extended Debug Info",self)
@@ -377,28 +301,36 @@ class ANTS_Settings_Tab(QWidget):
         self.gs_number_of_runs_lineedit.setValidator(self.gs_number_of_runs_validator)
         self.gs_number_of_runs_lineedit.textChanged[str].connect(self.on_num_runs)
 
-        # Combo box for the access category
-        self.access_category_field = QComboBox(self)
-        self.access_category_field.addItem("Voice")
-        self.access_category_field.addItem("Video")
-        self.access_category_field.addItem("Best Effort")
-        self.access_category_field.addItem("Background")
-        self.access_category_field_label = QLabel("Access Category", self)
-        self.access_category_field.activated[str].connect(self.on_access_category_change)
 
         # Add the general settings tools to the groupbox
-        self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox, 2, 0)
+        self.general_settings_gridbox.addWidget(self.file_name_label, 0, 0)
+        self.general_settings_gridbox.addWidget(self.file_name_lineedit, 0, 1)
+
+        self.general_settings_gridbox.addWidget(self.runtime_label, 1, 0)
+        self.general_settings_gridbox.addWidget(self.runtime_slider, 1, 1)
+        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label, 2, 0)
+        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit, 2, 1)
         self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox, 3, 0)
-        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label, 4, 0)
-        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit, 4, 1)
-        self.general_settings_gridbox.addWidget(self.access_category_field_label, 1, 0)
-        self.general_settings_gridbox.addWidget(self.access_category_field, 1, 1)
+        self.general_settings_gridbox.addWidget(self.run_btn, 4, 0)
         self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
 
         # Add the groupbox widgets to the main tab grid
         self.layout.addWidget(self.usrp_groupbox, 0, 2, 2, 1)
-        self.layout.addWidget(self.iperf_groupbox, 0, 1, 2, 1)
+        self.layout.addWidget(self.network_groupbox, 0, 1, 2, 1)
         self.layout.addWidget(self.general_settings_groupbox, 0, 0, 2, 1)
+
+    # Controls changing the value pointed to by the slider. The slider should
+    # allow ranges between 0.5 and 10, but since the class only supports
+    # integers, some math must be done to the actual value when it is moved
+    def change_value(self, value):
+
+        if value == 0:
+            self.ants_controller.run_time = 0.5
+        elif value == 20:
+            self.ants_controller.run_time = 10
+        else:
+            self.ants_controller.run_time = value / 2.0
+        self.runtime_label.setText("Runtime " + str(self.ants_controller.run_time) + " seconds")
 
     # Action methods for access category radio buttons
     def on_ac_voice_clicked(self):
@@ -426,25 +358,23 @@ class ANTS_Settings_Tab(QWidget):
         elif self.gs_number_of_runs_lineedit.hasAcceptableInput():
             self.ants_controller.num_runs = int(self.gs_number_of_runs_lineedit.text())
 
-    # Checks to make sure iperf_client_addr is set to a realistic IP value
+    # Checks to make sure network_client_addr is set to a realistic IP value
     def on_client_ip(self, text):
-        if self.iperf_client_lineedit.text == "":
-            self.iperf_client_lineedit.text = "10.1.11.115"
-        elif self.iperf_client_lineedit.hasAcceptableInput():
-            self.ants_controller.iperf_client_addr = text
+        if self.network_client_lineedit.text == "":
+            self.network_client_lineedit.text = "10.1.11.115"
+        elif self.network_client_lineedit.hasAcceptableInput():
+            self.ants_controller.network_client_addr = text
 
-    # Checks to make sure iperf_server_addr is set to a realistic IP value
+    # Checks to make sure network_server_addr is set to a realistic IP value
     def on_server_ip(self, text):
-        if self.iperf_server_lineedit.text == "":
-            self.iperf_server_lineedit.text = "10.1.1.120"
-        elif self.iperf_server_lineedit.hasAcceptableInput():
-            self.ants_controller.iperf_server_addr = text
+        if self.network_server_lineedit.text == "":
+            self.network_server_lineedit.text = "10.1.1.120"
+        elif self.network_server_lineedit.hasAcceptableInput():
+            self.ants_controller.network_server_addr = text
 
-    # Checks to make sure iperf_ap_addr is set to a realistic IP value
+    # Checks to make sure network_ap_addr is set to a realistic IP value
     def on_ap_ip(self, text):
-        if self.iperf_ap_lineedit.text == "":
-            self.iperf_ap_lineedit.text = "10.1.1.120"
-        elif self.iperf_ap_lineedit.hasAcceptableInput():
+        if self.network_ap_lineedit.hasAcceptableInput():
             self.ants_controller.iperf_ap_addr = text
 
     # Set file name for the test run based on what's in the box
@@ -452,11 +382,12 @@ class ANTS_Settings_Tab(QWidget):
 
         self.ants_controller.file_name = text
 
-    def on_iperf_TOS_field_change(self, text):
-        pass
+    def on_network_WiFi_change(self, text):
+        self.ants_controller.essid = text
+        print ('NETWORK SELECTED IS:', self.ants_controller.essid)
 
-    def on_iperf_bandwidth_field_change(self, text):
-        self.ants_controller.iperf_bw = text
+    def on_network_bandwidth_field_change(self, text):
+        self.ants_controller.network_bw = text
 
     def usrp_slider_value(self, value):
         if value == 0:
@@ -486,19 +417,19 @@ class ANTS_Settings_Tab(QWidget):
             print("Run delay set to {0} seconds\n".format(self.ants_controller.usrp_run_delay))
             self.usrp_run_delay_label.setText("Run delay: " + str(self.ants_controller.usrp_run_delay) + "seconds")
 
-    def iperf_bandwidth_slider_value(self, value):
+    def network_bandwidth_slider_value(self, value):
         if value == 10:
-            self.ants_controller.iperf_bw = 10
-            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.iperf_bw))
-            self.iperf_bandwidth_slider_label.setText("Sample rate: " + str(self.ants_controller.iperf_bw) + "Mbit/s")
+            self.ants_controller.network_bw = 10
+            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.network_bw))
+            self.network_bandwidth_slider_label.setText("Sample rate: " + str(self.ants_controller.network_bw) + "Mbit/s")
         elif value == 150:
-            self.ants_controller.iperf_bw = 150
-            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.iperf_bw))
-            self.iperf_bandwidth_slider_label.setText("Sample rate: " + str(self.ants_controller.iperf_bw) + "Mbit/s")
+            self.ants_controller.network_bw = 150
+            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.network_bw))
+            self.network_bandwidth_slider_label.setText("Sample rate: " + str(self.ants_controller.network_bw) + "Mbit/s")
         else:
-            self.ants_controller.iperf_bw = value
-            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.iperf_bw))
-            self.iperf_bandwidth_slider_label.setText("Run delay: " + str(self.ants_controller.iperf_bw) + "Mbit/s")
+            self.ants_controller.network_bw = value
+            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.network_bw))
+            self.network_bandwidth_slider_label.setText("Run delay: " + str(self.ants_controller.network_bw) + "Mbit/s")
 
     def on_timestamp_checkbox_checked(self, state):
         if state == Qt.Checked:
@@ -535,6 +466,71 @@ class ANTS_Settings_Tab(QWidget):
     def flush_routing_button_clicked(self):
         pass
 
+    def configure_routing(self, state):
+        if state == Qt.Checked:
+            self.ants_controller.configure_routing = True
+        else:
+            self.ants_controller.configure_routing = False
+
+    def scan_button_clicked(self):
+        self.ants_controller.eth_name, self.ants_controller.eth_mac, self.ants_controller.wlan_name, self.ants_controller.wlan_mac, self.ants_controller.wlan_internal_name = interfaces_scan()
+        networks = get_all_networks(self.ants_controller.wlan_name)
+        self.network_WiFi.clear()
+
+        for n in networks:
+            self.network_WiFi.addItem(n)
+
+
+    # Run the test sequence by making calls to the control.py module. run_button_clicked generates QPixmap objects to hold the .png data plots generated with matplotlib
+    def run_button_clicked(self):
+
+        # Run the test sequence
+        self.ants_controller.run_n_times()
+
+        # Update the statistics labels with the latest test sequence data
+        self.results_tab.compliance_label.setText("Compliance: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.compliance_avg)), self.ants_controller.run_compliance_count))
+        if self.ants_controller.run_aggression_count > 0:
+            self.results_tab.aggression_label.setText("Aggression: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.aggression_avg)), self.ants_controller.run_aggression_count))
+        if self.ants_controller.run_submission_count > 0:
+            self.results_tab.submission_label.setText("Submission: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.submission_avg)), self.ants_controller.run_submission_count))
+
+        # Set up the graphics for the main display
+
+        # The general path for the data files. This is passed to each pixmap for further use
+        self.results_tab.general_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac
+
+        # The path for the bin distribution image
+        self.results_tab.bin_pixmap_path = self.results_tab.general_pixmap_path + "_bin_probability.svg"
+        self.results_tab.bin_pixmap = QPixmap(self.results_tab.bin_pixmap_path)
+
+        # The path for the interframe spacing image
+        self.results_tab.interframe_pixmap_path = self.results_tab.general_pixmap_path + "_interframe_spacing_histogram.svg"
+        self.results_tab.interframe_pixmap = QPixmap(self.results_tab.interframe_pixmap_path)
+
+        # The path for the raw signal image
+        self.results_tab.raw_signal_pixmap_path = self.results_tab.general_pixmap_path + "_signal_magnitude_plot.svg"
+        self.results_tab.raw_signal_pixmap = QPixmap(self.results_tab.raw_signal_pixmap_path)
+
+        # The path for the transmission opportunity image
+        self.results_tab.txop_pixmap_path = self.results_tab.general_pixmap_path + "_txop_durations_histogram.svg"
+        self.results_tab.txop_pixmap = QPixmap(self.results_tab.txop_pixmap_path)
+
+        print("Plots are saved as .svg files at {0}.\n".format(self.ants_controller.data_dir))
+
+        # Set the pixmap window to be a gray background if there is no data from a previous run
+        self.results_tab.graphic_label.setStyleSheet("""
+            background-color: grey;
+            color: white;
+            font: bold;
+            padding: 1px;
+            border-width: 1px;
+            border-style: panel;
+            border-radius: 1px;
+            border-color: white;
+        """)
+        self.results_tab.graphic_label.setPixmap(self.results_tab.bin_pixmap)
+
+        self.ants_table.setCurrentIndex(1)
 
 class ANTS_About_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
