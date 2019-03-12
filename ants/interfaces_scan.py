@@ -48,6 +48,12 @@ def get_devices(s):
 				dev_wlan_internal = Dev("wlan", get_serial(a), get_id(a), get_name(a))
 	return dev_eth, dev_wlan, dev_wlan_internal
 
+def gui_get_devices(s):
+	device_list = []
+	arr = s.split("*-network")
+	for a in arr:
+		device_list.append(get_name(a))
+	return device_list
 
 def interfaces_scan():
 	print("SCANNING HW NETWORK INTERFACES")
@@ -69,9 +75,7 @@ def gui_interfaces_scan():
 	p = Popen(['lshw','-class','network'], stdout=PIPE, stderr=PIPE)
 	data = p.communicate()
 	data = str(data)
-	dev_eth, dev_wlan, dev_wlan_internal = get_devices(data)
-	devices_list.append(dev_eth.name)
-	devices_list.append(dev_wlan.name)
-	devices_list.append(dev_wlan_internal.name)
+	dev_list = gui_get_devices(data)
+	print(dev_list)
 
-	return devices_list
+	return dev_list

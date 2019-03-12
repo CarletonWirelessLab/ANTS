@@ -241,7 +241,7 @@ class ANTS_Settings_Tab(QWidget):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
 
-        self.network_interfaces = None
+        self.network_interfaces = gui_interfaces_scan()
         self.network_ssids = None
 
         self.network_device_selection = None
@@ -395,14 +395,17 @@ class ANTS_Settings_Tab(QWidget):
 
         # Specify the network device to use
         self.network_device_box = QComboBox(self)
-        self.network_device_label = QLabel("Network Device", self)
+        for device in self.network_interfaces:
+            if device is not None:
+                self.network_device_box.addItem(str(device))
+        self.network_device_label = QLabel("AP Network Device", self)
         self.network_device_box.activated[str].connect(self.on_network_device_box_change)
 
         self.network_device_button = QPushButton("Set", self)
         self.network_device_button.clicked.connect(self.network_device_button_clicked)
 
         self.network_essid_box = QComboBox(self)
-        self.network_essid_label = QLabel("Network ESSID", self)
+        self.network_essid_label = QLabel("AP Network ESSID", self)
         self.network_essid_box.activated[str].connect(self.on_network_essid_box_change)
 
         self.network_essid_button = QPushButton("Set", self)
@@ -483,7 +486,8 @@ class ANTS_Settings_Tab(QWidget):
         pass
 
     def network_device_button_clicked(self):
-        pass
+        self.network_device_selection = str(self.network_device_box.currentText())
+        print("AP network device set to {0}\n".format(self.network_device_selection))
 
     def network_essid_button_clicked(self):
         pass
