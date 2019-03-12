@@ -62,3 +62,16 @@ def interfaces_scan():
 	print("THE MAC ADDRESS OF THE WIRELESS INTERFACE IS:", dev_wlan.mac_addr)
 
 	return dev_eth.name, dev_eth.mac_addr, dev_wlan.name, dev_wlan.mac_addr, dev_wlan_internal.name
+
+def gui_interfaces_scan():
+	devices_list = []
+	print("SCANNING HW NETWORK INTERFACES")
+	p = Popen(['lshw','-class','network'], stdout=PIPE, stderr=PIPE)
+	data = p.communicate()
+	data = str(data)
+	dev_eth, dev_wlan, dev_wlan_internal = get_devices(data)
+	devices_list.append(dev_eth.name)
+	devices_list.append(dev_wlan.name)
+	devices_list.append(dev_wlan_internal.name)
+
+	return devices_list

@@ -7,6 +7,8 @@ from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
 from PyQt5.QtWidgets import QGroupBox
 from PyQt5.QtCore import Qt, QRegExp, QSettings
 from PyQt5.QtGui import QRegExpValidator, QPixmap, QIntValidator
+from interfaces_scan import *
+from network_scan import *
 
 # The parent "table" class that holds all of the functional tabs
 class ANTS_Table(QWidget):
@@ -239,6 +241,11 @@ class ANTS_Settings_Tab(QWidget):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
 
+        self.network_interfaces = None
+        self.network_ssids = None
+
+        self.network_device_selection = None
+
         # Always run at least once
         self.num_runs = 1
 
@@ -386,13 +393,35 @@ class ANTS_Settings_Tab(QWidget):
         self.access_category_field_label = QLabel("Access Category", self)
         self.access_category_field.activated[str].connect(self.on_access_category_change)
 
+        # Specify the network device to use
+        self.network_device_box = QComboBox(self)
+        self.network_device_label = QLabel("Network Device", self)
+        self.network_device_box.activated[str].connect(self.on_network_device_box_change)
+
+        self.network_device_button = QPushButton("Set", self)
+        self.network_device_button.clicked.connect(self.network_device_button_clicked)
+
+        self.network_essid_box = QComboBox(self)
+        self.network_essid_label = QLabel("Network ESSID", self)
+        self.network_essid_box.activated[str].connect(self.on_network_essid_box_change)
+
+        self.network_essid_button = QPushButton("Set", self)
+        self.network_essid_button.clicked.connect(self.network_essid_button_clicked)
+
+
         # Add the general settings tools to the groupbox
-        self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox, 2, 0)
-        self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox, 3, 0)
-        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label, 4, 0)
-        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit, 4, 1)
-        self.general_settings_gridbox.addWidget(self.access_category_field_label, 1, 0)
-        self.general_settings_gridbox.addWidget(self.access_category_field, 1, 1)
+        self.general_settings_gridbox.addWidget(self.network_device_label, 1, 0)
+        self.general_settings_gridbox.addWidget(self.network_device_box, 1, 1)
+        self.general_settings_gridbox.addWidget(self.network_device_button, 1, 2)
+        self.general_settings_gridbox.addWidget(self.network_essid_label, 2, 0)
+        self.general_settings_gridbox.addWidget(self.network_essid_box, 2, 1)
+        self.general_settings_gridbox.addWidget(self.network_essid_button, 2, 2)
+        self.general_settings_gridbox.addWidget(self.access_category_field_label, 3, 0)
+        self.general_settings_gridbox.addWidget(self.access_category_field, 3, 1)
+        self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox, 4, 0)
+        self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox, 5, 0)
+        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label, 6, 0)
+        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit, 6, 1)
         self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
 
         # Add the groupbox widgets to the main tab grid
@@ -446,6 +475,18 @@ class ANTS_Settings_Tab(QWidget):
             self.iperf_ap_lineedit.text = "10.1.1.120"
         elif self.iperf_ap_lineedit.hasAcceptableInput():
             self.ants_controller.iperf_ap_addr = text
+
+    def on_network_essid_box_change(self):
+        pass
+
+    def on_network_device_box_change(self):
+        pass
+
+    def network_device_button_clicked(self):
+        pass
+
+    def network_essid_button_clicked(self):
+        pass
 
     # Set file name for the test run based on what's in the box
     def on_name_change(self, text):

@@ -52,3 +52,17 @@ def network_scan(device_name):
     c = max_cell_level(cells)
     print("NETWORK ESSID", c.essid, "HAS MAXIMUM SIGNAL LEVEL OF", c.level)
     return c.essid
+
+def gui_network_scan(device_list):
+    essid_list = [[]]
+    print("SCANNING NETWORKS FOR COMBO BOX SELECTIONS ON DEVICE {0}\n".format(device_name))
+    for device in range(0, device_list):
+        p = Popen(['iwlist', device_name, 'scan'], stdout=PIPE, stderr=PIPE)
+        data = p.communicate()
+        data = str(data)
+        cells = get_cells(data)
+        for cell in cells:
+            essid_list[0].append(get_essid(cell))
+
+    print("ESSIDS COLLECTED\n")
+    return essid_list
