@@ -53,6 +53,11 @@ class ANTS_Controller():
         # State variable to determine whether or not to configure network routing
         self.configure_routing = True
 
+        # The ESSID of the network to connect to when configuring network routing
+        # if it is desired to select a specific one, rather than have the routing
+        # automatically select the highest power-level ESSID
+        self.wireless_essid = None
+
         # Path of project directory for use in calls to scripts in utils/
         #self.working_dir = os.getcwd()
         self.working_dir = os.path.dirname(os.path.abspath(__file__))

@@ -8,6 +8,12 @@ class Cell:
     def __str__(self):
         return self.essid + ", " + self.level
 
+class GUI_Cell:
+    def __init__(self, e):
+        self.essid = e
+    def __str__(self):
+        return self.essid
+
 def get_level(s):
     m = re.search("Signal level=([0-9]{1,3})/100", s)
     if m:
@@ -27,6 +33,17 @@ def get_cells(s):
     for a in arr:
         if index != 0:
             c = Cell(get_essid(a), get_level(a))
+            cells.append(c)
+        index = index + 1
+    return cells
+
+def get_gui_cells(s):
+    cells = []
+    arr = s.split("Cell")
+    index = 0
+    for a in arr:
+        if index != 0:
+            c = GUI_Cell(get_essid(a))
             cells.append(c)
         index = index + 1
     return cells
@@ -53,16 +70,23 @@ def network_scan(device_name):
     print("NETWORK ESSID", c.essid, "HAS MAXIMUM SIGNAL LEVEL OF", c.level)
     return c.essid
 
-def gui_network_scan(device_list):
-    essid_list = [[]]
+def gui_network_scan(device_name):
+    essid_list = []
     print("SCANNING NETWORKS FOR COMBO BOX SELECTIONS ON DEVICE {0}\n".format(device_name))
-    for device in range(0, device_list):
-        p = Popen(['iwlist', device_name, 'scan'], stdout=PIPE, stderr=PIPE)
-        data = p.communicate()
-        data = str(data)
-        cells = get_cells(data)
-        for cell in cells:
-            essid_list[0].append(get_essid(cell))
+    #for device in range(0, device_list):
+        # p = Popen(['iwlist', device_name, 'scan'], stdout=PIPE, stderr=PIPE)
+        # data = p.communicate()
+        # data = str(data)
+        # cells = get_cells(data)
+        # for cell in cells:
+        #     essid_list[0].append(get_essid(cell))
+
+    p = Popen(['iwlist', device_name, 'scan'], stdout=PIPE, stderr=PIPE)
+    data, error = p.communicate()
+    data = str(data)
+    cells = get_gui_cells(data)
+    for cell in cells:
+        essid_list.append(cell.essid)
 
     print("ESSIDS COLLECTED\n")
     return essid_list

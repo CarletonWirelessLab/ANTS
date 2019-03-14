@@ -209,6 +209,11 @@ class ANTS_Results_Tab(QWidget):
         """)
         self.graphic_label.setPixmap(self.bin_pixmap)
 
+        # Turn off the setting to configure the network routing after the first
+        # time the test runs in this instance. Put it at the end of the run to
+        # ensure it only happens if the run successfully executed
+        self.routing_checkbox.toggle()
+
     def configure_routing(self, state):
         if state == Qt.Checked:
             self.ants_controller.configure_routing = True
@@ -245,6 +250,7 @@ class ANTS_Settings_Tab(QWidget):
         self.network_ssids = None
 
         self.network_device_selection = None
+        self.network_essid_selection = None
 
         # Always run at least once
         self.num_runs = 1
@@ -411,6 +417,9 @@ class ANTS_Settings_Tab(QWidget):
         self.network_essid_button = QPushButton("Set", self)
         self.network_essid_button.clicked.connect(self.network_essid_button_clicked)
 
+        self.network_essid_clear_button = QPushButton("Clear Target ESSID", self)
+        self.network_essid_clear_button.clicked.connect(self.network_essid_clear_clicked)
+
 
         # Add the general settings tools to the groupbox
         self.general_settings_gridbox.addWidget(self.network_device_label, 1, 0)
@@ -419,12 +428,14 @@ class ANTS_Settings_Tab(QWidget):
         self.general_settings_gridbox.addWidget(self.network_essid_label, 2, 0)
         self.general_settings_gridbox.addWidget(self.network_essid_box, 2, 1)
         self.general_settings_gridbox.addWidget(self.network_essid_button, 2, 2)
-        self.general_settings_gridbox.addWidget(self.access_category_field_label, 3, 0)
-        self.general_settings_gridbox.addWidget(self.access_category_field, 3, 1)
-        self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox, 4, 0)
-        self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox, 5, 0)
-        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label, 6, 0)
-        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit, 6, 1)
+        self.general_settings_gridbox.addWidget(self.network_essid_clear_button, 3, 0)
+
+        self.general_settings_gridbox.addWidget(self.access_category_field_label, 4, 0)
+        self.general_settings_gridbox.addWidget(self.access_category_field, 4, 1)
+        self.general_settings_gridbox.addWidget(self.gs_timestamp_checkbox, 5, 0)
+        self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox, 6, 0)
+        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label, 7, 0)
+        self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit, 7, 1)
         self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
 
         # Add the groupbox widgets to the main tab grid
@@ -488,9 +499,23 @@ class ANTS_Settings_Tab(QWidget):
     def network_device_button_clicked(self):
         self.network_device_selection = str(self.network_device_box.currentText())
         print("AP network device set to {0}\n".format(self.network_device_selection))
+        self.network_ssids = gui_network_scan(self.network_device_selection)
+        for entry in self.network_ssids:
+            print(entry)
+            self.network_essid_box.addItem(str(entry))
+
+        print("Scanned and identified relevant ESSIDS for {0}\n".format(self.network_device_selection))
 
     def network_essid_button_clicked(self):
-        pass
+        self.network_essid_selection = str(self.network_essid_box.currentText())
+        self.ants_controller.wireless_essid = self.network_essid_selection
+        print("Target ESSID set to {0}\n".format(self.ants_controller.wireless_essid))
+
+    def network_essid_clear_clicked(self):
+        self.ants_controller.wireless_essid = None
+        print("Target ESSID set to None.\n")
+        print("ANTS will default to choosing network based on power level\n")
+        print(self.ants_controller.wireless_essid)
 
     # Set file name for the test run based on what's in the box
     def on_name_change(self, text):
