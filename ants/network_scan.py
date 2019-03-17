@@ -13,6 +13,13 @@ def get_address(s):
         return m.group(1).lower()
     return None
 
+# def get_level(s):
+#     m = re.search("Signal level=(([0-9]{2}[:]){5})", s)
+#     if m:
+#         return m.group(1).lower()
+#     return None
+
+
 def get_essid(s):
     m = re.search("ESSID:\"(.*)\"", s)
     if m:
@@ -50,6 +57,7 @@ def get_all_networks(device_name):
     data = str(data)
     cells = get_cells(data)
     networks = []
+    # cells_sorted = sorted(cells, key=lambda x: x.level, reverse=True)
     for c in cells:
         networks.append(c.essid)
 

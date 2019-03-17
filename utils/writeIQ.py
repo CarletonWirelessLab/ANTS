@@ -15,24 +15,28 @@ from fcntl import ioctl
 global name
 global runFor #sec
 global access_category
+global sampling_rate
+global gain
 
 global classInst
 USBDEVFS_RESET = ord('U') << (4*2) | 20
 
-class writeIQ(gr.top_block): 
+class writeIQ(gr.top_block):
 	def __init__(self):
 		gr.top_block.__init__(self)
-		global name, runFor, access_category
+		global name, runFor, access_category, sampling_rate, gain
 		self.disconnect_all()
 		# Define variables and their default values
-		self.samp_rate = 20e6
+		self.samp_rate = sampling_rate
+		print('USED SAMPLE_RATE:', self.samp_rate)
 		self.cbw = 20e6
-		self.gain = 40
+		self.gain = gain
+		print('USED GAIN:', self.gain)
 		self.cfreq = 5.765e9 #2.412e9
 		self.antenna = "RX2"
 		self.file_name = name + '_' + access_category + '.bin'
 		print(self.file_name)
-		
+
 		# Define blocks
 		# 1) USRP Block
 		self.usrpSource = uhd.usrp_source(
@@ -42,7 +46,7 @@ class writeIQ(gr.top_block):
 				channels=range(1),
 			),
 		)
-          
+
 		# 2) Set default parameters
 		self.usrpSource.set_samp_rate(self.samp_rate)
 		self.usrpSource.set_center_freq(self.cfreq, 0)
@@ -52,12 +56,12 @@ class writeIQ(gr.top_block):
 
 		# 2) File Sink
 		self.fileSnk = blocks.file_sink(gr.sizeof_gr_complex*1, self.file_name, False)
-            
+
 
 		# Define connections
 		self.disconnect_all()
 		self.connect((self.usrpSource, 0), (self.fileSnk, 0))
-             
+
 
 	def get_samp_rate(self):
 		return self.samp_rate
@@ -90,14 +94,18 @@ class writeIQ(gr.top_block):
 def dowork():
 	classInst.run()
 	print "EXIT RUN"
-    
+
 def main():
-	global name, runFor, access_category
+	global name, runFor, access_category, sampling_rate, gain
 	global classInst
-        
+
 	name = sys.argv[1]
 	runFor = float(sys.argv[2]) # sec
 	access_category = sys.argv[3]
+	sampling_rate = int(sys.argv[4])*1e6
+	print('RECEIVED SAMPLING RATE:', sampling_rate)
+	gain = int(sys.argv[5])
+	print('RECEIVED GAIN:', gain)
 	file_name = name + '_' + access_category + '.bin'
 	classInst = writeIQ()
 	t = threading.Thread(target=dowork)

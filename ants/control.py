@@ -17,7 +17,7 @@ class ANTS_Controller():
     def __init__(self):
 
         self.essid = None
-
+        self.communication_success = 0
         # Class variables used for the subprocesses run, if any, of the tools
         # run when their checkboxes are selected
         self.usrp_proc = None
@@ -43,7 +43,8 @@ class ANTS_Controller():
         self.usrp_run_delay = 3
 
         # The sample rate in 20MS/s
-        self.usrp_sample_rate = 20
+        self.usrp_sample_rate = None
+        self.ursp_gain = None
 
         # Output/conversion file name. Set to "no_name" as default in case the
         # user has not yet given a file name to the run in the GUI
@@ -114,7 +115,8 @@ class ANTS_Controller():
         print("The binary data file will be written to {0}.\n".format(self.bin_path))
 
         # Create the argument list to pass to the USRP subprocess that will be instantiated
-        self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
+
+        self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.usrp_sample_rate, self.usrp_gain]
 
         # Run the USRP process with the necessary arguments
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
@@ -151,26 +153,12 @@ class ANTS_Controller():
         print("The binary data file will be written to {0}.\n".format(self.bin_path))
 
         # Set the arguments to be used to run the USRP
-        self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac]
+        self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.usrp_sample_rate, self.usrp_gain]
 
-        # Ensure that there is a default IP address for both the client and server if it hasn't already been configured
-        if self.iperf_client_addr == None:
-            self.iperf_client_addr = "10.1.1.11"
-            print("No IP was entered for the iperf client. IP has defaulted to 10.1.1.11\n")
-
-        if self.iperf_server_addr == None:
-            self.iperf_server_addr = "10.1.1.12"
-            print("No IP was entered for the iperf server. IP has defaulted to 10.1.1.12\n")
 
         if self.iperf_ap_addr == None:
-            self.iperf_ap_addr = "10.1.1.10"
-            print("No IP was entered for the iperf access point. IP has defaulted to 10.1.1.10\n")
-
-        if self.iperf_bw == None:
-            self.iperf_bw = "150"
-            print("No bandwidth was entered for the iperf client. Bandwidth has defaulted to 100Mbit/s\n")
-
-
+            self.iperf_ap_addr = "192.168.1.1"
+            print("No IP was entered for the iperf access point. IP has defaulted to 192.168.1.1\n")
 
         # Setup routing and get the ip addresses for client and server and their virtual
         if self.configure_routing == True:
@@ -196,55 +184,70 @@ class ANTS_Controller():
             print("ASSIGNING",self.eth_name,"TO IP:", self.iperf_client_addr)
             call(['ifconfig', self.eth_name, 'inet', self.iperf_client_addr, 'up'])
             time.sleep(10)
+            # ping_args = "ping -c 1 -I {0} {1}".format(self.eth_name, self.iperf_ap_addr).split(" ")
+            # ping_count = 0
+            # print("WAITING FOR PING SUCCESS OF THE ACCESS POINT THROUGH THE CLIENT INTERFACE")
+            # self.communication_success = 0
+            # while ping_count < self.ping_max:
+            #     ping_process = subprocess.Popen(ping_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            #     ping_process.communicate()[0]
+            #     rc = ping_process.returncode
+            #     if int(rc) == 0:
+            #         print("PING SUCCEEDED AFTER {0} RUNS".format(ping_count+1))
+            #         self.communication_success = 1
+            #         break
+            #     ping_count = ping_count + 1
+            # if ping_count == self.ping_max:
+            #     print("PING FAILED AFTER {0} ATTEMPTS".format(self.ping_max))
+            #     self.communication_success = 0
 
 
             network_connect(self.wlan_name, self.iperf_server_addr, self.essid, self.wlan_internal_name)
             setup_routing(self.eth_name, self.eth_mac, self.wlan_name, self.wlan_mac, self.iperf_client_addr, self.iperf_virtual_client_addr, self.iperf_server_addr, self.iperf_virtual_server_addr)
 
-        ping_args = "ping -c 10 -I {0} {1}".format(self.eth_name, self.iperf_virtual_server_addr).split(" ")
-        ping_count = 0
-        print("WAITING FOR PING SUCCESS OF THE VIRTUAL SERVER THROUGH THE CLIENT INTERFACE")
-        communication_success = 0
-        while ping_count < self.ping_max:
-            ping_process = subprocess.Popen(ping_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            ping_process.communicate()[0]
-            rc = ping_process.returncode
-            if int(rc) == 0:
-                print("PING SUCCEEDED AFTER {0} RUNS".format(ping_count+1))
-                communication_success = 1
-                break
-            ping_count = ping_count + 1
-        if ping_count == self.ping_max:
-            print("PING FAILED AFTER {0} ATTEMPTS".format(self.ping_max))
-            communication_success = 0
+            ping_args = "ping -c 1 -I {0} {1}".format(self.eth_name, self.iperf_virtual_server_addr).split(" ")
+            ping_count = 0
+            print("WAITING FOR PING SUCCESS OF THE VIRTUAL SERVER THROUGH THE CLIENT INTERFACE")
+            self.communication_success = 0
+            while ping_count < self.ping_max:
+                ping_process = subprocess.Popen(ping_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                ping_process.communicate()[0]
+                rc = ping_process.returncode
+                if int(rc) == 0:
+                    print("PING SUCCEEDED AFTER {0} RUNS".format(ping_count+1))
+                    self.communication_success = 1
+                    break
+                ping_count = ping_count + 1
+            if ping_count == self.ping_max:
+                print("PING FAILED AFTER {0} ATTEMPTS".format(self.ping_max))
+                self.communication_success = 0
 
 
         # The arguments to run the iperf client. If configure_routing is True, then automating routing has been performed and a virtual destination IP is required for the iperf client
-        if self.configure_routing == True:
-            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", " {0}M".format(self.iperf_bw), "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
-        else:
-            self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", " {0}M".format(self.iperf_bw), "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
-
+        self.iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", " {0}M".format(self.iperf_bw), "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
         # The arguments to run the iperf server
         self.iperf_server_args = ["iperf", "-B", "{0}".format(str(self.iperf_server_addr)), "-s", "-u", "-t 1000000000000000", "-i 0.5"]
-        if communication_success:
+        if self.communication_success:
             # Run the iperf commands and print debug information
             print("iperf server IP is {0}\n".format(self.iperf_server_addr))
             print("iperf client IP is {0}\n".format(self.iperf_client_addr))
-            print("iperf client bandwidth is {0}\n".format(self.iperf_bw))
+            print("iperf client bandwidth is {0} Mbits/sec\n".format(self.iperf_bw))
             self.iperf_server_proc = subprocess.Popen(self.iperf_server_args, stdin=subprocess.PIPE, stderr=None, shell=False)
             self.iperf_client_proc = subprocess.Popen(self.iperf_client_args, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=None, shell=False)
 
             # Wait for 3 seconds to ensure the iperf data has begun transferring
             time.sleep(2*self.usrp_run_delay)
-            # Start the USRP
-            self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
-
-            # Continuously check to see if the USRP is running, then break out when it has stopped
-            while True:
-                self.usrp_proc.poll()
-                if self.usrp_proc.returncode is not None:
-                    break
+            print('USRP SAMPLIING RATE:', self.usrp_sample_rate)
+            print('USRP GAIN:', self.usrp_gain)
+            for run in range(0, self.num_runs):
+                # Start the USRP
+                self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
+                # Continuously check to see if the USRP is running, then break out when it has stopped
+                while True:
+                    self.usrp_proc.poll()
+                    if self.usrp_proc.returncode is not None:
+                        break
+                self.stats_list.append(self.make_plots())
 
             # Close the iperf processes as soon as the USRP is done sensing the medium
             self.iperf_server_proc.terminate()
@@ -267,9 +270,9 @@ class ANTS_Controller():
         self.run_aggression_total = 0
         self.run_submission_total = 0
 
-        for run in range(0, self.num_runs):
-            self.start_usrp_iperf()
-            self.stats_list.append(self.make_plots())
+
+        self.start_usrp_iperf()
+
 
         for index in range(0, len(self.stats_list)):
             self.run_compliance_total = self.run_compliance_total + self.stats_list[index][0]
@@ -298,8 +301,9 @@ class ANTS_Controller():
             del self.plotter
         print("Running data conversion and plot routine on {0}...\n".format(self.bin_path))
         # Create and run an actual plotter instance
+        plotter_sample_rate = int(self.usrp_sample_rate)*1e6
         print("The test path is {0}\n".format(self.test_path))
-        self.plotter = ANTS_Plotter(self.plotter_ac, self.test_path, 20e6)
+        self.plotter = ANTS_Plotter(self.plotter_ac, self.test_path, plotter_sample_rate)
         self.plotter.read_and_parse()
         self.plotter.setup_packet_data()
         results = self.plotter.output_results()

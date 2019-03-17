@@ -206,6 +206,7 @@ class ANTS_Settings_Tab(QWidget):
         self.network_bandwidth_slider.setMaximum(150)
         self.network_bandwidth_slider.setTickInterval(10)
         self.network_bandwidth_slider.setValue(100)
+        self.ants_controller.iperf_bw = 100
         self.network_bandwidth_slider.setToolTip("Bandwidth for iperf traffic, from 10Mbit/s to 150Mbit/s")
         self.network_bandwidth_slider_text = "Bandwidth: " + str(self.network_bandwidth_slider.value()) + "Mbit/s"
         self.network_bandwidth_slider_label.setText(self.network_bandwidth_slider_text)
@@ -251,14 +252,31 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_sample_rate_label = QLabel(None, self)
         self.usrp_sample_rate_slider = QSlider(Qt.Horizontal, self)
         self.usrp_sample_rate_slider.setFocusPolicy(Qt.NoFocus)
-        self.usrp_sample_rate_slider.valueChanged[int].connect(self.usrp_slider_value)
+        self.usrp_sample_rate_slider.valueChanged[int].connect(self.usrp_sample_rate_slider_value)
         self.usrp_sample_rate_slider.setMinimum(1)
         self.usrp_sample_rate_slider.setMaximum(20)
         self.usrp_sample_rate_slider.setTickInterval(1)
         self.usrp_sample_rate_slider.setValue(20)
-        self.usrp_sample_rate_slider.setToolTip("Sample rate for USRP is between 1MS/s and20 MS/s")
+        self.usrp_sample_rate_slider.setToolTip("Sample rate for USRP is between 1MS/s and 20 MS/s")
         self.usrp_sample_rate_text = "Sample rate: " + str(self.usrp_sample_rate_slider.value()) + "MS/s"
         self.usrp_sample_rate_label.setText(self.usrp_sample_rate_text)
+        self.ants_controller.usrp_sample_rate = '20'
+
+        # The label and slider for setting the USRP sample rate
+        self.usrp_gain_label = QLabel(None, self)
+        self.usrp_gain_slider = QSlider(Qt.Horizontal, self)
+        self.usrp_gain_slider.setFocusPolicy(Qt.NoFocus)
+        self.usrp_gain_slider.valueChanged[int].connect(self.usrp_gain_slider_value)
+        self.usrp_gain_slider.setMinimum(1)
+        self.usrp_gain_slider.setMaximum(60)
+        self.usrp_gain_slider.setTickInterval(1)
+        self.usrp_gain_slider.setValue(40)
+        self.usrp_gain_slider.setToolTip("Gain for USRP is between 1 and 60")
+        self.usrp_gain_text = "Gain: " + str(self.usrp_gain_slider.value())
+        self.usrp_gain_label.setText(self.usrp_gain_text)
+        self.ants_controller.usrp_gain = '40'
+
+
 
         # The label and slider for setting the delay between the iperf traffic start and USRP process start time
         self.usrp_run_delay_label = QLabel(None, self)
@@ -276,8 +294,10 @@ class ANTS_Settings_Tab(QWidget):
 
         self.usrp_gridbox.addWidget(self.usrp_sample_rate_label, 0, 0)
         self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider, 0, 1)
-        self.usrp_gridbox.addWidget(self.usrp_run_delay_label, 1, 0)
-        self.usrp_gridbox.addWidget(self.usrp_run_delay_slider, 1, 1)
+        self.usrp_gridbox.addWidget(self.usrp_gain_label, 1, 0)
+        self.usrp_gridbox.addWidget(self.usrp_gain_slider, 1, 1)
+        self.usrp_gridbox.addWidget(self.usrp_run_delay_label, 2, 0)
+        self.usrp_gridbox.addWidget(self.usrp_run_delay_slider, 2, 1)
 
         # Create the plotting groupbox and fill it
         self.plotting_groupbox = QGroupBox("Plot Settings")
@@ -358,20 +378,6 @@ class ANTS_Settings_Tab(QWidget):
         elif self.gs_number_of_runs_lineedit.hasAcceptableInput():
             self.ants_controller.num_runs = int(self.gs_number_of_runs_lineedit.text())
 
-    # Checks to make sure network_client_addr is set to a realistic IP value
-    def on_client_ip(self, text):
-        if self.network_client_lineedit.text == "":
-            self.network_client_lineedit.text = "10.1.11.115"
-        elif self.network_client_lineedit.hasAcceptableInput():
-            self.ants_controller.network_client_addr = text
-
-    # Checks to make sure network_server_addr is set to a realistic IP value
-    def on_server_ip(self, text):
-        if self.network_server_lineedit.text == "":
-            self.network_server_lineedit.text = "10.1.1.120"
-        elif self.network_server_lineedit.hasAcceptableInput():
-            self.ants_controller.network_server_addr = text
-
     # Checks to make sure network_ap_addr is set to a realistic IP value
     def on_ap_ip(self, text):
         if self.network_ap_lineedit.hasAcceptableInput():
@@ -386,50 +392,24 @@ class ANTS_Settings_Tab(QWidget):
         self.ants_controller.essid = text
         print ('NETWORK SELECTED IS:', self.ants_controller.essid)
 
-    def on_network_bandwidth_field_change(self, text):
-        self.ants_controller.network_bw = text
+    def usrp_sample_rate_slider_value(self, value):
+        self.ants_controller.usrp_sample_rate = str(value)
+        self.usrp_sample_rate_label.setText("Sample rate: " + str(self.ants_controller.usrp_sample_rate) + "MS/s")
 
-    def usrp_slider_value(self, value):
-        if value == 0:
-            self.ants_controller.usrp_sample_rate = 1
-            print("Sample rate set to {0} MS/s\n".format(self.ants_controller.usrp_sample_rate))
-            self.usrp_sample_rate_label.setText("Sample rate: " + str(self.ants_controller.usrp_sample_rate) + "seconds")
-        elif value == 20:
-            self.ants_controller.usrp_sample_rate = 20
-            print("Sample rate set to {0} MS/s\n".format(self.ants_controller.usrp_sample_rate))
-            self.usrp_sample_rate_label.setText("Sample rate: " + str(self.ants_controller.usrp_sample_rate) + "seconds")
-        else:
-            self.ants_controller.usrp_sample_rate = value
-            print("Sample rate set to {0} MS/s\n".format(self.ants_controller.usrp_sample_rate))
-            self.usrp_sample_rate_label.setText("Run delay: " + str(self.ants_controller.usrp_sample_rate) + "seconds")
+
+    def usrp_gain_slider_value(self, value):
+        self.ants_controller.usrp_gain = str(value)
+        self.usrp_gain_label.setText("Gain: " + str(self.ants_controller.usrp_gain))
 
     def usrp_run_delay_value(self, value):
-        if value == 0:
-            self.ants_controller.usrp_run_delay = 1
-            print("Run delay set to {0} seconds\n".format(self.ants_controller.usrp_run_delay))
-            self.usrp_run_delay_label.setText("Run delay: " + str(self.ants_controller.usrp_run_delay) + "seconds")
-        elif value == 20:
-            self.ants_controller.usrp_run_delay = 10
-            print("Run delay set to {0} seconds\n".format(self.ants_controller.usrp_run_delay))
-            self.usrp_run_delay_label.setText("Run delay: " + str(self.ants_controller.usrp_run_delay) + "seconds")
-        else:
-            self.ants_controller.usrp_run_delay = value
-            print("Run delay set to {0} seconds\n".format(self.ants_controller.usrp_run_delay))
-            self.usrp_run_delay_label.setText("Run delay: " + str(self.ants_controller.usrp_run_delay) + "seconds")
+        self.ants_controller.usrp_run_delay = value
+        print("Run delay set to {0} seconds\n".format(self.ants_controller.usrp_run_delay))
+        self.usrp_run_delay_label.setText("Run delay: " + str(self.ants_controller.usrp_run_delay) + "seconds")
 
     def network_bandwidth_slider_value(self, value):
-        if value == 10:
-            self.ants_controller.network_bw = 10
-            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.network_bw))
-            self.network_bandwidth_slider_label.setText("Sample rate: " + str(self.ants_controller.network_bw) + "Mbit/s")
-        elif value == 150:
-            self.ants_controller.network_bw = 150
-            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.network_bw))
-            self.network_bandwidth_slider_label.setText("Sample rate: " + str(self.ants_controller.network_bw) + "Mbit/s")
-        else:
-            self.ants_controller.network_bw = value
-            print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.network_bw))
-            self.network_bandwidth_slider_label.setText("Run delay: " + str(self.ants_controller.network_bw) + "Mbit/s")
+        self.ants_controller.iperf_bw = value
+        print("iperf traffic bandwidth set to {0} Mbit/s\n".format(self.ants_controller.iperf_bw))
+        self.network_bandwidth_slider_label.setText("Bandwidth: " + str(self.ants_controller.iperf_bw) + "Mbit/s")
 
     def on_timestamp_checkbox_checked(self, state):
         if state == Qt.Checked:
@@ -475,11 +455,11 @@ class ANTS_Settings_Tab(QWidget):
     def scan_button_clicked(self):
         self.ants_controller.eth_name, self.ants_controller.eth_mac, self.ants_controller.wlan_name, self.ants_controller.wlan_mac, self.ants_controller.wlan_internal_name = interfaces_scan()
         networks = get_all_networks(self.ants_controller.wlan_name)
+        self.ants_controller.essid = networks[0]
+        print ('NETWORK SELECTED IS:', self.ants_controller.essid)
         self.network_WiFi.clear()
-
         for n in networks:
             self.network_WiFi.addItem(n)
-
 
     # Run the test sequence by making calls to the control.py module. run_button_clicked generates QPixmap objects to hold the .png data plots generated with matplotlib
     def run_button_clicked(self):
@@ -531,6 +511,9 @@ class ANTS_Settings_Tab(QWidget):
         self.results_tab.graphic_label.setPixmap(self.results_tab.bin_pixmap)
 
         self.ants_table.setCurrentIndex(1)
+        self.ants_controller.configure_routing = False
+        self.routing_checkbox.setChecked(False)
+
 
 class ANTS_About_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
