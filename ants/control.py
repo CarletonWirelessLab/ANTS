@@ -108,7 +108,7 @@ class ANTS_Controller():
 
         # Create the argument list to pass to the USRP subprocess that will be instantiated
 
-        self.usrp_control_args = ["python", self.working_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
+        self.usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
 
         # Run the USRP process with the necessary arguments
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
@@ -145,7 +145,7 @@ class ANTS_Controller():
         print("The binary data file will be written to {0}.\n".format(self.bin_path))
 
         # Set the arguments to be used to run the USRP
-        self.usrp_control_args = ["python", self.working_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
+        self.usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
 
 
         if self.iperf_ap_addr == None:
