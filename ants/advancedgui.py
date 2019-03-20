@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt, QRegExp, QSettings
 from PyQt5.QtGui import QRegExpValidator, QPixmap, QIntValidator
 from network_scan import *
 from interfaces_scan import *
+from subprocess import *
 # The parent "table" class that holds all of the functional tabs
 class ANTS_Table(QWidget):
 
@@ -192,6 +193,13 @@ class ANTS_Settings_Tab(QWidget):
         self.ants_controller.iperf_ap_addr = '192.168.1.1'
         self.network_ap_lineedit.textChanged[str].connect(self.on_ap_ip)
 
+        # Text box for specifying the IP address of the access point to be used for testing
+        self.center_frequency_lineedit = QLineEdit(self)
+        self.center_frequency_lineedit_label = QLabel("Center Frequency (GHz)", self)
+        self.center_frequency_lineedit.setText('5.765')
+        self.ants_controller.center_frequency = '5.765'
+        self.center_frequency_lineedit.textChanged[str].connect(self.on_center_frequency)
+
         # Specify the iperf type-of-service value (client only)
         self.network_WiFi = QComboBox(self)
         self.network_WiFi_label = QLabel("Wi-Fi Networks", self)
@@ -235,11 +243,14 @@ class ANTS_Settings_Tab(QWidget):
         self.network_gridbox.addWidget(self.network_ap_lineedit_label, 2, 0)
         self.network_gridbox.addWidget(self.network_ap_lineedit, 2, 1)
 
-        self.network_gridbox.addWidget(self.network_WiFi_label, 3, 0)
-        self.network_gridbox.addWidget(self.network_WiFi, 3, 1)
+        self.network_gridbox.addWidget(self.center_frequency_lineedit_label, 3, 0)
+        self.network_gridbox.addWidget(self.center_frequency_lineedit, 3, 1)
 
-        self.network_gridbox.addWidget(self.routing_checkbox, 4, 0)
-        self.network_gridbox.addWidget(self.scan_btn, 4, 1)
+        self.network_gridbox.addWidget(self.network_WiFi_label, 4, 0)
+        self.network_gridbox.addWidget(self.network_WiFi, 4, 1)
+
+        self.network_gridbox.addWidget(self.routing_checkbox, 5, 0)
+        self.network_gridbox.addWidget(self.scan_btn, 5, 1)
         self.network_groupbox.setLayout(self.network_gridbox)
 
 
@@ -249,18 +260,18 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_groupbox.setLayout(self.usrp_gridbox)
 
         # The label and slider for setting the USRP sample rate
-        self.usrp_sample_rate_label = QLabel(None, self)
-        self.usrp_sample_rate_slider = QSlider(Qt.Horizontal, self)
-        self.usrp_sample_rate_slider.setFocusPolicy(Qt.NoFocus)
-        self.usrp_sample_rate_slider.valueChanged[int].connect(self.usrp_sample_rate_slider_value)
-        self.usrp_sample_rate_slider.setMinimum(1)
-        self.usrp_sample_rate_slider.setMaximum(20)
-        self.usrp_sample_rate_slider.setTickInterval(1)
-        self.usrp_sample_rate_slider.setValue(20)
-        self.usrp_sample_rate_slider.setToolTip("Sample rate for USRP is between 1MS/s and 20 MS/s")
-        self.usrp_sample_rate_text = "Sample rate: " + str(self.usrp_sample_rate_slider.value()) + "MS/s"
-        self.usrp_sample_rate_label.setText(self.usrp_sample_rate_text)
-        self.ants_controller.usrp_sample_rate = '20'
+        # self.usrp_sample_rate_label = QLabel(None, self)
+        # self.usrp_sample_rate_slider = QSlider(Qt.Horizontal, self)
+        # self.usrp_sample_rate_slider.setFocusPolicy(Qt.NoFocus)
+        # self.usrp_sample_rate_slider.valueChanged[int].connect(self.usrp_sample_rate_slider_value)
+        # self.usrp_sample_rate_slider.setMinimum(1)
+        # self.usrp_sample_rate_slider.setMaximum(20)
+        # self.usrp_sample_rate_slider.setTickInterval(1)
+        # self.usrp_sample_rate_slider.setValue(20)
+        # self.usrp_sample_rate_slider.setToolTip("Sample rate for USRP is between 1MS/s and 20 MS/s")
+        # self.usrp_sample_rate_text = "Sample rate: " + str(self.usrp_sample_rate_slider.value()) + "MS/s"
+        # self.usrp_sample_rate_label.setText(self.usrp_sample_rate_text)
+        # self.ants_controller.usrp_sample_rate = '20'
 
         # The label and slider for setting the USRP sample rate
         self.usrp_gain_label = QLabel(None, self)
@@ -292,8 +303,8 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_run_delay_label.setText(self.usrp_run_delay_text)
 
 
-        self.usrp_gridbox.addWidget(self.usrp_sample_rate_label, 0, 0)
-        self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider, 0, 1)
+        # self.usrp_gridbox.addWidget(self.usrp_sample_rate_label, 0, 0)
+        # self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider, 0, 1)
         self.usrp_gridbox.addWidget(self.usrp_gain_label, 1, 0)
         self.usrp_gridbox.addWidget(self.usrp_gain_slider, 1, 1)
         self.usrp_gridbox.addWidget(self.usrp_run_delay_label, 2, 0)
@@ -383,6 +394,9 @@ class ANTS_Settings_Tab(QWidget):
         if self.network_ap_lineedit.hasAcceptableInput():
             self.ants_controller.iperf_ap_addr = text
 
+    def on_center_frequency(self, text):
+        self.ants_controller.center_frequency = str(text)
+
     # Set file name for the test run based on what's in the box
     def on_name_change(self, text):
 
@@ -392,9 +406,9 @@ class ANTS_Settings_Tab(QWidget):
         self.ants_controller.essid = text
         print ('NETWORK SELECTED IS:', self.ants_controller.essid)
 
-    def usrp_sample_rate_slider_value(self, value):
-        self.ants_controller.usrp_sample_rate = str(value)
-        self.usrp_sample_rate_label.setText("Sample rate: " + str(self.ants_controller.usrp_sample_rate) + "MS/s")
+    # def usrp_sample_rate_slider_value(self, value):
+    #     self.ants_controller.usrp_sample_rate = str(value)
+    #     self.usrp_sample_rate_label.setText("Sample rate: " + str(self.ants_controller.usrp_sample_rate) + "MS/s")
 
 
     def usrp_gain_slider_value(self, value):
@@ -454,7 +468,7 @@ class ANTS_Settings_Tab(QWidget):
 
     def scan_button_clicked(self):
         self.ants_controller.eth_name, self.ants_controller.eth_mac, self.ants_controller.wlan_name, self.ants_controller.wlan_mac, self.ants_controller.wlan_internal_name = interfaces_scan()
-        networks = get_all_networks(self.ants_controller.wlan_name)
+        networks = get_frequency_networks(self.ants_controller.wlan_name, self.ants_controller.center_frequency)
         self.ants_controller.essid = networks[0]
         print ('NETWORK SELECTED IS:', self.ants_controller.essid)
         self.network_WiFi.clear()
@@ -568,7 +582,9 @@ class Advanced_GUI(QMainWindow):
 
     def __init__(self, ants_controller):
         super().__init__()
-
+        print("TURNING OFF NETWORK MANAGER")
+        # turn off network manager
+        call(['nmcli', 'n', 'off'])
         # The ANTS Controller object
         self.ants_controller = ants_controller
 

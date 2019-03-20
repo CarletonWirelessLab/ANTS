@@ -1,24 +1,17 @@
 import re
 from subprocess import *
 class Cell:
-    def __init__(self, e, a):
+    def __init__(self, e, f):
         self.essid = e
-        self.address = a
+        self.frequency = f
     def __str__(self):
-        return self.essid + ", " + self.address
+        return self.essid + ", " + self.frequency
 
-def get_address(s):
-    m = re.search("Address: (([0-9A-Fa-f]{2}[:]){5})", s)
+def get_frequency(s):
+    m = re.search("Frequency:([0-9][.][0-9]*) GHz", s)
     if m:
-        return m.group(1).lower()
+        return m.group(1)
     return None
-
-# def get_level(s):
-#     m = re.search("Signal level=(([0-9]{2}[:]){5})", s)
-#     if m:
-#         return m.group(1).lower()
-#     return None
-
 
 def get_essid(s):
     m = re.search("ESSID:\"(.*)\"", s)
@@ -26,50 +19,30 @@ def get_essid(s):
         return m.group(1)
     return None
 
-def get_cells(s):
+def get_frequency_cells(s, fc):
     cells = []
     arr = s.split("Cell")
     index = 0
     for a in arr:
         if index != 0:
-            c = Cell(get_essid(a), get_address(a))
-            cells.append(c)
+            c = Cell(get_essid(a), get_frequency(a))
+            if c.frequency == fc:
+                cells.append(c)
         index = index + 1
     return cells
 
-def match_address(arr,bridge_id):
-    mx = 0
-    index = 0
-    i = 0
-    for a in arr:
-        if a.address in bridge_id:
-            index = i
-        i = i + 1
-    return arr[index]
-
-def get_all_networks(device_name):
+def get_frequency_networks(device_name, center_frequency):
     print("BRINGING",device_name,"UP")
     call(['ifconfig', device_name, 'up'])
     call(['ip', 'addr', 'flush', 'dev', device_name])
-    print("SCANNING NETWORKS ON THE WIRELESS INTERFACE", device_name)
+    print("SCANNING NETWORKS ON THE WIRELESS INTERFACE", device_name, "FOR CENTER FREQUENCY", center_frequency)
     p = Popen(['iwlist', device_name, 'scan'], stdout=PIPE, stderr=PIPE)
     data, error = p.communicate()
     data = str(data)
-    cells = get_cells(data)
+    cells = get_frequency_cells(data, center_frequency)
     networks = []
-    # cells_sorted = sorted(cells, key=lambda x: x.level, reverse=True)
     for c in cells:
         networks.append(c.essid)
 
     print('NETWORK SCAN COMPLETE')
     return networks
-
-def network_scan(device_name, bridge_id):
-    print("SCANNING NETWORKS ON THE WIRELESS INTERFACE", device_name)
-    p = Popen(['iwlist', device_name, 'scan'], stdout=PIPE, stderr=PIPE)
-    data, error = p.communicate()
-    data = str(data)
-    cells = get_cells(data)
-    c = match_address(cells,bridge_id)
-    print("NETWORK ESSID", c.essid, "HAS A MATCHING ADDRESS{0}:xx".format(c.address))
-    return c.essid

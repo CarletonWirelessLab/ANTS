@@ -17,6 +17,7 @@ class ANTS_Controller():
     def __init__(self):
 
         self.essid = None
+        self.center_frequency = '5.765'
         self.communication_success = 0
         # Class variables used for the subprocesses run, if any, of the tools
         # run when their checkboxes are selected
@@ -43,8 +44,8 @@ class ANTS_Controller():
         self.usrp_run_delay = 3
 
         # The sample rate in 20MS/s
-        self.usrp_sample_rate = None
-        self.ursp_gain = None
+        self.usrp_sample_rate = '20'
+        self.ursp_gain = '40'
 
         # Output/conversion file name. Set to "no_name" as default in case the
         # user has not yet given a file name to the run in the GUI
@@ -61,16 +62,7 @@ class ANTS_Controller():
         #self.working_dir = os.getcwd()
         self.working_dir = os.path.dirname(os.path.abspath(__file__))
 
-        # Path of the utilities (i.e. non-MATLAB scripts) used to run the tests
-        self.utils_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'utils'))
-        self.utils_dir = self.utils_dir + '/'
-
-        # Path for calling scripts in simulation mode
-        self.sim_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'utils/sim'))
-        self.sim_dir = self.sim_dir + '/'
-
         # The number of times that the process should be run for an average. Minimum 1
-
         self.num_runs = 1
         self.ping_max = 10
 
@@ -116,7 +108,7 @@ class ANTS_Controller():
 
         # Create the argument list to pass to the USRP subprocess that will be instantiated
 
-        self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.usrp_sample_rate, self.usrp_gain]
+        self.usrp_control_args = ["python", self.working_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
 
         # Run the USRP process with the necessary arguments
         self.usrp_proc = subprocess.Popen(self.usrp_control_args, stdin=subprocess.PIPE, stderr=None, shell=False)
@@ -153,7 +145,7 @@ class ANTS_Controller():
         print("The binary data file will be written to {0}.\n".format(self.bin_path))
 
         # Set the arguments to be used to run the USRP
-        self.usrp_control_args = ["python", self.utils_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.usrp_sample_rate, self.usrp_gain]
+        self.usrp_control_args = ["python", self.working_dir + "writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
 
 
         if self.iperf_ap_addr == None:
