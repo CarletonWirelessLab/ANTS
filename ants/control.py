@@ -17,7 +17,7 @@ class ANTS_Controller():
     def __init__(self):
 
         self.essid = None
-        self.center_frequency = '5.765'
+        self.center_frequency = '5.180'
         self.communication_success = 0
         # Class variables used for the subprocesses run, if any, of the tools
         # run when their checkboxes are selected

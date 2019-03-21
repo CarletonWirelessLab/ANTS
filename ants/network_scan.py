@@ -26,7 +26,7 @@ def get_frequency_cells(s, fc):
     for a in arr:
         if index != 0:
             c = Cell(get_essid(a), get_frequency(a))
-            if c.frequency == fc:
+            if float(c.frequency) == float(fc):
                 cells.append(c)
         index = index + 1
     return cells

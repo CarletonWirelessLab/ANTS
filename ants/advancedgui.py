@@ -196,8 +196,8 @@ class ANTS_Settings_Tab(QWidget):
         # Text box for specifying the IP address of the access point to be used for testing
         self.center_frequency_lineedit = QLineEdit(self)
         self.center_frequency_lineedit_label = QLabel("Center Frequency (GHz)", self)
-        self.center_frequency_lineedit.setText('5.765')
-        self.ants_controller.center_frequency = '5.765'
+        self.center_frequency_lineedit.setText('5.180')
+        self.ants_controller.center_frequency = '5.180'
         self.center_frequency_lineedit.textChanged[str].connect(self.on_center_frequency)
 
         # Specify the iperf type-of-service value (client only)
