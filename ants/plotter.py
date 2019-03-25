@@ -16,8 +16,8 @@ import sys
 
 class ANTS_Plotter():
 
-    def __init__(self, access_category, test_name, sample_rate=20e6):
-
+    def __init__(self, access_category, test_name,  UUT_type, sample_rate=20e6):
+        self.UUT_type = UUT_type
         self.test_name = test_name
         self.access_category = access_category
         self.file_name = self.test_name + "_" + self.access_category + ".bin"
@@ -25,12 +25,16 @@ class ANTS_Plotter():
         self.output_file_name = self.test_name + "_" + self.access_category + "_results.txt"
 
         if self.access_category == "video":
-        	self.txop_limit = 4
-        	self.aifs = 34
-        	self.n = 8
-        	self.kp1 = 9
-        	self.mind = 32
-        	self.maxd = 95
+            self.txop_limit = 4
+            self.aifs = 34
+            self.n = 8
+            self.kp1 = 9
+            self.mind = 32
+            self.maxd = 95
+            # if self.UUT_type == "Supervising":
+            #     self.aifs = self.aifs - 9
+            #     self.mind = self.mind - 9
+            #     self.maxd = self.maxd - 9
         elif self.access_category == "best_effort":
         	self.txop_limit = 6
         	self.aifs = 43
@@ -52,6 +56,10 @@ class ANTS_Plotter():
         	self.kp1 = 5
         	self.mind = 32
         	self.maxd = 59
+            # if self.UUT_type == "Supervising":
+            #     self.aifs = self.aifs - 9
+            #     self.mind = self.mind - 9
+            #     self.maxd = self.maxd - 9
 
     # open the data file and read the raw data from it
     def read_and_parse(self, filename=None):
@@ -132,7 +140,12 @@ class ANTS_Plotter():
 
         self.packet_indices = np.concatenate(np.where(self.power_data > self.threshold)) #added
         self.SIFSD = np.concatenate(np.where(self.interframe_spacing <= 20.5))
-        self.correct_back_off = np.concatenate(np.where(self.interframe_spacing > 27))
+
+        if self.UUT_type == "Supervising" and (self.access_category == "voice" or self.access_category == "video") :
+            self.correct_back_off = np.concatenate(np.where(self.interframe_spacing > 25))
+        else:
+            self.correct_back_off = np.concatenate(np.where(self.interframe_spacing > 27))
+
         self.txop_durations = []
         self.COT_length = len(self.COT)
 

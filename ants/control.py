@@ -15,7 +15,7 @@ from ipaddress import *
 class ANTS_Controller():
 
     def __init__(self):
-
+        self.UUT_type = "Supervising"
         self.essid = None
         self.center_frequency = '5.180'
         self.communication_success = 0
@@ -295,7 +295,7 @@ class ANTS_Controller():
         # Create and run an actual plotter instance
         plotter_sample_rate = int(self.usrp_sample_rate)*1e6
         print("The test path is {0}\n".format(self.test_path))
-        self.plotter = ANTS_Plotter(self.plotter_ac, self.test_path, plotter_sample_rate)
+        self.plotter = ANTS_Plotter(self.plotter_ac, self.test_path, self.UUT_type, plotter_sample_rate)
         self.plotter.read_and_parse()
         self.plotter.setup_packet_data()
         results = self.plotter.output_results()

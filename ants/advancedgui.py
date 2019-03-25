@@ -205,6 +205,15 @@ class ANTS_Settings_Tab(QWidget):
         self.network_WiFi_label = QLabel("Wi-Fi Networks", self)
         self.network_WiFi.activated[str].connect(self.on_network_WiFi_change)
 
+        # Specify the itype of the UUT, supervised or supervising
+        self.UUT_type = QComboBox(self)
+        self.UUT_type_label = QLabel("UUT Type", self)
+        self.UUT_type.activated[str].connect(self.on_UUT_type_change)
+        self.UUT_type.addItem("Supervising")
+        self.UUT_type.addItem("Supervised")
+        self.ants_controller.UUT_type = "Supervising"
+        print("UUT TYPE IS: SUPERVISING")
+
         # Set the iperf bandwidth value (client only)
         self.network_bandwidth_slider_label = QLabel(None, self)
         self.network_bandwidth_slider = QSlider(Qt.Horizontal, self)
@@ -251,6 +260,10 @@ class ANTS_Settings_Tab(QWidget):
 
         self.network_gridbox.addWidget(self.routing_checkbox, 5, 0)
         self.network_gridbox.addWidget(self.scan_btn, 5, 1)
+
+        self.network_gridbox.addWidget(self.UUT_type_label, 6, 0)
+        self.network_gridbox.addWidget(self.UUT_type, 6, 1)
+
         self.network_groupbox.setLayout(self.network_gridbox)
 
 
@@ -405,6 +418,10 @@ class ANTS_Settings_Tab(QWidget):
     def on_network_WiFi_change(self, text):
         self.ants_controller.essid = text
         print ('NETWORK SELECTED IS:', self.ants_controller.essid)
+
+    def on_UUT_type_change(self, text):
+        self.ants_controller.UUT_type = text
+        print ('UUT TYPE IS:', self.ants_controller.UUT_type)
 
     # def usrp_sample_rate_slider_value(self, value):
     #     self.ants_controller.usrp_sample_rate = str(value)
@@ -601,6 +618,9 @@ class Advanced_GUI(QMainWindow):
             QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
+            print("TURNING ON NETWORK MANAGER")
+            # turn off network manager
+            call(['nmcli', 'n', 'on'])
             event.accept()
         else:
             event.ignore()
