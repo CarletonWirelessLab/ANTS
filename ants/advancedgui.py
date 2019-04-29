@@ -10,6 +10,7 @@ from PyQt5.QtGui import QRegExpValidator, QPixmap, QIntValidator
 from network_scan import *
 from interfaces_scan import *
 from subprocess import *
+from textwrap import dedent
 # The parent "table" class that holds all of the functional tabs
 class ANTS_Table(QWidget):
 
@@ -552,10 +553,13 @@ class ANTS_About_Tab(QWidget):
         self.ants_controller = ants_controller
         self.layout = QVBoxLayout(self)
         self.ants_message = QLabel()
-        self.ants_message.setText("ANTS (the Automated Networking Test Suite) is an application written \
-by the Broadband Networks Laboratory at Carleton University, with the goal of automating and simplifying \
-compliance testing of wireless devices. For more information, or if you have suggestions or bugs to report, \
-visit https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.\n")
+        self.ants_message.setText(dedent("""
+            ANTS (the Automated Networking Test Suite) is an application written
+            by the Broadband Networks Laboratory at Carleton University, with the goal of automating and simplifying
+            compliance testing of wireless devices. For more information, or if you have suggestions or bugs to report,
+            visit https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.
+            
+            Icon provided by icons8.com"""))
 
         self.ants_message.setMargin(10)
         self.ants_message.setWordWrap(1)
@@ -570,27 +574,28 @@ class ANTS_License_Tab(QWidget):
         self.ants_controller = ants_controller
         self.layout = QVBoxLayout(self)
         self.license_message = QLabel()
-        self.license_message.setText("MIT License\n\
-\n\
-Copyright (c) 2018-2019 Carleton University Broadband Networks Laboratory\n\
-\n\
-Permission is hereby granted, free of charge, to any person obtaining a copy\n\
-of this software and associated documentation files (the \"Software\"), to deal\n\
-in the Software without restriction, including without limitation the rights\n\
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n\
-copies of the Software, and to permit persons to whom the Software is\n\
-furnished to do so, subject to the following conditions:\n\
-\n\
-The above copyright notice and this permission notice shall be included in all\n\
-copies or substantial portions of the Software.\n\
-\n\
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n\
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n\
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n\
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n\
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n\
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n\
-SOFTWARE.")
+        self.license_message.setText(dedent("""
+            MIT License
+
+            Copyright (c) 2018-2019 Carleton University Broadband Networks Laboratory
+
+            Permission is hereby granted, free of charge, to any person obtaining a copy
+            of this software and associated documentation files (the \"Software\"), to deal
+            in the Software without restriction, including without limitation the rights
+            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+            copies of the Software, and to permit persons to whom the Software is
+            furnished to do so, subject to the following conditions:
+
+            The above copyright notice and this permission notice shall be included in all
+            copies or substantial portions of the Software.
+
+            THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+            IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+            FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+            AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+            LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+            OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+            SOFTWARE."""))
         self.license_message.setMargin(10)
         self.layout.addWidget(self.license_message)
         self.setLayout(self.layout)
