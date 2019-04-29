@@ -1,13 +1,15 @@
 #!/usr/bin/python3
 
+import sys
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QIcon
 from control import ANTS_Controller
 from advancedgui import Advanced_GUI
-from PyQt5.QtWidgets import QApplication
-import sys
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon('ants/ants.png'))
+    
     controller = ANTS_Controller()
     gui = Advanced_GUI(controller)
     sys.exit(app.exec_())

@@ -599,15 +599,22 @@ class Advanced_GUI(QMainWindow):
 
     def __init__(self, ants_controller):
         super().__init__()
-        print("TURNING OFF NETWORK MANAGER")
+        
         # turn off network manager
-        call(['nmcli', 'n', 'off'])
+        try:
+            print("TURNING OFF NETWORK MANAGER")
+            call(['nmcli', 'n', 'off'])
+        except FileNotFoundError:
+            print("ERROR: COULD NOT TURN OFF NETWORK MANAGER")
+            pass
+        
         # The ANTS Controller object
         self.ants_controller = ants_controller
 
         self.table_widget = ANTS_Table(self, self.ants_controller)
         self.setCentralWidget(self.table_widget)
-
+        self.setWindowTitle("ANTS")
+        
         self.show()
 
     # Make sure we get prompted before closing the GUI
@@ -618,9 +625,14 @@ class Advanced_GUI(QMainWindow):
             QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            print("TURNING ON NETWORK MANAGER")
             # turn off network manager
-            call(['nmcli', 'n', 'on'])
+            try:
+                print("TURNING ON NETWORK MANAGER")
+                call(['nmcli', 'n', 'on'])
+            except FileNotFoundError:
+                print("ERROR: COULD NOT TURN ON NETWORK MANAGER")
+                pass
+
             event.accept()
         else:
             event.ignore()
