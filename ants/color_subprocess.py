@@ -29,9 +29,9 @@ class Popen(object):
     def __init__(self, command, prefix = '', color = ''):
         
         self._process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self._stdout_reader = Popen.PrefixStdoutPipe(process.stdout, prefix, color)
+        self._stdout_reader = Popen.PrefixStdoutPipe(self._process.stdout, prefix, color)
         self._stdout_reader.start()
-        self._stderr_reader = Popen.PrefixStdoutPipe(process.stdout, prefix, colors.fg.red)
+        self._stderr_reader = Popen.PrefixStdoutPipe(self._process.stdout, prefix, colors.fg.red)
         self._stderr_reader.start()
 
     def getProcess():
