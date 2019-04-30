@@ -34,7 +34,7 @@ class Popen(object):
         self._stderr_reader = Popen.PrefixStdoutPipe(self._process.stdout, prefix, colors.fg.red)
         self._stderr_reader.start()
 
-    def getProcess():
+    def getProcess(self):
         return self._process
 
     def terminate(self):
