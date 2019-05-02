@@ -1,33 +1,44 @@
 import re
 from subprocess import *
+
 class Cell:
-    def __init__(self, e, f):
-        self.essid = e
-        self.frequency = f
+    def __init__(self, cellDescription):
+        self._cellDescription = cellDescription
+        self.essid = self.get_essid()
+        self.frequency = self.get_frequency()
+        self.is_encrypted = self.get_encrypted()
+
     def __str__(self):
         return self.essid + ", " + self.frequency
 
-def get_frequency(s):
-    m = re.search("Frequency:([0-9][.][0-9]*) GHz", s)
-    if m:
-        return m.group(1)
-    return None
+    def get_frequency(self):
+        m = re.search("Frequency:([0-9][.][0-9]*) GHz", self._cellDescription)
+        if m:
+            return m.group(1)
+        return None
 
-def get_essid(s):
-    m = re.search("ESSID:\"(.*)\"", s)
-    if m:
-        return m.group(1)
-    return None
+    def get_encrypted(self):
+        m = re.search("Encryption key:on", self._cellDescription)
+        if m:
+            return True
+        return False
 
-def get_frequency_cells(s, fc):
+    def get_essid(self):
+        m = re.search("ESSID:\"(.*)\"", self._cellDescription)
+        if m:
+            return m.group(1)
+        return None
+
+def get_frequency_cells(s, selectedFrequency):
     cells = []
-    arr = s.split("Cell")
+    cellDescriptions = s.split("Cell")
     index = 0
-    for a in arr:
-        if index != 0:
-            c = Cell(get_essid(a), get_frequency(a))
-            if float(c.frequency) == float(fc):
-                cells.append(c)
+    for cellDescription in cellDescriptions:
+        if index == 0:
+            break
+        c = Cell(cellDescription)
+        if float(c.frequency) == float(selectedFrequency) and c.is_encrypted == False:
+            cells.append(c)
         index = index + 1
     return cells
 

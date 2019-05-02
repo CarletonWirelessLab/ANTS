@@ -13,8 +13,8 @@ from plotter import *
 from network_connect import *
 from setup_routing import *
 from ipaddress import *
-class ANTS_Controller():
 
+class ANTS_Controller():
     def __init__(self):
         self.UUT_type = "Supervising"
         self.essid = None
@@ -67,7 +67,6 @@ class ANTS_Controller():
         self.num_runs = 1
         self.ping_max = 10
 
-
     # Make the timestamped data directory, and then return the full path for
     # writing data files to
     def make_data_dir(self, test_name):
@@ -102,17 +101,17 @@ class ANTS_Controller():
             self.plotter_ac = "voice"
 
         # Create the data directory for the run
-        self.data_dir = self.make_data_dir(self.file_name)
-        self.test_path = self.data_dir + self.file_name
+        data_dir = self.make_data_dir(self.file_name)
+        self.test_path = data_dir + self.file_name
         self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
         print("The binary data file will be written to {0}.\n".format(self.bin_path))
 
         # Create the argument list to pass to the USRP subprocess that will be instantiated
 
-        self.usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
+        usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
 
         # Run the USRP process with the necessary arguments
-        self.usrp_proc = subprocess.Popen(self.usrp_control_args)
+        self.usrp_proc = subprocess.Popen(usrp_control_args)
         while self.usrp_proc.poll() is None:
             continue
 
@@ -136,15 +135,12 @@ class ANTS_Controller():
             self.iperf_client_ac = "0xC0"
 
         # Create the data directory for the run
-        self.data_dir = self.make_data_dir(self.file_name)
-        self.test_path = self.data_dir + self.file_name
+        data_dir = self.make_data_dir(self.file_name)
+        self.test_path = data_dir + self.file_name
         self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
 
         # Print the file path for debug purposes
         print("The binary data file will be written to {0}.\n".format(self.bin_path))
-
-        # Set the arguments to be used to run the USRP
-        self.usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
 
         if self.iperf_ap_addr == None:
             self.iperf_ap_addr = "192.168.1.1"
@@ -195,7 +191,8 @@ class ANTS_Controller():
                 print("PING FAILED AFTER {0} ATTEMPTS".format(self.ping_max))
                 self.communication_success = 0
 
-
+        # Set the arguments to be used to run the USRP
+        usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
         # The arguments to run the iperf client. If configure_routing is True, then automating routing has been performed and a virtual destination IP is required for the iperf client
         iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", " {0}M".format(self.iperf_bw), "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
         # The arguments to run the iperf server
@@ -214,7 +211,7 @@ class ANTS_Controller():
             print('USRP GAIN:', self.usrp_gain)
             for run in range(0, self.num_runs):
                 # Start the USRP
-                self.usrp_proc = color_subprocess.Popen(self.usrp_control_args, prefix='USRP:        ', color=color_subprocess.colors.fg.lightgreen)
+                self.usrp_proc = color_subprocess.Popen(usrp_control_args, prefix='USRP:        ', color=color_subprocess.colors.fg.lightgreen)
                 # Continuously check to see if the USRP is running, then break out when it has stopped
                 while True:
                     self.usrp_proc.getProcess().poll()
@@ -228,8 +225,6 @@ class ANTS_Controller():
 
             print("Done sampling the medium. iperf processes killed.\n")
 
-        return
-
     def run_n_times(self):
 
         # Compliance and aggression values list and variables, for averaging over multiple runs
@@ -242,9 +237,7 @@ class ANTS_Controller():
         self.run_aggression_total = 0
         self.run_submission_total = 0
 
-
         self.start_usrp_iperf()
-
 
         for index in range(0, len(self.stats_list)):
             self.run_compliance_total = self.run_compliance_total + self.stats_list[index][0]

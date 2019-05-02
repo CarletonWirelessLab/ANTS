@@ -27,7 +27,6 @@ class Popen(object):
                 print(self._color, self._prefix, line.decode('utf-8'), colors.reset, sep='', end='')
 
     def __init__(self, command, prefix = '', color = ''):
-        
         self._process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self._stdout_reader = Popen.PrefixStdoutPipe(self._process.stdout, prefix, color)
         self._stdout_reader.start()
@@ -38,9 +37,6 @@ class Popen(object):
         return self._process
 
     def terminate(self):
-        self._stdout_reader.join()
-        self._stderr_reader.join()
-
         self._process.stdout.close()
         self._process.stderr.close()
         self._process.terminate()
