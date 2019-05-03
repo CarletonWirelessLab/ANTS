@@ -25,7 +25,7 @@ class Popen(object):
 
         def run(self):
             try:
-                for line in self._fd.readline():
+                for line in iter(self._fd.readline(), b''):
                     print(self._color, self._prefix, line, colors.reset, sep='', end='')
             except:
                 return
