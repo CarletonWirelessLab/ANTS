@@ -82,7 +82,7 @@ class ANTS_Controller():
         # Make the data file path if it doesn't exist (this should always run as long as the timestamp is present)
         if not os.path.exists(full_path):
             os.makedirs(full_path)
-        print("Generated the test directory {0}.\n".format(full_path))
+        print("Generated the test directory {0}.".format(full_path))
 
         return full_path
 
@@ -104,7 +104,7 @@ class ANTS_Controller():
         self.data_dir = self.make_data_dir(self.file_name)
         self.test_path = self.data_dir + self.file_name
         self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
-        print("The binary data file will be written to {0}.\n".format(self.bin_path))
+        print("The binary data file will be written to {0}.".format(self.bin_path))
 
         # Create the argument list to pass to the USRP subprocess that will be instantiated
 
@@ -119,7 +119,11 @@ class ANTS_Controller():
 
     # Runs the USRP and iperf tools simultaneously
     def start_usrp_iperf(self):
-        print("Running USRP with interference injected using iperf...\n")
+        print("Running USRP with interference injected using iperf...")
+
+        if len(self.essid) == 0:
+            print("ERROR: No network selected.")
+            return
 
         if self.access_category == 1:
             self.plotter_ac = "video"
@@ -140,7 +144,7 @@ class ANTS_Controller():
         self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
 
         # Print the file path for debug purposes
-        print("The binary data file will be written to {0}.\n".format(self.bin_path))
+        print("The binary data file will be written to {0}.".format(self.bin_path))
 
         if self.iperf_ap_addr == None:
             self.iperf_ap_addr = "192.168.1.1"
