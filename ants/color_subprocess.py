@@ -23,8 +23,10 @@ class Popen(object):
             self._prefix = prefix
 
         def run(self):
-            for line in iter(self._fd.readline, b''):
-                print(self._color, self._prefix, line.decode('utf-8'), colors.reset, sep='', end='')
+            line = self._fd.readline()
+            while(line):
+                print(self._color, self._prefix, line, colors.reset, sep='', end='')
+                line = self._fd.readline()
 
     def __init__(self, command, prefix = '', color = ''):
         self._process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
