@@ -17,14 +17,18 @@ class Popen(object):
     class PrefixStdoutPipe(threading.Thread):
         def __init__(self, fd, prefix, color = ''):
             assert callable(fd.readline)
-            threading.Thread.__init__(self)
             self._color = color
             self._fd = fd
             self._prefix = prefix
 
+            threading.Thread.__init__(self)
+
         def run(self):
-            for line in self._fd.readline():
-                print(self._color, self._prefix, line, colors.reset, sep='', end='')
+            try:
+                for line in self._fd.readline():
+                    print(self._color, self._prefix, line, colors.reset, sep='', end='')
+            except:
+                return
 
     def __init__(self, command, prefix = '', color = ''):
         self._process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -37,8 +41,6 @@ class Popen(object):
         return self._process
 
     def terminate(self):
-        self._stdout_reader.terminate()
-        self._stderr_reader.terminate()
         self._process.stdout.close()
         self._process.stderr.close()
         self._process.terminate()
