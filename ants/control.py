@@ -101,8 +101,8 @@ class ANTS_Controller():
             self.plotter_ac = "voice"
 
         # Create the data directory for the run
-        data_dir = self.make_data_dir(self.file_name)
-        self.test_path = data_dir + self.file_name
+        self.data_dir = self.make_data_dir(self.file_name)
+        self.test_path = self.data_dir + self.file_name
         self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
         print("The binary data file will be written to {0}.\n".format(self.bin_path))
 
@@ -135,8 +135,8 @@ class ANTS_Controller():
             self.iperf_client_ac = "0xC0"
 
         # Create the data directory for the run
-        data_dir = self.make_data_dir(self.file_name)
-        self.test_path = data_dir + self.file_name
+        self.data_dir = self.make_data_dir(self.file_name)
+        self.test_path = self.data_dir + self.file_name
         self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
 
         # Print the file path for debug purposes

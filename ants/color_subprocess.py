@@ -26,7 +26,7 @@ class Popen(object):
         def run(self):
             try:
                 for line in iter(self._fd.readline(), b''):
-                    print(self._color, self._prefix, line, colors.reset, sep='', end='')
+                    print(self._color, self._prefix, line.decode(), colors.reset, sep='', end='')
             except:
                 return
 
@@ -34,15 +34,13 @@ class Popen(object):
         self._process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self._stdout_reader = Popen.PrefixStdoutPipe(self._process.stdout, prefix, color)
         self._stdout_reader.start()
-        self._stderr_reader = Popen.PrefixStdoutPipe(self._process.stdout, prefix, colors.fg.red)
+        self._stderr_reader = Popen.PrefixStdoutPipe(self._process.stderr, prefix, colors.fg.red)
         self._stderr_reader.start()
 
     def getProcess(self):
         return self._process
 
     def terminate(self):
-        self._process.stdout.close()
-        self._process.stderr.close()
         self._process.terminate()
 
 class colors: 
