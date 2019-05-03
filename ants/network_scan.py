@@ -9,7 +9,7 @@ class Cell:
         self.is_encrypted = self.get_encrypted()
 
     def __str__(self):
-        return self.essid + ", " + self.frequency
+        return self.essid + "@" + self.frequency + ", enc:" + str(self.is_encrypted)
 
     def get_frequency(self):
         m = re.search("Frequency:([0-9][.][0-9]*) GHz", self._cellDescription)
@@ -32,11 +32,14 @@ class Cell:
 def get_frequency_cells(s, selectedFrequency):
     cells = []
     cellDescriptions = s.split("Cell")
+    print("Found {0} networks".format(len(cellDescriptions)))
     index = 0
     for cellDescription in cellDescriptions:
         if index == 0:
-            break
+            index = index + 1
+            continue
         c = Cell(cellDescription)
+        print ('   ', c)
         if float(c.frequency) == float(selectedFrequency) and c.is_encrypted == False:
             cells.append(c)
         index = index + 1
