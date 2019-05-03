@@ -272,6 +272,5 @@ class ANTS_Controller():
         self.plotter.read_and_parse()
         self.plotter.setup_packet_data()
         results = self.plotter.output_results()
-        # self.plotter.plot_results()
 
         return results
