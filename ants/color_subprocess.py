@@ -23,10 +23,8 @@ class Popen(object):
             self._prefix = prefix
 
         def run(self):
-            line = self._fd.readline()
-            while(line):
+            for line in self._fd.readline:
                 print(self._color, self._prefix, line, colors.reset, sep='', end='')
-                line = self._fd.readline()
 
     def __init__(self, command, prefix = '', color = ''):
         self._process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -39,6 +37,8 @@ class Popen(object):
         return self._process
 
     def terminate(self):
+        self._stdout_reader.terminate()
+        self._stderr_reader.terminate()
         self._process.stdout.close()
         self._process.stderr.close()
         self._process.terminate()
