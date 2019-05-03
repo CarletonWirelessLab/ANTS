@@ -15,29 +15,6 @@ class Popen(object):
 
             color: The color escape code
     """
-    class PrefixStdoutPipe(threading.Thread):
-        def __init__(self, prefix, color = ''):
-            self._color = color
-            self._prefix = prefix
-            self._readpipe, self._writepipe = os.pipe()
-            super().__init__()
-
-        def fileno(self):
-            self.start()
-            return self._writepipe
-
-        def finished(self):
-            os.close(self._writepipe)
-
-        def run(self):
-            inputFile = os.fdopen(self._readpipe)
-
-            while True:
-                line = inputFile.readline()
-                if len(line) == 0:
-                    break
-                    
-                print(self._color, self._prefix, line.strip(), colors.reset, sep='')
 
     def __init__(self, command, prefix = '', color = ''):
         self._process = subprocess.Popen(command, stdout=PrefixStdoutPipe(prefix, color), stderr=PrefixStdoutPipe(prefix, colors.fg.red))
@@ -47,6 +24,30 @@ class Popen(object):
 
     def terminate(self):
         self._process.terminate()
+
+class PrefixStdoutPipe(threading.Thread):
+    def __init__(self, prefix, color = ''):
+        self._color = color
+        self._prefix = prefix
+        self._readpipe, self._writepipe = os.pipe()
+        super().__init__()
+
+    def fileno(self):
+        self.start()
+        return self._writepipe
+
+    def finished(self):
+        os.close(self._writepipe)
+
+    def run(self):
+        inputFile = os.fdopen(self._readpipe)
+
+        while True:
+            line = inputFile.readline()
+            if len(line) == 0:
+                break
+                
+            print(self._color, self._prefix, line.strip(), colors.reset, sep='')
 
 class colors: 
     reset='\033[0m'
