@@ -36,20 +36,20 @@ class Overlay(QWidget):
                 painter.setBrush(QBrush(QColor(127, 127, 127)))
                 painter.drawEllipse(
                 self.width()/2 + 30 * math.cos(2 * math.pi * i / 6.0) - 10,
-                self.height()/2 + 30 * math.sin(2 * math.pi * i / 6.0) - 10, 20, 20) 
+                self.height()/2 + 30 * math.sin(2 * math.pi * i / 6.0) - 10, 20, 20)
 
         painter.end()
 
     def showEvent(self, event):
         self.timer = self.startTimer(50)
-        self.counter = 0 
+        self.counter = 0
         event.accept()
 
     def hideEvent(self, event):
         self.killTimer(self.timer)
         event.accept()
 
-    def timerEvent(self, event):     
+    def timerEvent(self, event):
         self.counter += 1
         self.update()
 
@@ -172,7 +172,7 @@ class ANTS_ControlThread(QThread):
     def __init__(self, antsController):
         QThread.__init__(self)
         self._antsController = antsController
-    
+
     def __def__(self):
         self.wait()
 
@@ -513,6 +513,10 @@ class ANTS_Settings_Tab(QWidget):
     def scan_button_clicked(self):
         self.ants_controller.eth_name, self.ants_controller.eth_mac, self.ants_controller.wlan_name, self.ants_controller.wlan_mac, self.ants_controller.wlan_internal_name = interfaces_scan()
         networks = get_frequency_networks(self.ants_controller.wlan_name, self.ants_controller.center_frequency)
+        if len(networks) == 0:
+            print ('ERROR: No network found on the given frequency without encryption.')
+            return
+
         self.ants_controller.essid = networks[0]
         print ('NETWORK SELECTED IS:', self.ants_controller.essid)
         self.network_WiFi.clear()
@@ -587,7 +591,7 @@ class ANTS_About_Tab(QWidget):
             by the Broadband Networks Laboratory at Carleton University, with the goal of automating and simplifying
             compliance testing of wireless devices. For more information, or if you have suggestions or bugs to report,
             visit https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.
-            
+
             Icon provided by icons8.com"""))
 
         self.ants_message.setMargin(10)
@@ -633,7 +637,7 @@ class Advanced_GUI(QMainWindow):
 
     def __init__(self, ants_controller):
         super().__init__()
-        
+
         # turn off network manager
         try:
             print("TURNING OFF NETWORK MANAGER")
@@ -641,7 +645,7 @@ class Advanced_GUI(QMainWindow):
         except FileNotFoundError:
             print("WARNING: COULD NOT TURN OFF NETWORK MANAGER")
             pass
-        
+
         # The ANTS Controller object
         self.ants_controller = ants_controller
 
@@ -651,7 +655,7 @@ class Advanced_GUI(QMainWindow):
 
         self.overlay = Overlay(self.centralWidget())
         self.overlay.hide()
-        
+
         self.show()
 
     def showOverlay(self):
@@ -662,7 +666,7 @@ class Advanced_GUI(QMainWindow):
 
     def resizeEvent(self, event):
         self.overlay.resize(event.size())
-        event.accept()    
+        event.accept()
 
     # Make sure we get prompted before closing the GUI
     def closeEvent(self, event):
