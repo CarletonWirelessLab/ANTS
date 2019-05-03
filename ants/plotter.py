@@ -307,6 +307,7 @@ class ANTS_Plotter():
         plt.draw()
         plt.savefig(self.test_name + '_' + self.access_category + '_signal_magnitude_plot.svg')
         plt.close()
+        
         plt.figure(2)
         plt.xlim((0,250))
         plt.hist(self.interframe_spacing, bins=750)
@@ -316,8 +317,8 @@ class ANTS_Plotter():
         plt.draw()
         plt.savefig(self.test_name + '_' + self.access_category + '_interframe_spacing_histogram.svg')
         plt.close()
+        
         plt.figure(3)
-
         compliant_txop_durations = self.txop_durations[self.txop_durations < self.txop_limit]
         violating_txop_durations = self.txop_durations[self.txop_durations >= self.txop_limit]
         plt.hist(compliant_txop_durations, bins=50)
@@ -330,6 +331,7 @@ class ANTS_Plotter():
         plt.draw()
         plt.savefig(self.test_name + '_' + self.access_category + '_txop_durations_histogram.svg')
         plt.close()
+
         plt.figure(4)
         t = np.linspace(0, self.kp1-1, num=self.kp1)
         plt.bar(t, self.p, color='b', width=0.25)
@@ -341,7 +343,6 @@ class ANTS_Plotter():
         plt.legend(Gender, loc=2)
         plt.draw()
         plt.savefig(self.test_name + '_' + self.access_category + '_bin_probability.svg')
-
         plt.close()
         #
         #plt.show(block=False)

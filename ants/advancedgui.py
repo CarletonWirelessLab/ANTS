@@ -6,12 +6,13 @@ from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox, QPushButton
 from PyQt5.QtWidgets import QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
 from PyQt5.QtWidgets import QGroupBox
-from PyQt5.QtCore import Qt, QRegExp, QSettings, QTimer
+from PyQt5.QtCore import Qt, QRegExp, QSettings, QTimer, QThread
 from PyQt5.QtGui import *
 from network_scan import *
 from interfaces_scan import *
 from subprocess import *
 from textwrap import dedent
+
 
 class Overlay(QWidget):
 
@@ -164,6 +165,17 @@ class ANTS_Results_Tab(QWidget):
     def txop_button_clicked(self):
         self.txop_pixmap.load(self.txop_pixmap_path)
         self.graphic_label.setPixmap(self.txop_pixmap)
+
+class ANTS_ControlThread(QThread):
+    def __init__(self, antsController):
+        QThread.__init__(self)
+        self._antsController = antsController
+    
+    def __def__(self):
+        self.wait()
+
+    def run(self):
+        self._antsController.run_n_times()
 
 # The catch-all tab widget for settings related to ANTS. Data entered here should be passed to the ANTS controller object
 class ANTS_Settings_Tab(QWidget):
@@ -506,12 +518,12 @@ class ANTS_Settings_Tab(QWidget):
 
     # Run the test sequence by making calls to the control.py module. run_button_clicked generates QPixmap objects to hold the .png data plots generated with matplotlib
     def run_button_clicked(self):
-
         self.showOverlay()
+        self.control_thread = ANTS_ControlThread(self.ants_controller)
+        self.connect(self.control_thread, SIGNAL("finished()"), self.measurement_done)
+        self.control_thread.start()
 
-        # Run the test sequence
-        self.ants_controller.run_n_times()
-
+    def measurement_done(self):
         self.hideOverlay()
 
         # Update the statistics labels with the latest test sequence data
@@ -560,7 +572,6 @@ class ANTS_Settings_Tab(QWidget):
         self.ants_table.setCurrentIndex(1)
         self.ants_controller.configure_routing = False
         self.routing_checkbox.setChecked(False)
-        self.overlay.hide
 
 class ANTS_About_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
