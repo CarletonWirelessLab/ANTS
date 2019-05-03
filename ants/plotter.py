@@ -307,7 +307,7 @@ class ANTS_Plotter():
         plt.draw()
         plt.savefig(self.test_name + '_' + self.access_category + '_signal_magnitude_plot.svg')
         plt.close()
-        
+
         plt.figure(2)
         plt.xlim((0,250))
         plt.hist(self.interframe_spacing, bins=750)
@@ -344,9 +344,6 @@ class ANTS_Plotter():
         plt.draw()
         plt.savefig(self.test_name + '_' + self.access_category + '_bin_probability.svg')
         plt.close()
-        #
-        #plt.show(block=False)
-
 
 def sum_range(l,a,b):
 	sum = 0

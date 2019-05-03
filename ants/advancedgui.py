@@ -532,6 +532,7 @@ class ANTS_Settings_Tab(QWidget):
 
     def measurement_done(self):
         self.hideOverlay()
+        self.ants_controller.plotter.plot_results()
 
         # Update the statistics labels with the latest test sequence data
         self.results_tab.compliance_label.setText("Compliance: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.compliance_avg)), self.ants_controller.run_compliance_count))
