@@ -23,7 +23,7 @@ class Popen(object):
             self._prefix = prefix
 
         def run(self):
-            for line in self._fd.readline:
+            for line in self._fd.readline():
                 print(self._color, self._prefix, line, colors.reset, sep='', end='')
 
     def __init__(self, command, prefix = '', color = ''):
