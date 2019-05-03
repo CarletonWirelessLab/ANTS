@@ -1,4 +1,5 @@
 import sys
+import os
 import subprocess
 import time
 import threading
@@ -15,27 +16,31 @@ class Popen(object):
             color: The color escape code
     """
     class PrefixStdoutPipe(threading.Thread):
-        def __init__(self, fd, prefix, color = ''):
-            assert callable(fd.readline)
+        def __init__(self, prefix, color = ''):
             self._color = color
-            self._fd = fd
             self._prefix = prefix
+            self._readpipe, self._writepipe = os.pipe()
+            super().__init__()
 
-            threading.Thread.__init__(self)
+        def fileno(self):
+            self.start()
+            return self._writepipe
+
+        def finished(self):
+            os.close(self._writepipe)
 
         def run(self):
-            try:
-                for line in iter(self._fd.readline(), b''):
-                    print(self._color, self._prefix, line.decode(), colors.reset, sep='', end='')
-            except:
-                return
+            inputFile = os.fdopen(self._readpipe)
+
+            while True:
+                line = inputFile.readline()
+                if len(line) == 0:
+                    break
+                    
+                print(self._color, self._prefix, line.strip(), colors.reset, sep='')
 
     def __init__(self, command, prefix = '', color = ''):
-        self._process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self._stdout_reader = Popen.PrefixStdoutPipe(self._process.stdout, prefix, color)
-        self._stdout_reader.start()
-        self._stderr_reader = Popen.PrefixStdoutPipe(self._process.stderr, prefix, colors.fg.red)
-        self._stderr_reader.start()
+        self._process = subprocess.Popen(command, stdout=PrefixStdoutPipe(prefix, color), stderr=PrefixStdoutPipe(prefix, colors.fg.red))
 
     def getProcess(self):
         return self._process
