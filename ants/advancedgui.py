@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox, QPushButton
 from PyQt5.QtWidgets import QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
 from PyQt5.QtWidgets import QGroupBox
-from PyQt5.QtCore import Qt, QRegExp, QSettings, QTimer, QThread
+from PyQt5.QtCore import Qt, QRegExp, QSettings, QTimer, QThread, pyqtSignal
 from PyQt5.QtGui import *
 from network_scan import *
 from interfaces_scan import *
@@ -167,6 +167,8 @@ class ANTS_Results_Tab(QWidget):
         self.graphic_label.setPixmap(self.txop_pixmap)
 
 class ANTS_ControlThread(QThread):
+    signal = pyqtSignal()
+
     def __init__(self, antsController):
         QThread.__init__(self)
         self._antsController = antsController
@@ -176,6 +178,7 @@ class ANTS_ControlThread(QThread):
 
     def run(self):
         self._antsController.run_n_times()
+        self.signal.emit()
 
 # The catch-all tab widget for settings related to ANTS. Data entered here should be passed to the ANTS controller object
 class ANTS_Settings_Tab(QWidget):
@@ -524,7 +527,7 @@ class ANTS_Settings_Tab(QWidget):
     def run_button_clicked(self):
         self.showOverlay()
         self.control_thread = ANTS_ControlThread(self.ants_controller)
-        self.connect(self.control_thread, SIGNAL("finished()"), self.measurement_done)
+        self.control_thread.signal.connect(self.measurement_done)
         self.control_thread.start()
 
     def measurement_done(self):
