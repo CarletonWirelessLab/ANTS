@@ -61,7 +61,6 @@ class writeIQ(gr.top_block):
 		self.disconnect_all()
 		self.connect((self.usrpSource, 0), (self.fileSnk, 0))
 
-
 	def get_samp_rate(self):
 		return self.samp_rate
 
