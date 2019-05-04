@@ -1,19 +1,62 @@
 #!/usr/bin/python3
 
+import math
 from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction
 from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox, QPushButton
 from PyQt5.QtWidgets import QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
 from PyQt5.QtWidgets import QGroupBox
-from PyQt5.QtCore import Qt, QRegExp, QSettings
-from PyQt5.QtGui import QRegExpValidator, QPixmap, QIntValidator
+from PyQt5.QtCore import Qt, QRegExp, QSettings, QTimer, QThread, pyqtSignal
+from PyQt5.QtGui import *
 from network_scan import *
 from interfaces_scan import *
 from subprocess import *
+from textwrap import dedent
+
+
+class Overlay(QWidget):
+
+    def __init__(self, parent = None):
+        QWidget.__init__(self, parent)
+        palette = QPalette(self.palette())
+        palette.setColor(palette.Background, Qt.transparent)
+        self.setPalette(palette)
+
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.fillRect(event.rect(), QBrush(QColor(255,255,255,127)))
+        painter.setPen(QPen(Qt.NoPen))
+
+        for i in range(6):
+            if (self.counter / 5) %6 == i:
+                painter.setBrush(QBrush(QColor(127 + (self.counter % 5)*32, 127, 127)))
+            else:
+                painter.setBrush(QBrush(QColor(127, 127, 127)))
+                painter.drawEllipse(
+                self.width()/2 + 30 * math.cos(2 * math.pi * i / 6.0) - 10,
+                self.height()/2 + 30 * math.sin(2 * math.pi * i / 6.0) - 10, 20, 20)
+
+        painter.end()
+
+    def showEvent(self, event):
+        self.timer = self.startTimer(50)
+        self.counter = 0
+        event.accept()
+
+    def hideEvent(self, event):
+        self.killTimer(self.timer)
+        event.accept()
+
+    def timerEvent(self, event):
+        self.counter += 1
+        self.update()
+
 # The parent "table" class that holds all of the functional tabs
 class ANTS_Table(QWidget):
 
-    def __init__(self, main_gui, ants_controller):
+    def __init__(self, main_gui, ants_controller, showOverlay, hideOverlay):
         super(QWidget, self).__init__(main_gui)
 
         # Initialize the ANTS controller object to run the tests
@@ -25,7 +68,7 @@ class ANTS_Table(QWidget):
 
         # Instantiate all of the tab objects needed for the GUI
         self.results_tab = ANTS_Results_Tab(self, self.ants_controller)
-        self.settings_tab = ANTS_Settings_Tab(self, self.results_tab, self.ants_controller, self.tabs)
+        self.settings_tab = ANTS_Settings_Tab(self, self.results_tab, self.ants_controller, self.tabs, showOverlay, hideOverlay)
         self.about_tab = ANTS_About_Tab(self, self.ants_controller)
         self.license_tab = ANTS_License_Tab(self, self.ants_controller)
         self.tabs.resize(300, 200)
@@ -123,13 +166,29 @@ class ANTS_Results_Tab(QWidget):
         self.txop_pixmap.load(self.txop_pixmap_path)
         self.graphic_label.setPixmap(self.txop_pixmap)
 
+class ANTS_ControlThread(QThread):
+    signal = pyqtSignal()
+
+    def __init__(self, antsController):
+        QThread.__init__(self)
+        self._antsController = antsController
+
+    def __def__(self):
+        self.wait()
+
+    def run(self):
+        self._antsController.run_n_times()
+        self.signal.emit()
+
 # The catch-all tab widget for settings related to ANTS. Data entered here should be passed to the ANTS controller object
 class ANTS_Settings_Tab(QWidget):
-    def __init__(self, tabs_object, results_tab, ants_controller, ants_table):
+    def __init__(self, tabs_object, results_tab, ants_controller, ants_table, showOverlay, hideOverlay):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
         self.ants_table = ants_table
         self.results_tab = results_tab
+        self.showOverlay = showOverlay
+        self.hideOverlay = hideOverlay
         # Always run at least once
         self.num_runs = 1
 
@@ -241,8 +300,6 @@ class ANTS_Settings_Tab(QWidget):
         self.network_groupbox = QGroupBox("Network Settings")
         self.network_gridbox = QGridLayout(self)
 
-
-
         self.network_gridbox.addWidget(self.network_bandwidth_slider_label, 0, 0)
         self.network_gridbox.addWidget(self.network_bandwidth_slider, 0, 1)
 
@@ -266,7 +323,6 @@ class ANTS_Settings_Tab(QWidget):
 
         self.network_groupbox.setLayout(self.network_gridbox)
 
-
         # Create the USRP settings groupbox and fill it
         self.usrp_groupbox = QGroupBox("USRP Settings")
         self.usrp_gridbox = QGridLayout(self)
@@ -286,7 +342,7 @@ class ANTS_Settings_Tab(QWidget):
         # self.usrp_sample_rate_label.setText(self.usrp_sample_rate_text)
         # self.ants_controller.usrp_sample_rate = '20'
 
-        # The label and slider for setting the USRP sample rate
+        # The label and slider for setting the USRP gain
         self.usrp_gain_label = QLabel(None, self)
         self.usrp_gain_slider = QSlider(Qt.Horizontal, self)
         self.usrp_gain_slider.setFocusPolicy(Qt.NoFocus)
@@ -300,8 +356,6 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_gain_label.setText(self.usrp_gain_text)
         self.ants_controller.usrp_gain = '40'
 
-
-
         # The label and slider for setting the delay between the iperf traffic start and USRP process start time
         self.usrp_run_delay_label = QLabel(None, self)
         self.usrp_run_delay_slider = QSlider(Qt.Horizontal, self)
@@ -314,7 +368,6 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_run_delay_slider.setToolTip("Set a delay between the time the iperf traffic starts and when the USRP runs")
         self.usrp_run_delay_text = "Run delay: " + str(self.usrp_run_delay_slider.value()) + " seconds"
         self.usrp_run_delay_label.setText(self.usrp_run_delay_text)
-
 
         # self.usrp_gridbox.addWidget(self.usrp_sample_rate_label, 0, 0)
         # self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider, 0, 1)
@@ -345,11 +398,9 @@ class ANTS_Settings_Tab(QWidget):
         self.gs_number_of_runs_lineedit.setValidator(self.gs_number_of_runs_validator)
         self.gs_number_of_runs_lineedit.textChanged[str].connect(self.on_num_runs)
 
-
         # Add the general settings tools to the groupbox
         self.general_settings_gridbox.addWidget(self.file_name_label, 0, 0)
         self.general_settings_gridbox.addWidget(self.file_name_lineedit, 0, 1)
-
         self.general_settings_gridbox.addWidget(self.runtime_label, 1, 0)
         self.general_settings_gridbox.addWidget(self.runtime_slider, 1, 1)
         self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label, 2, 0)
@@ -367,7 +418,6 @@ class ANTS_Settings_Tab(QWidget):
     # allow ranges between 0.5 and 10, but since the class only supports
     # integers, some math must be done to the actual value when it is moved
     def change_value(self, value):
-
         if value == 0:
             self.ants_controller.run_time = 0.5
         elif value == 20:
@@ -375,23 +425,6 @@ class ANTS_Settings_Tab(QWidget):
         else:
             self.ants_controller.run_time = value / 2.0
         self.runtime_label.setText("Runtime " + str(self.ants_controller.run_time) + " seconds")
-
-    # Action methods for access category radio buttons
-    def on_ac_voice_clicked(self):
-        self.ants_controller.access_category = 0
-        print("Access category set to voice\n")
-
-    def on_ac_video_clicked(self):
-        self.ants_controller.access_category = 1
-        print("Access category set to video\n")
-
-    def on_ac_besteffort_clicked(self):
-        self.ants_controller.access_category = 2
-        print("Access category set to best effort\n")
-
-    def on_ac_background_clicked(self):
-        self.ants_controller.access_category = 3
-        print("Access category set to background\n")
 
     # Allow the user to specify how many test sequences in a row to run. Set the minimum to 1
     def on_num_runs(self):
@@ -412,7 +445,6 @@ class ANTS_Settings_Tab(QWidget):
 
     # Set file name for the test run based on what's in the box
     def on_name_change(self, text):
-
         self.ants_controller.file_name = text
 
     def on_network_WiFi_change(self, text):
@@ -422,11 +454,6 @@ class ANTS_Settings_Tab(QWidget):
     def on_UUT_type_change(self, text):
         self.ants_controller.UUT_type = text
         print ('UUT TYPE IS:', self.ants_controller.UUT_type)
-
-    # def usrp_sample_rate_slider_value(self, value):
-    #     self.ants_controller.usrp_sample_rate = str(value)
-    #     self.usrp_sample_rate_label.setText("Sample rate: " + str(self.ants_controller.usrp_sample_rate) + "MS/s")
-
 
     def usrp_gain_slider_value(self, value):
         self.ants_controller.usrp_gain = str(value)
@@ -486,6 +513,10 @@ class ANTS_Settings_Tab(QWidget):
     def scan_button_clicked(self):
         self.ants_controller.eth_name, self.ants_controller.eth_mac, self.ants_controller.wlan_name, self.ants_controller.wlan_mac, self.ants_controller.wlan_internal_name = interfaces_scan()
         networks = get_frequency_networks(self.ants_controller.wlan_name, self.ants_controller.center_frequency)
+        if len(networks) == 0:
+            print ('ERROR: No network found on the given frequency without encryption.')
+            return
+
         self.ants_controller.essid = networks[0]
         print ('NETWORK SELECTED IS:', self.ants_controller.essid)
         self.network_WiFi.clear()
@@ -494,9 +525,14 @@ class ANTS_Settings_Tab(QWidget):
 
     # Run the test sequence by making calls to the control.py module. run_button_clicked generates QPixmap objects to hold the .png data plots generated with matplotlib
     def run_button_clicked(self):
+        self.showOverlay()
+        self.control_thread = ANTS_ControlThread(self.ants_controller)
+        self.control_thread.signal.connect(self.measurement_done)
+        self.control_thread.start()
 
-        # Run the test sequence
-        self.ants_controller.run_n_times()
+    def measurement_done(self):
+        self.hideOverlay()
+        self.ants_controller.plotter.plot_results()
 
         # Update the statistics labels with the latest test sequence data
         self.results_tab.compliance_label.setText("Compliance: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.compliance_avg)), self.ants_controller.run_compliance_count))
@@ -545,17 +581,19 @@ class ANTS_Settings_Tab(QWidget):
         self.ants_controller.configure_routing = False
         self.routing_checkbox.setChecked(False)
 
-
 class ANTS_About_Tab(QWidget):
     def __init__(self, tabs_object, ants_controller):
         super(QWidget, self).__init__(tabs_object)
         self.ants_controller = ants_controller
         self.layout = QVBoxLayout(self)
         self.ants_message = QLabel()
-        self.ants_message.setText("ANTS (the Automated Networking Test Suite) is an application written \
-by the Broadband Networks Laboratory at Carleton University, with the goal of automating and simplifying \
-compliance testing of wireless devices. For more information, or if you have suggestions or bugs to report, \
-visit https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.\n")
+        self.ants_message.setText(dedent("""\
+            ANTS (the Automated Networking Test Suite) is an application written
+            by the Broadband Networks Laboratory at Carleton University, with the goal of automating and simplifying
+            compliance testing of wireless devices. For more information, or if you have suggestions or bugs to report,
+            visit https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.
+
+            Icon provided by icons8.com"""))
 
         self.ants_message.setMargin(10)
         self.ants_message.setWordWrap(1)
@@ -570,27 +608,28 @@ class ANTS_License_Tab(QWidget):
         self.ants_controller = ants_controller
         self.layout = QVBoxLayout(self)
         self.license_message = QLabel()
-        self.license_message.setText("MIT License\n\
-\n\
-Copyright (c) 2018-2019 Carleton University Broadband Networks Laboratory\n\
-\n\
-Permission is hereby granted, free of charge, to any person obtaining a copy\n\
-of this software and associated documentation files (the \"Software\"), to deal\n\
-in the Software without restriction, including without limitation the rights\n\
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n\
-copies of the Software, and to permit persons to whom the Software is\n\
-furnished to do so, subject to the following conditions:\n\
-\n\
-The above copyright notice and this permission notice shall be included in all\n\
-copies or substantial portions of the Software.\n\
-\n\
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n\
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n\
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n\
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n\
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n\
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n\
-SOFTWARE.")
+        self.license_message.setText(dedent("""\
+            MIT License
+
+            Copyright (c) 2018-2019 Carleton University Broadband Networks Laboratory
+
+            Permission is hereby granted, free of charge, to any person obtaining a copy
+            of this software and associated documentation files (the "Software"), to deal
+            in the Software without restriction, including without limitation the rights
+            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+            copies of the Software, and to permit persons to whom the Software is
+            furnished to do so, subject to the following conditions:
+
+            The above copyright notice and this permission notice shall be included in all
+            copies or substantial portions of the Software.
+
+            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+            IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+            FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+            AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+            LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+            OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+            SOFTWARE."""))
         self.license_message.setMargin(10)
         self.layout.addWidget(self.license_message)
         self.setLayout(self.layout)
@@ -599,16 +638,36 @@ class Advanced_GUI(QMainWindow):
 
     def __init__(self, ants_controller):
         super().__init__()
-        print("TURNING OFF NETWORK MANAGER")
+
         # turn off network manager
-        call(['nmcli', 'n', 'off'])
+        try:
+            print("TURNING OFF NETWORK MANAGER")
+            call(['nmcli', 'n', 'off'])
+        except FileNotFoundError:
+            print("WARNING: COULD NOT TURN OFF NETWORK MANAGER")
+            pass
+
         # The ANTS Controller object
         self.ants_controller = ants_controller
 
-        self.table_widget = ANTS_Table(self, self.ants_controller)
+        self.table_widget = ANTS_Table(self, self.ants_controller, self.showOverlay, self.hideOverlay)
         self.setCentralWidget(self.table_widget)
+        self.setWindowTitle("ANTS")
+
+        self.overlay = Overlay(self.centralWidget())
+        self.overlay.hide()
 
         self.show()
+
+    def showOverlay(self):
+        self.overlay.show()
+
+    def hideOverlay(self):
+        self.overlay.hide()
+
+    def resizeEvent(self, event):
+        self.overlay.resize(event.size())
+        event.accept()
 
     # Make sure we get prompted before closing the GUI
     def closeEvent(self, event):
@@ -618,9 +677,14 @@ class Advanced_GUI(QMainWindow):
             QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            print("TURNING ON NETWORK MANAGER")
             # turn off network manager
-            call(['nmcli', 'n', 'on'])
+            try:
+                print("TURNING ON NETWORK MANAGER")
+                call(['nmcli', 'n', 'on'])
+            except FileNotFoundError:
+                print("WARNING: COULD NOT TURN ON NETWORK MANAGER")
+                pass
+
             event.accept()
         else:
             event.ignore()
