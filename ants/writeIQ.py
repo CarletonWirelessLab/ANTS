@@ -61,7 +61,6 @@ class writeIQ(gr.top_block):
 		self.disconnect_all()
 		self.connect((self.usrpSource, 0), (self.fileSnk, 0))
 
-
 	def get_samp_rate(self):
 		return self.samp_rate
 
@@ -92,7 +91,7 @@ class writeIQ(gr.top_block):
 
 def dowork():
 	classInst.run()
-	print "EXIT RUN"
+	print("EXIT RUN")
 
 def main():
 	global name, runFor, access_category, center_frequency, gain
@@ -110,10 +109,10 @@ def main():
 	t.start()
 	time.sleep(runFor)
 	classInst.stop()
-	print '## END READING ## Duration =',runFor,' s'
+	print('## END READING ## Duration =',runFor,' s')
 
 	time.sleep(2)
 	quit()
 
-if __name__  == '__main__':
+if __name__ == '__main__':
 	main()

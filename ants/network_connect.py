@@ -4,7 +4,7 @@ def is_associated(wlan_name, essid):
 	p = Popen(['iwconfig',wlan_name],stdout=PIPE, stderr=PIPE)
 	data = str(p.communicate()[0])
 	if essid in data:
-		print(wlan_name, "ASSOCIATED TO ESSID:" , essid)#)
+		print(wlan_name, "ASSOCIATED TO ESSID:" , essid)
 		return 1
 	return 0
 
