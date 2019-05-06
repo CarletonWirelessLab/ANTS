@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import math
+import os
 from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction
 from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox, QPushButton
 from PyQt5.QtWidgets import QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout
