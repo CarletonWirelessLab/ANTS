@@ -137,7 +137,7 @@ class ANTS_Controller():
             self.iperf_client_ac = "0xC0"
 
         # Create the data directory for the run
-        self.data_dir = self.make_data_dir(self.test_name)
+        self.data_dir = self.make_data_dir()
 
         # Print the file path for debug purposes
         print("The test results will be written to {0}.".format(self.data_dir))
