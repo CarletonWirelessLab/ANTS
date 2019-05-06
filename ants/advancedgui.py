@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction
 from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox, QPushButton
 from PyQt5.QtWidgets import QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
-from PyQt5.QtWidgets import QGroupBox
+from PyQt5.QtWidgets import QGroupBox, QFileDialog
 from PyQt5.QtCore import Qt, QRegExp, QSettings, QTimer, QThread, pyqtSignal
 from PyQt5.QtGui import *
 from network_scan import *
@@ -59,27 +59,18 @@ class ANTS_Table(QWidget):
     def __init__(self, main_gui, ants_controller, showOverlay, hideOverlay):
         super(QWidget, self).__init__(main_gui)
 
-        # Initialize the ANTS controller object to run the tests
-        self.ants_controller = ants_controller
-
         # Set the layout type for the GUI and instantiate the tabs widget
         self.layout = QVBoxLayout(self)
-        self.tabs = QTabWidget()
+        tabs = QTabWidget()
 
         # Instantiate all of the tab objects needed for the GUI
-        self.results_tab = ANTS_Results_Tab(self, self.ants_controller)
-        self.settings_tab = ANTS_Settings_Tab(self, self.results_tab, self.ants_controller, self.tabs, showOverlay, hideOverlay)
-        self.about_tab = ANTS_About_Tab(self, self.ants_controller)
-        self.license_tab = ANTS_License_Tab(self, self.ants_controller)
-        self.tabs.resize(300, 200)
+        self.results_tab = ANTS_Results_Tab(self, ants_controller)
+        self.settings_tab = ANTS_Settings_Tab(self, self.results_tab, ants_controller, tabs, showOverlay, hideOverlay)
+        tabs.resize(300, 200)
+        tabs.addTab(self.settings_tab, "Control Settings")
+        tabs.addTab(self.results_tab, "Results")
 
-        self.tabs.addTab(self.settings_tab, "Control Settings")
-        self.tabs.addTab(self.results_tab, "Results")
-        self.tabs.addTab(self.about_tab, "About")
-        self.tabs.addTab(self.license_tab, "License")
-
-        self.layout.addWidget(self.tabs)
-        self.setLayout(self.layout)
+        self.layout.addWidget(tabs)
 
 class ANTS_Results_Tab(QWidget):
 
@@ -194,7 +185,7 @@ class ANTS_Settings_Tab(QWidget):
 
         # Define tab layout and set column structure
         self.layout = QGridLayout(self)
-        self.setLayout(self.layout)
+        #self.setLayout(self.layout)
         self.layout.setColumnStretch(0, 1)
         self.layout.setColumnStretch(1, 1)
         self.layout.setColumnStretch(2, 1)
@@ -219,9 +210,8 @@ class ANTS_Settings_Tab(QWidget):
         # The checkbox for confirming that automatic network routing should be performed
         self.routing_checkbox = QCheckBox("Perform Auto Routing", self)
         self.routing_checkbox.toggle()
-        self.routing_checkbox.setToolTip("Allow ANTS to perform custom networking setup (requires root permissions). Off by default")
+        self.routing_checkbox.setToolTip("Allow ANTS to perform custom networking setup (requires root permissions).")
         self.routing_checkbox.stateChanged.connect(self.configure_routing)
-
 
         # Create a text box to take the filename used by the USRP and converter
         # tools
@@ -242,7 +232,6 @@ class ANTS_Settings_Tab(QWidget):
         self.runtime_slider.setToolTip("Sense/injection duration for the USRP and signal generator")
         self.runtime_text = "Runtime " + str(0.5) + " seconds"
         self.runtime_label = QLabel(self.runtime_text, self)
-
 
         # Text box for specifying the IP address of the access point to be used for testing
         self.network_ap_lineedit = QLineEdit(self)
@@ -382,7 +371,6 @@ class ANTS_Settings_Tab(QWidget):
         self.plotting_groupbox.setLayout(self.plotting_gridbox)
 
         # Create the general (i.e. system-level) settings groupbox
-
         self.general_settings_groupbox = QGroupBox("General Settings")
         self.general_settings_gridbox = QGridLayout(self)
         self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
@@ -581,70 +569,40 @@ class ANTS_Settings_Tab(QWidget):
         self.ants_controller.configure_routing = False
         self.routing_checkbox.setChecked(False)
 
-class ANTS_About_Tab(QWidget):
-    def __init__(self, tabs_object, ants_controller):
-        super(QWidget, self).__init__(tabs_object)
-        self.ants_controller = ants_controller
-        self.layout = QVBoxLayout(self)
-        self.ants_message = QLabel()
-        self.ants_message.setText(dedent("""\
-            ANTS (the Automated Networking Test Suite) is an application written
-            by the Broadband Networks Laboratory at Carleton University, with the goal of automating and simplifying
-            compliance testing of wireless devices. For more information, or if you have suggestions or bugs to report,
-            visit https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.
-
-            Icon provided by icons8.com"""))
-
-        self.ants_message.setMargin(10)
-        self.ants_message.setWordWrap(1)
-        #self.setCentralWidget(self.ants_message)
-
-        self.layout.addWidget(self.ants_message)
-        self.setLayout(self.layout)
-
-class ANTS_License_Tab(QWidget):
-    def __init__(self, tabs_object, ants_controller):
-        super(QWidget, self).__init__(tabs_object)
-        self.ants_controller = ants_controller
-        self.layout = QVBoxLayout(self)
-        self.license_message = QLabel()
-        self.license_message.setText(dedent("""\
-            MIT License
-
-            Copyright (c) 2018-2019 Carleton University Broadband Networks Laboratory
-
-            Permission is hereby granted, free of charge, to any person obtaining a copy
-            of this software and associated documentation files (the "Software"), to deal
-            in the Software without restriction, including without limitation the rights
-            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-            copies of the Software, and to permit persons to whom the Software is
-            furnished to do so, subject to the following conditions:
-
-            The above copyright notice and this permission notice shall be included in all
-            copies or substantial portions of the Software.
-
-            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-            IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-            FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-            AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-            LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-            OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-            SOFTWARE."""))
-        self.license_message.setMargin(10)
-        self.layout.addWidget(self.license_message)
-        self.setLayout(self.layout)
-
 class Advanced_GUI(QMainWindow):
 
     def __init__(self, ants_controller):
         super().__init__()
 
+        menubar = self.menuBar()
+        fileMenu = menubar.addMenu('&File')
+
+        exitAction = QAction('&Exit', self)        
+        exitAction.setStatusTip('Exit application')
+        exitAction.triggered.connect(self.close)
+        fileMenu.addAction(exitAction)
+
+        openIQSamplesFileAction = QAction('&Load IQ Samples', self)
+        openIQSamplesFileAction.setStatusTip('Load existing IQ samples from a previous run')
+        openIQSamplesFileAction.triggered.connect(self.openIQSamplesFile)
+        fileMenu.addAction(openIQSamplesFileAction)
+
+        helpMenu = menubar.addMenu('&Help')
+
+        openLicenseAction = QAction('View &License', self)
+        openLicenseAction.triggered.connect(self.openLicense)
+        helpMenu.addAction(openLicenseAction)
+
+        openAboutAction = QAction('&About', self)
+        openAboutAction.triggered.connect(self.openAbout)
+        helpMenu.addAction(openAboutAction)
+
         # turn off network manager
         try:
-            print("TURNING OFF NETWORK MANAGER")
+            print("Turning off network manager")
             call(['nmcli', 'n', 'off'])
         except FileNotFoundError:
-            print("WARNING: COULD NOT TURN OFF NETWORK MANAGER")
+            print("WARNING: Could not turn off network manager")
             pass
 
         # The ANTS Controller object
@@ -669,6 +627,47 @@ class Advanced_GUI(QMainWindow):
         self.overlay.resize(event.size())
         event.accept()
 
+    def openLicense(self):
+        licenseText = dedent("""\
+            MIT License
+
+            Copyright (c) 2018-2019 Carleton University Broadband Networks Laboratory
+
+            Permission is hereby granted, free of charge, to any person obtaining a copy
+            of this software and associated documentation files (the "Software"), to deal
+            in the Software without restriction, including without limitation the rights
+            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+            copies of the Software, and to permit persons to whom the Software is
+            furnished to do so, subject to the following conditions:
+
+            The above copyright notice and this permission notice shall be included in all
+            copies or substantial portions of the Software.
+
+            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+            IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+            FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+            AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+            LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+            OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+            SOFTWARE.""")
+        QMessageBox.about(self, 'License', licenseText)
+
+    def openAbout(self):
+        aboutText = dedent("""\
+            ANTS (the Automated Networking Test Suite) is an application written
+            by the Broadband Networks Laboratory at Carleton University, with the goal of automating and simplifying
+            compliance testing of wireless devices. For more information, or if you have suggestions or bugs to report,
+            visit https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.
+
+            Icon provided by icons8.com""")
+        QMessageBox.about(self, 'About', aboutText)    
+
+    def openIQSamplesFile(self):
+        fileName, _ = QFileDialog.getOpenFileName(self, "Load IQ Samples File", "", "IQ Samples Files (*.bin);;All Files (*)")
+        if fileName:
+            print(fileName)
+
+
     # Make sure we get prompted before closing the GUI
     def closeEvent(self, event):
 
@@ -677,12 +676,12 @@ class Advanced_GUI(QMainWindow):
             QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            # turn off network manager
+            # turn on network manager
             try:
-                print("TURNING ON NETWORK MANAGER")
+                print("Turning on network manager")
                 call(['nmcli', 'n', 'on'])
             except FileNotFoundError:
-                print("WARNING: COULD NOT TURN ON NETWORK MANAGER")
+                print("WARNING: Could not turn on network manager")
                 pass
 
             event.accept()

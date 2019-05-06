@@ -3,26 +3,25 @@ import matplotlib.pyplot as plt
 import numpy
 import math
 import sys
+import os
 
 
 # Input arguments:
 # ----------------
-# device_name (string): the name of the device under test
-# file_name (string): the path of the .bin file containing the USRP data
+# iq_samples_file_name (string): the path of the .bin file containing the USRP data
 # access_category (string): the type of service -> voice, video, best_effort, back_ground
 # sampling_rate (int): sampling rate of the USRP
 # duration (float): time interval of the data captured in seconds, default 2.5 seconds
 
-
 class ANTS_Plotter():
 
-    def __init__(self, access_category, test_name,  UUT_type, sample_rate=20e6):
+    def __init__(self, access_category, iq_samples_file_name,  UUT_type, sample_rate=20e6):
         self.UUT_type = UUT_type
-        self.test_name = test_name
+        self.iq_samples_file_name = iq_samples_file_name
+        self.test_directory = os.path.dirname(iq_samples_file_name)
+        self.test_name = os.path.basename(iq_samples_file_name)
         self.access_category = access_category
-        self.file_name = self.test_name + "_" + self.access_category + ".bin"
         self.sample_rate = sample_rate
-        self.output_file_name = self.test_name + "_" + self.access_category + "_results.txt"
 
         if self.access_category == "video":
             self.txop_limit = 4
@@ -62,14 +61,11 @@ class ANTS_Plotter():
             #     self.maxd = self.maxd - 9
 
     # open the data file and read the raw data from it
-    def read_and_parse(self, filename=None):
+    def read_and_parse(self):
 
-        if filename == None:
-            filename = self.file_name
+        print("Read and parse {0}\n".format(self.iq_samples_file_name))
 
-        print("The plotter file name is {0}\n".format(self.file_name))
-
-        with open(filename, mode='rb') as file:
+        with open(self.iq_samples_file_name, mode='rb') as file:
             self.raw_data = np.fromfile(file, dtype=np.float32)
         file.close()
         file_length = len(self.raw_data)
@@ -167,7 +163,6 @@ class ANTS_Plotter():
         	self.violating_durations = self.txop_durations[np.concatenate(np.where(self.txop_durations > self.txop_limit))]
         self.txop_factor = (len(self.violating_durations)/len(self.txop_durations))
 
-
         self.slot_time = 9
         self.BFmin = self.aifs - self.slot_time/2
         self.BFmax = self.aifs + self.slot_time*(self.n-1) + self.slot_time/2
@@ -244,7 +239,7 @@ class ANTS_Plotter():
         		self.p_max[i] = self.p_max[0] + i * 0.25
 
     def output_results(self):
-        with open(self.output_file_name, "w") as outfile:
+        with open(os.path.join(self.test_directory, self.test_name + "_results.txt"), "w") as outfile:
 
             outfile.write("Found " + str(len(self.packet_end_indices)) + " packets, " + str(len(self.interframe_spacing)) + " IFSs"+"\n")
             outfile.write("minBackOff: " + str(self.min_back_off)+"\n")
@@ -305,7 +300,7 @@ class ANTS_Plotter():
         plt.xlabel("Time (sec)")
         plt.ylabel("Signal magnitude") #find out if the power is in Watts or dB?
         plt.draw()
-        plt.savefig(self.test_name + '_' + self.access_category + '_signal_magnitude_plot.svg')
+        plt.savefig(self.test_name + '_signal_magnitude_plot.svg')
         plt.close()
 
         plt.figure(2)
@@ -315,7 +310,7 @@ class ANTS_Plotter():
         plt.xlabel("Inter-frame spacing (microsecond)")
         plt.ylabel("Frequency")
         plt.draw()
-        plt.savefig(self.test_name + '_' + self.access_category + '_interframe_spacing_histogram.svg')
+        plt.savefig(self.test_name + '_interframe_spacing_histogram.svg')
         plt.close()
         
         plt.figure(3)
@@ -329,7 +324,7 @@ class ANTS_Plotter():
         Gender = ['Compliant Txop', 'Violating Txop']
         plt.legend(Gender, loc=2)
         plt.draw()
-        plt.savefig(self.test_name + '_' + self.access_category + '_txop_durations_histogram.svg')
+        plt.savefig(self.test_name + '_txop_durations_histogram.svg')
         plt.close()
 
         plt.figure(4)
@@ -342,7 +337,7 @@ class ANTS_Plotter():
         Gender = ['Bin Probability', 'Compliance Upper threshold']
         plt.legend(Gender, loc=2)
         plt.draw()
-        plt.savefig(self.test_name + '_' + self.access_category + '_bin_probability.svg')
+        plt.savefig(self.test_name + '_bin_probability.svg')
         plt.close()
 
 def sum_range(l,a,b):

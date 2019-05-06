@@ -92,23 +92,22 @@ class ANTS_Controller():
         print("Running USRP...\n")
 
         if self.access_category == 1:
-            self.plotter_ac = "video"
+            self.access_category_name = "video"
         elif self.access_category == 2:
-            self.plotter_ac = "best_effort"
+            self.access_category_name = "best_effort"
         elif self.access_category == 3:
-            self.plotter_ac = "background"
+            self.access_category_name = "background"
         else:
-            self.plotter_ac = "voice"
+            self.access_category_name = "voice"
 
         # Create the data directory for the run
         self.data_dir = self.make_data_dir(self.file_name)
         self.test_path = self.data_dir + self.file_name
-        self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
-        print("The binary data file will be written to {0}.".format(self.bin_path))
+        print("The binary data file will be written to {0}.".format(self.test_path))
 
         # Create the argument list to pass to the USRP subprocess that will be instantiated
 
-        usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
+        usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.test_path, str(self.run_time), self.access_category_name, self.center_frequency, self.usrp_gain]
 
         # Run the USRP process with the necessary arguments
         self.usrp_proc = subprocess.Popen(usrp_control_args)
@@ -121,30 +120,29 @@ class ANTS_Controller():
     def start_usrp_iperf(self):
         print("Running USRP with interference injected using iperf...")
 
-        if len(self.essid) == 0:
+        if self.essid is None or len(self.essid) == 0:
             print("ERROR: No network selected.")
             return
 
         if self.access_category == 1:
-            self.plotter_ac = "video"
+            self.access_category_name = "video"
             self.iperf_client_ac = "0x80"
         elif self.access_category == 2:
-            self.plotter_ac = "best_effort"
+            self.access_category_name = "best_effort"
             self.iperf_client_ac = "0x00"
         elif self.access_category == 3:
-            self.plotter_ac = "background"
+            self.access_category_name = "background"
             self.iperf_client_ac = "0x20"
         else:
-            self.plotter_ac = "voice"
+            self.access_category_name = "voice"
             self.iperf_client_ac = "0xC0"
 
         # Create the data directory for the run
         self.data_dir = self.make_data_dir(self.file_name)
         self.test_path = self.data_dir + self.file_name
-        self.bin_path = self.test_path + "_" + self.plotter_ac + ".bin"
 
         # Print the file path for debug purposes
-        print("The binary data file will be written to {0}.".format(self.bin_path))
+        print("The binary data file will be written to {0}.".format(self.test_path))
 
         if self.iperf_ap_addr == None:
             self.iperf_ap_addr = "192.168.1.1"
@@ -195,8 +193,6 @@ class ANTS_Controller():
                 print("PING FAILED AFTER {0} ATTEMPTS".format(self.ping_max))
                 self.communication_success = 0
 
-        # Set the arguments to be used to run the USRP
-        usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.test_path, str(self.run_time), self.plotter_ac, self.center_frequency, self.usrp_gain]
         # The arguments to run the iperf client. If configure_routing is True, then automating routing has been performed and a virtual destination IP is required for the iperf client
         iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", " {0}M".format(self.iperf_bw), "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
         # The arguments to run the iperf server
@@ -214,6 +210,9 @@ class ANTS_Controller():
             print('USRP SAMPLING RATE:', self.usrp_sample_rate)
             print('USRP GAIN:', self.usrp_gain)
             for run in range(0, self.num_runs):
+                # Set the arguments to be used to run the USRP
+                file_name = self.test_path + '_' + self.access_category_name + '_run' + run + '.bin'
+                usrp_control_args = ["python", self.working_dir + "/writeIQ.py", file_name, str(self.run_time), self.center_frequency, self.usrp_gain]
                 # Start the USRP
                 self.usrp_proc = color_subprocess.Popen(usrp_control_args, prefix='USRP:        ', color=color_subprocess.colors.fg.lightgreen)
                 # Continuously check to see if the USRP is running, then break out when it has stopped
@@ -221,7 +220,7 @@ class ANTS_Controller():
                     self.usrp_proc.getProcess().poll()
                     if self.usrp_proc.getProcess().returncode is not None:
                         break
-                self.stats_list.append(self.make_plots())
+                self.stats_list.append(self.make_plots(file_name))
 
             # Close the iperf processes as soon as the USRP is done sensing the medium
             iperf_server_proc.terminate()
@@ -265,14 +264,13 @@ class ANTS_Controller():
             print("Device was {0} percent submissive (average) on {1} out of {2} runs\n".format(self.submission_avg, self.run_submission_count, self.run_compliance_count))
 
     #Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
-    def make_plots(self):
+    def make_plots(self, file_name):
         if hasattr(self, "plotter"):
             del self.plotter
-        print("Running data conversion and plot routine on {0}...\n".format(self.bin_path))
+        print("Running data conversion and plot routine on {0}...".format(file_name))
         # Create and run an actual plotter instance
         plotter_sample_rate = int(self.usrp_sample_rate)*1e6
-        print("The test path is {0}\n".format(self.test_path))
-        self.plotter = ANTS_Plotter(self.plotter_ac, self.test_path, self.UUT_type, plotter_sample_rate)
+        self.plotter = ANTS_Plotter(self.access_category_name, file_name, self.UUT_type, plotter_sample_rate)
         self.plotter.read_and_parse()
         self.plotter.setup_packet_data()
         results = self.plotter.output_results()
