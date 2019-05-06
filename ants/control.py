@@ -101,13 +101,11 @@ class ANTS_Controller():
             self.access_category_name = "voice"
 
         # Create the data directory for the run
-        self.data_dir = self.make_data_dir(self.test_name)
+        self.data_dir = self.make_data_dir()
         print("The binary data file will be written to {0}.".format(self.data_dir))
 
         # Create the argument list to pass to the USRP subprocess that will be instantiated
-
-        usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.test_path, str(self.run_time), self.access_category_name, self.center_frequency, self.usrp_gain]
-
+        usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.get_iq_file_name(self.data_dir), str(self.run_time), self.center_frequency, self.usrp_gain]
         # Run the USRP process with the necessary arguments
         self.usrp_proc = subprocess.Popen(usrp_control_args)
         while self.usrp_proc.poll() is None:
@@ -209,8 +207,7 @@ class ANTS_Controller():
             print('USRP GAIN:', self.usrp_gain)
             for run in range(0, self.num_runs):
                 # Set the arguments to be used to run the USRP
-                iq_file_name = os.path.join(self.test_path, "iqsamples_" + self.access_category_name + "_run" + str(run) + ".bin")
-                usrp_control_args = ["python", self.working_dir + "/writeIQ.py", iq_file_name, str(self.run_time), self.center_frequency, self.usrp_gain]
+                usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.get_iq_file_name(self.data_dir), str(self.run_time), self.center_frequency, self.usrp_gain]
                 # Start the USRP
                 self.usrp_proc = color_subprocess.Popen(usrp_control_args, prefix='USRP:        ', color=color_subprocess.colors.fg.lightgreen)
                 # Continuously check to see if the USRP is running, then break out when it has stopped
@@ -225,6 +222,9 @@ class ANTS_Controller():
             iperf_client_proc.terminate()
 
             print("Done sampling the medium. iperf processes killed.\n")
+
+    def get_iq_file_name(self, data_dir):
+        return os.path.join(data_dir, "iqsamples_" + self.access_category_name + "_run" + str(run) + ".bin")
 
     def run_n_times(self):
 
