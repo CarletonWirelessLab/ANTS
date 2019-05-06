@@ -40,7 +40,7 @@ class WriteIQ(gr.top_block):
 
 		# 2) File Sink
 		self.fileSnk = blocks.file_sink(gr.sizeof_gr_complex*1, file_name, False)
-		print("Write IQ samples to", file_name)
+		print("Write IQ samples to {}".format(file_name))
 
 		# Define connections
 		self.disconnect_all()

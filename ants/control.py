@@ -50,7 +50,7 @@ class ANTS_Controller():
 
         # Output/conversion file name. Set to "no_name" as default in case the
         # user has not yet given a file name to the run in the GUI
-        self.file_name = "no_name"
+        self.test_name = "no_name"
 
         # Used to set the access category. '0' is voice, '1' is video, '2' is
         # best effort, '3' is background
@@ -69,15 +69,15 @@ class ANTS_Controller():
 
     # Make the timestamped data directory, and then return the full path for
     # writing data files to
-    def make_data_dir(self, test_name):
+    def make_data_dir(self):
         # Create the timestamp
         time = str(datetime.datetime.utcnow().strftime("%Y-%m-%d %H-%M-%S"))
         time = time.replace(' ', '_')
 
         # Get the full path of the data file to be created
-        dir_name = self.file_name + "_" + time + "/"
+        dir_name = self.test_name + "_" + time + "/"
         location = os.path.dirname(os.path.abspath(__file__))
-        full_path = location + "/../tests/" + dir_name
+        full_path = os.path.abspath(os.path.join(location, "..",  "tests", dir_name))
 
         # Make the data file path if it doesn't exist (this should always run as long as the timestamp is present)
         if not os.path.exists(full_path):
@@ -101,9 +101,8 @@ class ANTS_Controller():
             self.access_category_name = "voice"
 
         # Create the data directory for the run
-        self.data_dir = self.make_data_dir(self.file_name)
-        self.test_path = self.data_dir + self.file_name
-        print("The binary data file will be written to {0}.".format(self.test_path))
+        self.data_dir = self.make_data_dir(self.test_name)
+        print("The binary data file will be written to {0}.".format(self.data_dir))
 
         # Create the argument list to pass to the USRP subprocess that will be instantiated
 
@@ -138,11 +137,10 @@ class ANTS_Controller():
             self.iperf_client_ac = "0xC0"
 
         # Create the data directory for the run
-        self.data_dir = self.make_data_dir(self.file_name)
-        self.test_path = self.data_dir + self.file_name
+        self.data_dir = self.make_data_dir(self.test_name)
 
         # Print the file path for debug purposes
-        print("The binary data file will be written to {0}.".format(self.test_path))
+        print("The binary data file will be written to {0}.".format(self.data_dir))
 
         if self.iperf_ap_addr == None:
             self.iperf_ap_addr = "192.168.1.1"
@@ -211,8 +209,8 @@ class ANTS_Controller():
             print('USRP GAIN:', self.usrp_gain)
             for run in range(0, self.num_runs):
                 # Set the arguments to be used to run the USRP
-                file_name = self.test_path + '_' + self.access_category_name + '_run' + str(run) + '.bin'
-                usrp_control_args = ["python", self.working_dir + "/writeIQ.py", file_name, str(self.run_time), self.center_frequency, self.usrp_gain]
+                iq_file_name = os.path.join() self.test_path + '_' + self.access_category_name + '_run' + str(run) + '.bin'
+                usrp_control_args = ["python", self.working_dir + "/writeIQ.py", iq_file_name, str(self.run_time), self.center_frequency, self.usrp_gain]
                 # Start the USRP
                 self.usrp_proc = color_subprocess.Popen(usrp_control_args, prefix='USRP:        ', color=color_subprocess.colors.fg.lightgreen)
                 # Continuously check to see if the USRP is running, then break out when it has stopped
@@ -220,7 +218,7 @@ class ANTS_Controller():
                     self.usrp_proc.getProcess().poll()
                     if self.usrp_proc.getProcess().returncode is not None:
                         break
-                self.stats_list.append(self.make_plots(file_name))
+                self.stats_list.append(self.make_plots(iq_file_name))
 
             # Close the iperf processes as soon as the USRP is done sensing the medium
             iperf_server_proc.terminate()
@@ -264,13 +262,13 @@ class ANTS_Controller():
             print("Device was {0} percent submissive (average) on {1} out of {2} runs\n".format(self.submission_avg, self.run_submission_count, self.run_compliance_count))
 
     #Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
-    def make_plots(self, file_name):
+    def make_plots(self, iq_file_name):
         if hasattr(self, "plotter"):
             del self.plotter
-        print("Running data conversion and plot routine on {0}...".format(file_name))
+        print("Running data conversion and plot routine on {0}...".format(iq_file_name))
         # Create and run an actual plotter instance
         plotter_sample_rate = int(self.usrp_sample_rate)*1e6
-        self.plotter = ANTS_Plotter(self.access_category_name, file_name, self.UUT_type, plotter_sample_rate)
+        self.plotter = ANTS_Plotter(self.access_category_name, iq_file_name, self.UUT_type, plotter_sample_rate)
         self.plotter.read_and_parse()
         self.plotter.setup_packet_data()
         results = self.plotter.output_results()
