@@ -206,8 +206,9 @@ class ANTS_Controller():
             print('USRP SAMPLING RATE:', self.usrp_sample_rate)
             print('USRP GAIN:', self.usrp_gain)
             for run in range(0, self.num_runs):
+                iq_file_name = self.get_iq_file_name(self.data_dir, run)
                 # Set the arguments to be used to run the USRP
-                usrp_control_args = ["python", self.working_dir + "/writeIQ.py", self.get_iq_file_name(self.data_dir), str(self.run_time), self.center_frequency, self.usrp_gain]
+                usrp_control_args = ["python", self.working_dir + "/writeIQ.py", iq_file_name, str(self.run_time), self.center_frequency, self.usrp_gain]
                 # Start the USRP
                 self.usrp_proc = color_subprocess.Popen(usrp_control_args, prefix='USRP:        ', color=color_subprocess.colors.fg.lightgreen)
                 # Continuously check to see if the USRP is running, then break out when it has stopped
@@ -215,7 +216,7 @@ class ANTS_Controller():
                     self.usrp_proc.getProcess().poll()
                     if self.usrp_proc.getProcess().returncode is not None:
                         break
-                self.stats_list.append(self.make_plots(self.get_iq_file_name(self.data_dir)))
+                self.stats_list.append(self.make_plots(iq_file_name)
 
             # Close the iperf processes as soon as the USRP is done sensing the medium
             iperf_server_proc.terminate()
@@ -223,11 +224,10 @@ class ANTS_Controller():
 
             print("Done sampling the medium. iperf processes killed.\n")
 
-    def get_iq_file_name(self, data_dir):
+    def get_iq_file_name(self, data_dir, run):
         return os.path.join(data_dir, "iqsamples_" + self.access_category_name + "_run" + str(run) + ".bin")
 
     def run_n_times(self):
-
         # Compliance and aggression values list and variables, for averaging over multiple runs
         self.stats_list = []
         self.run_compliance_count = 0

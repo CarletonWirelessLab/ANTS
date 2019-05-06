@@ -18,8 +18,7 @@ class ANTS_Plotter():
     def __init__(self, iq_samples_file_name, UUT_type, sample_rate=20e6):
         m = re.search("iqsamples_(video|voice|best_effort|background)_run(\d+)\.bin", iq_samples_file_name)
         if not m:
-            print("ERROR: Could not parse file name {} to ac and run#".format(iq_samples_file_name))
-            return
+            raise Exception("ERROR: Could not parse file name {} to ac and run#".format(iq_samples_file_name))
 
         self.access_category = m.group(1)
         self.run = m.group(2)
