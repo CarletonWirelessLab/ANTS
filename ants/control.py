@@ -140,7 +140,7 @@ class ANTS_Controller():
         self.data_dir = self.make_data_dir(self.test_name)
 
         # Print the file path for debug purposes
-        print("The binary data file will be written to {0}.".format(self.data_dir))
+        print("The test results will be written to {0}.".format(self.data_dir))
 
         if self.iperf_ap_addr == None:
             self.iperf_ap_addr = "192.168.1.1"
@@ -209,7 +209,7 @@ class ANTS_Controller():
             print('USRP GAIN:', self.usrp_gain)
             for run in range(0, self.num_runs):
                 # Set the arguments to be used to run the USRP
-                iq_file_name = os.path.join(self.test_path, self.test_name + '_' + self.access_category_name + '_run' + str(run) + '.bin')
+                iq_file_name = os.path.join(self.test_path, "iqsamples_" + self.access_category_name + "_run" + str(run) + ".bin")
                 usrp_control_args = ["python", self.working_dir + "/writeIQ.py", iq_file_name, str(self.run_time), self.center_frequency, self.usrp_gain]
                 # Start the USRP
                 self.usrp_proc = color_subprocess.Popen(usrp_control_args, prefix='USRP:        ', color=color_subprocess.colors.fg.lightgreen)
@@ -268,7 +268,7 @@ class ANTS_Controller():
         print("Running data conversion and plot routine on {0}...".format(iq_file_name))
         # Create and run an actual plotter instance
         plotter_sample_rate = int(self.usrp_sample_rate)*1e6
-        self.plotter = ANTS_Plotter(self.access_category_name, iq_file_name, self.UUT_type, plotter_sample_rate)
+        self.plotter = ANTS_Plotter(iq_file_name, self.UUT_type, plotter_sample_rate)
         self.plotter.read_and_parse()
         self.plotter.setup_packet_data()
         results = self.plotter.output_results()

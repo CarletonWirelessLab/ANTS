@@ -4,7 +4,7 @@ import numpy
 import math
 import sys
 import os
-
+import re
 
 # Input arguments:
 # ----------------
@@ -15,12 +15,17 @@ import os
 
 class ANTS_Plotter():
 
-    def __init__(self, access_category, iq_samples_file_name,  UUT_type, sample_rate=20e6):
+    def __init__(self, iq_samples_file_name, UUT_type, sample_rate=20e6):
+        m = re.search("iqsamples_(video|voice|best_effort|background)_run(\d+)\.bin", iq_samples_file_name)
+        if not m:
+            print("ERROR: Could not parse file name {} to ac and run#".format(iq_samples_file_name))
+            return
+
+        self.access_category = m.group(1)
+        self.run = m.group(2)
         self.UUT_type = UUT_type
         self.iq_samples_file_name = iq_samples_file_name
         self.test_directory = os.path.dirname(iq_samples_file_name)
-        self.test_name = os.path.basename(iq_samples_file_name)
-        self.access_category = access_category
         self.sample_rate = sample_rate
 
         if self.access_category == "video":
@@ -62,7 +67,6 @@ class ANTS_Plotter():
 
     # open the data file and read the raw data from it
     def read_and_parse(self):
-
         print("Read and parse {0}\n".format(self.iq_samples_file_name))
 
         with open(self.iq_samples_file_name, mode='rb') as file:
@@ -239,7 +243,7 @@ class ANTS_Plotter():
         		self.p_max[i] = self.p_max[0] + i * 0.25
 
     def output_results(self):
-        with open(os.path.join(self.test_directory, self.test_name + "_results.txt"), "w") as outfile:
+        with open(os.path.join(self.test_directory, "results_run{}.txt".format(self.run)), "w") as outfile:
             results = dedent("""\
                 Found {} packets, {} IFSs
                 minBackOff: {}
@@ -262,7 +266,7 @@ class ANTS_Plotter():
 
             outfile.write(resutls)
             print(results)
-            
+
             if any(self.p > self.p_max):
                 print("Bin probability violation")
             else:
@@ -297,7 +301,7 @@ class ANTS_Plotter():
         plt.xlabel("Time (sec)")
         plt.ylabel("Signal magnitude") #find out if the power is in Watts or dB?
         plt.draw()
-        plt.savefig(os.path.join(self.test_directory, ) self.test_name + '_signal_magnitude_plot.svg')
+        plt.savefig(os.path.join(self.test_directory, 'signal_magnitude_plot_run{}.svg'.format(self.run)))
         plt.close()
 
         plt.figure(2)
@@ -307,7 +311,7 @@ class ANTS_Plotter():
         plt.xlabel("Inter-frame spacing (microsecond)")
         plt.ylabel("Frequency")
         plt.draw()
-        plt.savefig(self.test_name + '_interframe_spacing_histogram.svg')
+        plt.savefig(os.path.join(self.test_directory, 'interframe_spacing_histogram_run{}.svg'.format(self.run)))
         plt.close()
         
         plt.figure(3)
@@ -321,7 +325,7 @@ class ANTS_Plotter():
         Gender = ['Compliant Txop', 'Violating Txop']
         plt.legend(Gender, loc=2)
         plt.draw()
-        plt.savefig(self.test_name + '_txop_durations_histogram.svg')
+        plt.savefig(os.path.join(self.test_directory, 'txop_durations_histogram_run{}.svg'.format(self.run)))
         plt.close()
 
         plt.figure(4)
@@ -334,7 +338,7 @@ class ANTS_Plotter():
         Gender = ['Bin Probability', 'Compliance Upper threshold']
         plt.legend(Gender, loc=2)
         plt.draw()
-        plt.savefig(self.test_name + '_bin_probability.svg')
+        plt.savefig(os.path.join(self.test_directory, 'bin_probability_run{}.svg'.format(self.run)))
         plt.close()
 
 def sum_range(l,a,b):
