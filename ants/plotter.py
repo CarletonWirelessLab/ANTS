@@ -264,7 +264,7 @@ class ANTS_Plotter():
                     self.dist_factor, self.ag_factor, self.sifs_factor, self.norm_factor, self.geometric_factor
                 ))
 
-            outfile.write(resutls)
+            outfile.write(results)
             print(results)
 
             if any(self.p > self.p_max):
