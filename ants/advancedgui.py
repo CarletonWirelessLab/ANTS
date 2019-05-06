@@ -213,13 +213,13 @@ class ANTS_Settings_Tab(QWidget):
         self.routing_checkbox.setToolTip("Allow ANTS to perform custom networking setup (requires root permissions).")
         self.routing_checkbox.stateChanged.connect(self.configure_routing)
 
-        # Create a text box to take the filename used by the USRP and converter
+        # Create a text box to take the test name used by the USRP and converter
         # tools
-        self.file_name_lineedit = QLineEdit(self)
-        self.file_name_lineedit.textChanged[str].connect(self.on_name_change)
-        self.file_name_lineedit.setToolTip("The filename for the USRP to output the data to")
-        self.file_name_text = "Test Name"
-        self.file_name_label = QLabel(self.file_name_text, self)
+        self.test_name_lineedit = QLineEdit(self)
+        self.test_name_lineedit.textChanged[str].connect(self.on_name_change)
+        self.test_name_lineedit.setToolTip("The test name to output the data to")
+        self.test_name_text = "Test Name"
+        self.test_name_label = QLabel(self.test_name_text, self)
 
         # Run time slider set up
         self.runtime_slider = QSlider(Qt.Horizontal, self)
@@ -387,8 +387,8 @@ class ANTS_Settings_Tab(QWidget):
         self.gs_number_of_runs_lineedit.textChanged[str].connect(self.on_num_runs)
 
         # Add the general settings tools to the groupbox
-        self.general_settings_gridbox.addWidget(self.file_name_label, 0, 0)
-        self.general_settings_gridbox.addWidget(self.file_name_lineedit, 0, 1)
+        self.general_settings_gridbox.addWidget(self.test_name_label, 0, 0)
+        self.general_settings_gridbox.addWidget(self.test_name_lineedit, 0, 1)
         self.general_settings_gridbox.addWidget(self.runtime_label, 1, 0)
         self.general_settings_gridbox.addWidget(self.runtime_slider, 1, 1)
         self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label, 2, 0)
@@ -433,7 +433,7 @@ class ANTS_Settings_Tab(QWidget):
 
     # Set file name for the test run based on what's in the box
     def on_name_change(self, text):
-        self.ants_controller.file_name = text
+        self.ants_controller.test_name = text
 
     def on_network_WiFi_change(self, text):
         self.ants_controller.essid = text
@@ -532,7 +532,7 @@ class ANTS_Settings_Tab(QWidget):
         # Set up the graphics for the main display
 
         # The general path for the data files. This is passed to each pixmap for further use
-        self.results_tab.general_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac
+        self.results_tab.general_pixmap_path = self.ants_controller.data_dir + self.ants_controller.test_name + "_" + self.ants_controller.access_category_name
 
         # The path for the bin distribution image
         self.results_tab.bin_pixmap_path = self.results_tab.general_pixmap_path + "_bin_probability.svg"

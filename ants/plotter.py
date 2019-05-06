@@ -240,32 +240,29 @@ class ANTS_Plotter():
 
     def output_results(self):
         with open(os.path.join(self.test_directory, self.test_name + "_results.txt"), "w") as outfile:
+            results = dedent("""\
+                Found {} packets, {} IFSs
+                minBackOff: {}
+                meanTxop: {}
+                maxTxop: {}
+                TxopFactor: {}
+                KBL: {}
+                DistFactor: {}
+                AGFactor: {}
+                SIFSFactor: {}
+                NF: {}
+                GF: {}""".format(
+                    len(self.packet_end_indices),
+                    len(self.interframe_spacing),
+                    self.min_back_off,
+                    self.mean_txop, self.max_txop, self.txop_factor,
+                    self.kbl,
+                    self.dist_factor, self.ag_factor, self.sifs_factor, self.norm_factor, self.geometric_factor
+                ))
 
-            outfile.write("Found " + str(len(self.packet_end_indices)) + " packets, " + str(len(self.interframe_spacing)) + " IFSs"+"\n")
-            outfile.write("minBackOff: " + str(self.min_back_off)+"\n")
-            outfile.write("meanTxop: " + str(self.mean_txop)+"\n")
-            outfile.write("maxTxop: " + str(self.max_txop)+"\n")
-            outfile.write("TxopFactor: " + str(self.txop_factor)+"\n")
-            outfile.write("KBL: " + str(self.kbl)+"\n")
-            outfile.write("DistFactor: " + str(self.dist_factor)+"\n")
-            outfile.write("AGFactor: " + str(self.ag_factor)+"\n")
-            outfile.write("SIFSFactor: " + str(self.sifs_factor)+"\n")
-            outfile.write("NF: " + str(self.norm_factor)+"\n")
-            outfile.write("GF: " + str(self.geometric_factor)+"\n")
-
-            # print results to debug console
-            print("Found " + str(len(self.packet_end_indices)) + " packets, " + str(len(self.interframe_spacing)) + " IFSs")
-            print("minBackOff: " + str(self.min_back_off))
-            print("meanTxop: " + str(self.mean_txop))
-            print("maxTxop: " + str(self.max_txop))
-            print("TxopFactor: " + str(self.txop_factor))
-            print("KBL: " + str(self.kbl))
-            print("DistFactor: " + str(self.dist_factor))
-            print("AGFactor: " + str(self.ag_factor))
-            print("SIFSFactor: " + str(self.sifs_factor))
-            print("NF: " + str(self.norm_factor))
-            print("GF: " + str(self.geometric_factor))
-
+            outfile.write(resutls)
+            print(results)
+            
             if any(self.p > self.p_max):
                 print("Bin probability violation")
             else:
@@ -300,7 +297,7 @@ class ANTS_Plotter():
         plt.xlabel("Time (sec)")
         plt.ylabel("Signal magnitude") #find out if the power is in Watts or dB?
         plt.draw()
-        plt.savefig(self.test_name + '_signal_magnitude_plot.svg')
+        plt.savefig(os.path.join(self.test_directory, ) self.test_name + '_signal_magnitude_plot.svg')
         plt.close()
 
         plt.figure(2)

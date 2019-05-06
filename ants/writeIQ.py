@@ -12,7 +12,7 @@ import time
 import os
 from fcntl import ioctl
 
-USBDEVFS_RESET = ord('U') << (4*2) | 20
+USBDEVFS_RESET = ord("U") << (4*2) | 20
 
 class WriteIQ(gr.top_block):
 	def __init__(self, runFor, center_frequency, gain, file_name):
@@ -27,20 +27,20 @@ class WriteIQ(gr.top_block):
 		# Define blocks
 		# 1) USRP Source
 		self.usrpSource = uhd.usrp_source(",".join(("", "")), uhd.stream_args(cpu_format="fc32", channels=range(1)))
-		print('Set sample rate to', sample_rate)
+		print("Set sample rate to {}".format(sample_rate))
 		self.usrpSource.set_samp_rate(sample_rate)
-		print('Set center frequency to', center_frequency)
+		print("Set center frequency to {}".format(center_frequency))
 		self.usrpSource.set_center_freq(center_frequency, 0)
-		print('Set gain to', gain)
+		print("Set gain to {}".format(gain))
 		self.usrpSource.set_gain(gain, 0)
-		print('Set antenna to', antenna)
+		print("Set antenna to {}".format(antenna))
 		self.usrpSource.set_antenna(antenna, 0)
-		print('Set bandwidth to', bandwidth)
+		print("Set bandwidth to {}".format(bandwidth))
 		self.usrpSource.set_bandwidth(bandwidth, 0)
 
 		# 2) File Sink
 		self.fileSnk = blocks.file_sink(gr.sizeof_gr_complex*1, file_name, False)
-		print('Write IQ samples to', file_name)
+		print("Write IQ samples to", file_name)
 
 		# Define connections
 		self.disconnect_all()
@@ -58,9 +58,9 @@ def main():
 	t.start()
 	time.sleep(runFor)
 	writeIq.stop()
-	print('Finished sampling for',runFor,'s')
+	print("Finished sampling for",runFor,"s")
 
 	quit()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 	main()
