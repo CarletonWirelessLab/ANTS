@@ -216,7 +216,7 @@ class ANTS_Controller():
                     self.usrp_proc.getProcess().poll()
                     if self.usrp_proc.getProcess().returncode is not None:
                         break
-                self.stats_list.append(self.make_plots(iq_file_name)
+                self.stats_list.append(self.make_plots(iq_file_name))
 
             # Close the iperf processes as soon as the USRP is done sensing the medium
             iperf_server_proc.terminate()
