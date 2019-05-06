@@ -532,25 +532,25 @@ class ANTS_Settings_Tab(QWidget):
         # Set up the graphics for the main display
 
         # The general path for the data files. This is passed to each pixmap for further use
-        self.results_tab.general_pixmap_path = self.ants_controller.data_dir + self.ants_controller.test_name + "_" + self.ants_controller.access_category_name
+        #self.results_tab.general_pixmap_path = os.path.join(self.ants_controller.data_dir,  + self.ants_controller.test_name + "_" + self.ants_controller.access_category_name
 
         # The path for the bin distribution image
-        self.results_tab.bin_pixmap_path = self.results_tab.general_pixmap_path + "_bin_probability.svg"
+        self.results_tab.bin_pixmap_path = os.path.join(self.ants_controller.data_dir, "bin_probability_{}_run0.svg".format(self.ants_controller.access_category_name))
         self.results_tab.bin_pixmap = QPixmap(self.results_tab.bin_pixmap_path)
 
         # The path for the interframe spacing image
-        self.results_tab.interframe_pixmap_path = self.results_tab.general_pixmap_path + "_interframe_spacing_histogram.svg"
+        self.results_tab.interframe_pixmap_path = os.path.join(self.ants_controller.data_dir, "interframe_spacing_histogram_{}_run0.svg".format(self.ants_controller.access_category_name))
         self.results_tab.interframe_pixmap = QPixmap(self.results_tab.interframe_pixmap_path)
 
         # The path for the raw signal image
-        self.results_tab.raw_signal_pixmap_path = self.results_tab.general_pixmap_path + "_signal_magnitude_plot.svg"
+        self.results_tab.raw_signal_pixmap_path = os.path.join(self.ants_controller.data_dir, "signal_magnitude_plot_{}_run0.svg".format(self.ants_controller.access_category_name))
         self.results_tab.raw_signal_pixmap = QPixmap(self.results_tab.raw_signal_pixmap_path)
 
         # The path for the transmission opportunity image
-        self.results_tab.txop_pixmap_path = self.results_tab.general_pixmap_path + "_txop_durations_histogram.svg"
+        self.results_tab.txop_pixmap_path = os.path.join(self.ants_controller.data_dir, "txop_durations_histogram_{}_run0.svg".format(self.ants_controller.access_category_name))
         self.results_tab.txop_pixmap = QPixmap(self.results_tab.txop_pixmap_path)
 
-        print("Plots are saved as .svg files at {0}.\n".format(self.ants_controller.data_dir))
+        print("Plots are saved as .svg files at {0}.".format(self.ants_controller.data_dir))
 
         # Set the pixmap window to be a gray background if there is no data from a previous run
         self.results_tab.graphic_label.setStyleSheet("""

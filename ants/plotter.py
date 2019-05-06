@@ -301,7 +301,7 @@ class ANTS_Plotter():
         plt.xlabel("Time (sec)")
         plt.ylabel("Signal magnitude") #find out if the power is in Watts or dB?
         plt.draw()
-        plt.savefig(os.path.join(self.test_directory, 'signal_magnitude_plot_run{}.svg'.format(self.run)))
+        plt.savefig(os.path.join(self.test_directory, 'signal_magnitude_plot_{}_run{}.svg'.format(self.access_category, self.run)))
         plt.close()
 
         plt.figure(2)
@@ -311,7 +311,7 @@ class ANTS_Plotter():
         plt.xlabel("Inter-frame spacing (microsecond)")
         plt.ylabel("Frequency")
         plt.draw()
-        plt.savefig(os.path.join(self.test_directory, 'interframe_spacing_histogram_run{}.svg'.format(self.run)))
+        plt.savefig(os.path.join(self.test_directory, 'interframe_spacing_histogram_{}_run{}.svg'.format(self.access_category, self.run)))
         plt.close()
         
         plt.figure(3)
@@ -325,7 +325,7 @@ class ANTS_Plotter():
         Gender = ['Compliant Txop', 'Violating Txop']
         plt.legend(Gender, loc=2)
         plt.draw()
-        plt.savefig(os.path.join(self.test_directory, 'txop_durations_histogram_run{}.svg'.format(self.run)))
+        plt.savefig(os.path.join(self.test_directory, 'txop_durations_histogram_{}_run{}.svg'.format(self.access_category, self.run)))
         plt.close()
 
         plt.figure(4)
@@ -338,7 +338,7 @@ class ANTS_Plotter():
         Gender = ['Bin Probability', 'Compliance Upper threshold']
         plt.legend(Gender, loc=2)
         plt.draw()
-        plt.savefig(os.path.join(self.test_directory, 'bin_probability_run{}.svg'.format(self.run)))
+        plt.savefig(os.path.join(self.test_directory, 'bin_probability_{}_run{}.svg'.format(self.access_category, self.run)))
         plt.close()
 
 def sum_range(l,a,b):
