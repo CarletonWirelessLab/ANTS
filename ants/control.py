@@ -9,7 +9,6 @@ import queue
 import os
 import datetime
 import statistics as stat
-from plotter import *
 from network_connect import *
 from setup_routing import *
 from ipaddress import *
