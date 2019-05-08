@@ -262,14 +262,10 @@ class ANTS_Analyzer():
         txop_durations = []
         # leave out last COT, it might be incomplete
         for i in range(0, len(COT)-1):
-            txop_duration = 0
             start = COT[i][0]
             end = COT[i+1][0]
-            # add packet durations during this COP - 
-            for j in range(start + 1, end + 1):
-                txop_duration = txop_duration + self.packet_duration[j]
-            for j in range(start + 1, end):
-                txop_duration = txop_duration + self.interframe_spacing[j]
+            # sum the packets and the IFSs _within_ the txop
+            txop_duration = np.sum(self.packet_duration[start+1 : end+1]) + np.sum(self.interframe_spacing[start+1 : end])
             txop_durations.append(txop_duration)
         txop_durations = np.array(txop_durations)
         results.txop_durations = txop_durations
