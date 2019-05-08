@@ -4,6 +4,7 @@ import re
 import sys
 from textwrap import dedent
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -64,6 +65,7 @@ class IQSamplesFile():
         self.packet_indicator[self.packet_end_indices] = 1
     
     def plot(self, start = 0, num_samples = -1, filename = None):
+        matplotlib.rcParams['agg.path.chunksize'] = 10000
         plt.figure()
         plt.plot(self.time[start:num_samples], np.sqrt(self.power_data[start:num_samples]), 'b-', self.time[start:num_samples], self.packet_indicator[start:num_samples], 'r-')
         plt.title("Plot of the magnitude of the signal vs Time")
@@ -290,7 +292,6 @@ class ANTS_Analyzer():
         if self.uut_type == "Supervising" and (self.access_category == "voice" or self.access_category == "video") :
             correct_back_off = np.concatenate(np.where(self.interframe_spacing > self.sifs))
         else:
-            # why +2???
             correct_back_off = np.concatenate(np.where(self.interframe_spacing > (self.sifs + 2)))
         
         slot_time = 9
