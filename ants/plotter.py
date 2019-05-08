@@ -10,10 +10,7 @@ from textwrap import dedent
 # Input arguments:
 # ----------------
 # iq_samples_file_name (string): the path of the .bin file containing the USRP data
-# access_category (string): the type of service -> voice, video, best_effort, back_ground
 # sampling_rate (int): sampling rate of the USRP
-# duration (float): time interval of the data captured in seconds, default 2.5 seconds
-
 class ANTS_Plotter():
 
     def __init__(self, iq_samples_file_name, UUT_type, sample_rate=20e6):
@@ -67,7 +64,7 @@ class ANTS_Plotter():
 
     # open the data file and read the raw data from it
     def read_and_parse(self):
-        print("Read and parse {0}\n".format(self.iq_samples_file_name))
+        print("Read and parse {0}".format(self.iq_samples_file_name))
 
         with open(self.iq_samples_file_name, mode='rb') as file:
             self.raw_data = np.fromfile(file, dtype=np.float32)
@@ -291,8 +288,7 @@ class ANTS_Plotter():
 
         return self.out_tuple
 
-    def plot_results(self):
-        #plt.rcParams['agg.path.chunksize'] = 10*len(self.time)
+    def plot_results(self, results):
         # generate a plot for the power of the signal and the packet indicators
         plt.figure(1)
         plt.plot(self.time, np.sqrt(self.power_data), 'b-', self.time, 0.5*self.packet_indicator, 'r-')#, time, packet_indicator, 'r-')

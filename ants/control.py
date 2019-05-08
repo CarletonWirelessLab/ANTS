@@ -193,19 +193,17 @@ class ANTS_Controller():
         iperf_client_args = ["iperf", "-B", "{0}".format(str(self.iperf_client_addr)), "-c", "{0}".format(str(self.iperf_virtual_server_addr)), "-u", "-b", " {0}M".format(self.iperf_bw), "-t 10000000000000", "-i 1", "-S {0}".format(self.iperf_client_ac)]
         # The arguments to run the iperf server
         iperf_server_args = ["iperf", "-B", "{0}".format(str(self.iperf_server_addr)), "-s", "-u", "-t 1000000000000000", "-i 1"]
+        iq_sample_files = []
         if self.communication_success:
             # Run the iperf commands and print debug information
-            print("iperf server IP is {0}\n".format(self.iperf_server_addr))
-            print("iperf client IP is {0}\n".format(self.iperf_client_addr))
-            print("iperf client bandwidth is {0} Mbits/sec\n".format(self.iperf_bw))
+            print("iperf server IP is {0}".format(self.iperf_server_addr))
+            print("iperf client IP is {0}".format(self.iperf_client_addr))
+            print("iperf client bandwidth is {0} Mbits/sec".format(self.iperf_bw))
             iperf_server_proc = color_subprocess.Popen(iperf_server_args, prefix='iperf_server:', color=color_subprocess.colors.fg.lightblue)
             iperf_client_proc = color_subprocess.Popen(iperf_client_args, prefix='iperf_client:', color=color_subprocess.colors.fg.lightcyan)
 
-            # Wait to ensure the iperf data has begun transferring
-            time.sleep(self.usrp_run_delay)
-            print('USRP SAMPLING RATE:', self.usrp_sample_rate)
-            print('USRP GAIN:', self.usrp_gain)
             for run in range(0, self.num_runs):
+                time.sleep(self.usrp_run_delay)
                 iq_file_name = self.get_iq_file_name(self.data_dir, run)
                 # Set the arguments to be used to run the USRP
                 usrp_control_args = ["python", self.working_dir + "/writeIQ.py", iq_file_name, str(self.run_time), self.center_frequency, self.usrp_gain]
@@ -215,62 +213,16 @@ class ANTS_Controller():
                 while True:
                     self.usrp_proc.getProcess().poll()
                     if self.usrp_proc.getProcess().returncode is not None:
+                        iq_sample_files.append(iq_file_name)
                         break
-                self.stats_list.append(self.make_plots(iq_file_name))
 
             # Close the iperf processes as soon as the USRP is done sensing the medium
             iperf_server_proc.terminate()
             iperf_client_proc.terminate()
 
-            print("Done sampling the medium. iperf processes killed.\n")
+            print("Done sampling the medium. iperf processes killed.")
+        
+        return iq_sample_files
 
     def get_iq_file_name(self, data_dir, run):
         return os.path.join(data_dir, "iqsamples_" + self.access_category_name + "_run" + str(run) + ".bin")
-
-    def run_n_times(self):
-        # Compliance and aggression values list and variables, for averaging over multiple runs
-        self.stats_list = []
-        self.run_compliance_count = 0
-        self.run_aggression_count = 0
-        self.run_submission_count = 0
-
-        self.run_compliance_total = 0
-        self.run_aggression_total = 0
-        self.run_submission_total = 0
-
-        self.start_usrp_iperf()
-
-        for index in range(0, len(self.stats_list)):
-            self.run_compliance_total = self.run_compliance_total + self.stats_list[index][0]
-            self.run_compliance_count = self.run_compliance_count + 1
-
-            ag_val = self.stats_list[index][1]
-            if ag_val > 0:
-                self.run_aggression_total = self.run_aggression_total + ag_val
-                self.run_aggression_count = self.run_aggression_count + 1
-            else:
-                self.run_submission_total = self.run_submission_total + ag_val
-                self.run_submission_count = self.run_submission_count + 1
-
-        self.compliance_avg = abs(self.run_compliance_total)/self.run_compliance_count
-        print("Device was {0} percent compliant (average) over {1} total test runs\n".format(self.compliance_avg, self.run_compliance_count))
-        if self.run_aggression_count > 0:
-            self.aggression_avg = abs(self.run_aggression_total * 100)/self.run_aggression_count
-            print("Device was {0} percent aggressive (average) on {1} out of {2} runs\n".format(self.aggression_avg, self.run_aggression_count, self.run_compliance_count))
-        if self.run_submission_count > 0:
-            self.submission_avg = abs(self.run_submission_total * 100)/self.run_submission_count
-            print("Device was {0} percent submissive (average) on {1} out of {2} runs\n".format(self.submission_avg, self.run_submission_count, self.run_compliance_count))
-
-    #Method to create an ANTS_Plotter instance for analyzing and plotting the collected data
-    def make_plots(self, iq_file_name):
-        if hasattr(self, "plotter"):
-            del self.plotter
-        print("Running data conversion and plot routine on {0}...".format(iq_file_name))
-        # Create and run an actual plotter instance
-        plotter_sample_rate = int(self.usrp_sample_rate)*1e6
-        self.plotter = ANTS_Plotter(iq_file_name, self.UUT_type, plotter_sample_rate)
-        self.plotter.read_and_parse()
-        self.plotter.setup_packet_data()
-        results = self.plotter.output_results()
-
-        return results
