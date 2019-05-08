@@ -75,16 +75,16 @@ class IQSamplesFile():
         else:
             plt.draw()
             plt.savefig(filename)
-            plt.close()
-
-        
+            plt.close()    
 
 class ANTS_Analyzer():
     class Stats():
-        def __init__(self, min, mean, max):
+        def __init__(self, count, min, mean, max, violations):
+            self.count = count
             self.min = min
             self.mean = mean
             self.max = max
+            self.violations = violations
         
     class Results():
         def __init__(self):
@@ -94,7 +94,6 @@ class ANTS_Analyzer():
             self.txop_stats = None
             self.backoff_stats = None
             self.backoff_bin_probabilities = None
-            self.backoff_exceeds_CW = None
 
             self.access_category = None
             self.txop_limit = None
@@ -114,21 +113,30 @@ class ANTS_Analyzer():
         def to_string(self):
             results = dedent("""\
                 Found {} packets
+
+                {} TXOPs
                 min/mean/max Txop: {:.3f}µs {:.3f}µs {:.3f}µs
+                Txop exceeding Txop limit: {}
                 Txop factor: {:.3f}
+
+                {} Backoffs
                 min/mean/max Backoff: {:.3f}µs {:.3f}µs {:.3f}µs
-                Backoff over CW: {}
+                Backoff exceeding CW: {}
                 Backoff Kullback-Leibler Divergence: {:.3f}
                 Backoff KL Factor: {:.3f}
+
                 Aggressiveness Factor: {:.3f}
                 SIFS Factor: {:.3f}
                 Norm Factor: {:.3f}
                 Geometric Factor: {:.3f}
                 """.format(self.number_of_packets,
+                self.txop_stats.count,
                 self.txop_stats.min, self.txop_stats.mean, self.txop_stats.max,
+                self.txop_stats.violations,
                 self.txop_factor,
+                self.txop_stats.count,
                 self.backoff_stats.min, self.backoff_stats.mean, self.backoff_stats.max,
-                self.backoff_exceeds_CW,
+                self.backoff_stats.violations,
                 self.backoff_kullback_leibler_divergence,
                 self.dist_factor,
                 self.aggressiveness_factor,
@@ -267,17 +275,17 @@ class ANTS_Analyzer():
         mean_txop = np.mean(txop_durations)
         max_txop = np.max(txop_durations)
         min_txop = np.min(txop_durations)
-        results.txop_stats = ANTS_Analyzer.Stats(min_txop, mean_txop, max_txop)
-
         print("TXOP Min/Mean/Max: {:.3f}µs / {:.3f}µs / {:.3f}µs".format(min_txop, mean_txop, max_txop))
         
         if self.txop_limit == 0:
             # no txop limit, no violations
-        	violating_durations = []
+        	violating_durations = 0
         else:
-        	violating_durations = txop_durations[np.concatenate(np.where(txop_durations > self.txop_limit * 1e3))]
-        txop_factor = (len(violating_durations)/len(txop_durations))
-        print("Found {:d} violating durations (> {:d}ms)".format(len(violating_durations), self.txop_limit))
+        	violating_durations = np.count_nonzero(txop_durations > self.txop_limit * 1e3)
+
+        results.txop_stats = ANTS_Analyzer.Stats(len(txop_durations), min_txop, mean_txop, max_txop, violating_durations)
+        txop_factor = violating_durations/len(txop_durations)
+        print("Found {:d} violating durations (> {:d}ms)".format(violating_durations, self.txop_limit))
 
         if self.uut_type == "Supervising" and (self.access_category == "voice" or self.access_category == "video") :
             correct_back_off = np.concatenate(np.where(self.interframe_spacing > self.sifs))
@@ -291,8 +299,7 @@ class ANTS_Analyzer():
         BFmid = (BFmax + BFmin)/2
 
         back_offs = self.interframe_spacing[correct_back_off]
-        results.backoff_stats = ANTS_Analyzer.Stats(np.min(back_offs), np.mean(back_offs), np.max(back_offs))
-        results.backoff_exceeds_CW = np.count_nonzero(back_offs > BFmax)
+        results.backoff_stats = ANTS_Analyzer.Stats(len(back_offs), np.min(back_offs), np.mean(back_offs), np.max(back_offs), np.count_nonzero(back_offs > BFmax))
         blen = len(back_offs)
         b = np.asarray(np.zeros(self.n))
         b2 = np.asarray(np.zeros(self.kp1))
