@@ -67,6 +67,29 @@ class ANTS_Controller():
         self.num_runs = 1
         self.ping_max = 10
 
+    def __set_access_category(self, x):
+        if x == 0:
+            self.access_category_name = "voice"
+            self.iperf_client_ac = "0xC0"
+        elif x == 1:
+            self.access_category_name = "video"
+            self.iperf_client_ac = "0x80"
+        elif x == 2:
+            self.access_category_name = "best_effort"
+            self.iperf_client_ac = "0x00"
+        elif x == 3:
+            self.access_category_name = "background"
+            self.iperf_client_ac = "0x20"
+        else:
+            raise Exception("Unknown access category {}".format(x))
+
+        self.__access_category = x
+    
+    def __get_access_category(self):
+        return self.__access_category
+
+    access_category = property(__get_access_category, __set_access_category)
+
     # Make the timestamped data directory, and then return the full path for
     # writing data files to
     def make_data_dir(self):
@@ -91,15 +114,6 @@ class ANTS_Controller():
     def start_usrp(self):
         print("Running USRP...\n")
 
-        if self.access_category == 1:
-            self.access_category_name = "video"
-        elif self.access_category == 2:
-            self.access_category_name = "best_effort"
-        elif self.access_category == 3:
-            self.access_category_name = "background"
-        else:
-            self.access_category_name = "voice"
-
         # Create the data directory for the run
         self.data_dir = self.make_data_dir()
         print("The binary data file will be written to {0}.".format(self.data_dir))
@@ -120,19 +134,6 @@ class ANTS_Controller():
         if self.essid is None or len(self.essid) == 0:
             print("ERROR: No network selected.")
             return
-
-        if self.access_category == 1:
-            self.access_category_name = "video"
-            self.iperf_client_ac = "0x80"
-        elif self.access_category == 2:
-            self.access_category_name = "best_effort"
-            self.iperf_client_ac = "0x00"
-        elif self.access_category == 3:
-            self.access_category_name = "background"
-            self.iperf_client_ac = "0x20"
-        else:
-            self.access_category_name = "voice"
-            self.iperf_client_ac = "0xC0"
 
         # Create the data directory for the run
         self.data_dir = self.make_data_dir()

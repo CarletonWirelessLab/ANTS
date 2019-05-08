@@ -156,7 +156,7 @@ class ANTS_Results_Tab(QWidget):
         self.graphic_label.setPixmap(self.txop_pixmap)
 
 class ANTS_Thread(QThread):
-    signal = pyqtSignal()
+    signal = pyqtSignal(analyzer.ANTS_Analyzer.Results, str)
 
     def __init__(self, antsController):
         QThread.__init__(self)
@@ -171,7 +171,7 @@ class ANTS_Thread(QThread):
         for iq_sample_file in iq_sample_files:
             self.antsAnalyzer.loadIqSamples(iq_sample_file)
         self.results = self.antsAnalyzer.get_results()
-        self.signal.emit()
+        self.signal.emit(self.results, self._antsController.data_dir)
 
 # The catch-all tab widget for settings related to ANTS. Data entered here should be passed to the ANTS controller object
 class ANTS_Settings_Tab(QWidget):
@@ -517,15 +517,14 @@ class ANTS_Settings_Tab(QWidget):
     def run_button_clicked(self):
         self.showOverlay()
         self.control_thread = ANTS_Thread(self.ants_controller)
-        self.control_thread.signal.connect(self.measurement_done)
+        self.control_thread.signal.connect(self.show_results)
         self.control_thread.start()
 
-    def measurement_done(self):
+    def show_results(self, results, data_dir):
         self.hideOverlay()
 
-        results = self.control_thread.results
-        results.plot(self.ants_controller.data_dir)
-        with open(os.path.join(self.ants_controller.data_dir, "results_{}.txt".format(results.access_category)), "w") as outfile:
+        results.plot(data_dir)
+        with open(os.path.join(data_dir, "results_{}.txt".format(results.access_category)), "w") as outfile:
             outfile.write(results.to_string())
 
         self.results_tab.results_label.setText(results.to_string())    
@@ -533,22 +532,22 @@ class ANTS_Settings_Tab(QWidget):
         # Set up the graphics for the main display
 
         # The path for the bin distribution image
-        self.results_tab.bin_pixmap_path = os.path.join(self.ants_controller.data_dir, "bin_probability_{}.svg".format(self.ants_controller.access_category_name))
+        self.results_tab.bin_pixmap_path = os.path.join(data_dir, "bin_probability_{}.svg".format(self.ants_controller.access_category_name))
         self.results_tab.bin_pixmap = QPixmap(self.results_tab.bin_pixmap_path)
 
         # The path for the interframe spacing image
-        self.results_tab.interframe_pixmap_path = os.path.join(self.ants_controller.data_dir, "interframe_spacing_histogram_{}.svg".format(self.ants_controller.access_category_name))
+        self.results_tab.interframe_pixmap_path = os.path.join(data_dir, "interframe_spacing_histogram_{}.svg".format(self.ants_controller.access_category_name))
         self.results_tab.interframe_pixmap = QPixmap(self.results_tab.interframe_pixmap_path)
 
         # The path for the raw signal image
-        self.results_tab.raw_signal_pixmap_path = os.path.join(self.ants_controller.data_dir, "signal_magnitude_plot_{}.svg".format(self.ants_controller.access_category_name))
+        self.results_tab.raw_signal_pixmap_path = os.path.join(data_dir, "signal_magnitude_plot_{}.svg".format(self.ants_controller.access_category_name))
         self.results_tab.raw_signal_pixmap = QPixmap(self.results_tab.raw_signal_pixmap_path)
 
         # The path for the transmission opportunity image
-        self.results_tab.txop_pixmap_path = os.path.join(self.ants_controller.data_dir, "txop_durations_histogram_{}.svg".format(self.ants_controller.access_category_name))
+        self.results_tab.txop_pixmap_path = os.path.join(data_dir, "txop_durations_histogram_{}.svg".format(self.ants_controller.access_category_name))
         self.results_tab.txop_pixmap = QPixmap(self.results_tab.txop_pixmap_path)
 
-        print("Plots are saved as .svg files at {0}.".format(self.ants_controller.data_dir))
+        print("Plots are saved as .svg files at {0}.".format(data_dir))
 
         # Set the pixmap window to be a gray background if there is no data from a previous run
         self.results_tab.graphic_label.setStyleSheet("""
@@ -580,6 +579,11 @@ class Advanced_GUI(QMainWindow):
         exitAction.triggered.connect(self.close)
         fileMenu.addAction(exitAction)
 
+        analyzeIQSamplesAction = QAction('&Analyze IQ Samples', self)
+        analyzeIQSamplesAction.setStatusTip('Load a set of existing IQ samples from a previous run and analyze the results')
+        analyzeIQSamplesAction.triggered.connect(self.analyzeIQSamples)
+        fileMenu.addAction(analyzeIQSamplesAction)
+        
         plotIQSamplesFileAction = QAction('&Plot IQ Samples', self)
         plotIQSamplesFileAction.setStatusTip('Plot existing IQ samples from a previous run')
         plotIQSamplesFileAction.triggered.connect(self.plotIQSamplesFile)
@@ -661,11 +665,21 @@ class Advanced_GUI(QMainWindow):
         QMessageBox.about(self, 'About', aboutText)    
 
     def plotIQSamplesFile(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Load IQ Samples File", "", "IQ Samples Files (*.bin);;All Files (*)")
+        fileName, _ = QFileDialog.getOpenFileName(self, "Plot IQ Sample File", "", "IQ Samples Files (*.bin);;All Files (*)")
         if fileName:
             print("Open {}".format(fileName))
             iqFile = analyzer.IQSamplesFile(fileName)
             iqFile.plot()
+
+    def analyzeIQSamples(self):
+        iq_sample_files, _ = QFileDialog.getOpenFileNames(self, "Analyze IQ Sample Files", "IQ Samples Files (*.bin);;All Files (*)")
+        if iq_sample_files and len(iq_sample_files) > 0:
+            antsAnalyzer = analyzer.ANTS_Analyzer(self.ants_controller.UUT_type, sample_rate=20e6)
+            for iq_sample_file in iq_sample_files:
+                antsAnalyzer.loadIqSamples(iq_sample_file)
+            results = antsAnalyzer.get_results()
+            dir = os.path.dirname(iq_sample_files[0])
+            self.table_widget.settings_tab.show_results(results, dir)
 
     # Make sure we get prompted before closing the GUI
     def closeEvent(self, event):
