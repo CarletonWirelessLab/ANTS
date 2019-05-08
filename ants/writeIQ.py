@@ -12,107 +12,55 @@ import time
 import os
 from fcntl import ioctl
 
-global name
-global runFor #sec
-global access_category
-global center_frequency
-global gain
+USBDEVFS_RESET = ord("U") << (4*2) | 20
 
-global classInst
-USBDEVFS_RESET = ord('U') << (4*2) | 20
-
-class writeIQ(gr.top_block):
-	def __init__(self):
+class WriteIQ(gr.top_block):
+	def __init__(self, runFor, center_frequency, gain, file_name):
 		gr.top_block.__init__(self)
-		global name, runFor, access_category, center_frequency, gain
-		self.disconnect_all()
-		# Define variables and their default values
-		self.samp_rate = 20e6
-		self.cbw = 20e6
-		self.gain = gain
-		self.cfreq = center_frequency #2.412e9
-		print(self.cfreq)
-		self.antenna = "RX2"
-		self.file_name = name + '_' + access_category + '.bin'
-		print(self.file_name)
+		
+		# Define variables
+		sample_rate = 20e6
+		bandwidth = 20e6
+		antenna = "RX2"
+		file_name = file_name
 
 		# Define blocks
-		# 1) USRP Block
-		self.usrpSource = uhd.usrp_source(
-			",".join(("", "")),
-			uhd.stream_args(
-				cpu_format="fc32",
-				channels=range(1),
-			),
-		)
-
-		# 2) Set default parameters
-		self.usrpSource.set_samp_rate(self.samp_rate)
-		self.usrpSource.set_center_freq(self.cfreq, 0)
-		self.usrpSource.set_gain(self.gain, 0)
-		self.usrpSource.set_antenna(self.antenna, 0)
-		self.usrpSource.set_bandwidth(self.cbw, 0)
+		# 1) USRP Source
+		self.usrpSource = uhd.usrp_source(",".join(("", "")), uhd.stream_args(cpu_format="fc32", channels=range(1)))
+		print("Set sample rate to {}".format(sample_rate))
+		self.usrpSource.set_samp_rate(sample_rate)
+		print("Set center frequency to {}".format(center_frequency))
+		self.usrpSource.set_center_freq(center_frequency, 0)
+		print("Set gain to {}".format(gain))
+		self.usrpSource.set_gain(gain, 0)
+		print("Set antenna to {}".format(antenna))
+		self.usrpSource.set_antenna(antenna, 0)
+		print("Set bandwidth to {}".format(bandwidth))
+		self.usrpSource.set_bandwidth(bandwidth, 0)
 
 		# 2) File Sink
-		self.fileSnk = blocks.file_sink(gr.sizeof_gr_complex*1, self.file_name, False)
-
+		self.fileSnk = blocks.file_sink(gr.sizeof_gr_complex*1, file_name, False)
+		print("Write IQ samples to {}".format(file_name))
 
 		# Define connections
 		self.disconnect_all()
 		self.connect((self.usrpSource, 0), (self.fileSnk, 0))
 
-	def get_samp_rate(self):
-		return self.samp_rate
-
-	def set_samp_rate(self, samp_rate):
-		self.samp_rate = samp_rate
-		self.usrpSource.set_samp_rate(self.samp_rate)
-
-	def get_gain(self):
-		return self.gain
-
-	def set_gain(self, gain):
-		self.gain = gain
-		self.usrpSource.set_gain(self.gain, 0)
-
-	def get_cfreq(self):
-		return self.center_frequency
-
-	def set_cfreq(self, cfreq):
-		self.cfreq = cfreq
-		self.usrpSource.set_center_freq(self.cfreq, 0)
-
-	def get_cbw(self):
-		return self.cbw
-
-	def set_cbw(self, cbw):
-		self.cbw = cbw
-		self.usrpSource.set_bandiwdth(self.cbw, 0)
-
-def dowork():
-	classInst.run()
-	print("EXIT RUN")
-
 def main():
-	global name, runFor, access_category, center_frequency, gain
-	global classInst
-
-	name = sys.argv[1]
+	file_name = sys.argv[1]
 	runFor = float(sys.argv[2]) # sec
-	access_category = sys.argv[3]
-	center_frequency = float(sys.argv[4])*1e9
-	gain = int(sys.argv[5])
-	file_name = name + '_' + access_category + '.bin'
-	classInst = writeIQ()
-	t = threading.Thread(target=dowork)
+	center_frequency = float(sys.argv[3])*1e9
+	gain = int(sys.argv[4])
+	
+	writeIq = WriteIQ(runFor, center_frequency, gain, file_name)
+	t = threading.Thread(target=writeIq.run)
 	t.daemon = True
 	t.start()
 	time.sleep(runFor)
-	classInst.stop()
-	print('## END READING ## Duration =',runFor,' s')
+	writeIq.stop()
+	print("Finished sampling for {}s".format(runFor))
 
-	time.sleep(2)
 	quit()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 	main()

@@ -1,4 +1,6 @@
 __pycache__/
 *.pyc
 .vscode
-
+tests
+.DS_Store
+*.svg

@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 
 import math
+import os
+import analyzer
 from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction
 from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox, QPushButton
 from PyQt5.QtWidgets import QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
-from PyQt5.QtWidgets import QGroupBox
+from PyQt5.QtWidgets import QGroupBox, QFileDialog
 from PyQt5.QtCore import Qt, QRegExp, QSettings, QTimer, QThread, pyqtSignal
 from PyQt5.QtGui import *
 from network_scan import *
@@ -59,27 +61,18 @@ class ANTS_Table(QWidget):
     def __init__(self, main_gui, ants_controller, showOverlay, hideOverlay):
         super(QWidget, self).__init__(main_gui)
 
-        # Initialize the ANTS controller object to run the tests
-        self.ants_controller = ants_controller
-
         # Set the layout type for the GUI and instantiate the tabs widget
         self.layout = QVBoxLayout(self)
-        self.tabs = QTabWidget()
+        tabs = QTabWidget()
 
         # Instantiate all of the tab objects needed for the GUI
-        self.results_tab = ANTS_Results_Tab(self, self.ants_controller)
-        self.settings_tab = ANTS_Settings_Tab(self, self.results_tab, self.ants_controller, self.tabs, showOverlay, hideOverlay)
-        self.about_tab = ANTS_About_Tab(self, self.ants_controller)
-        self.license_tab = ANTS_License_Tab(self, self.ants_controller)
-        self.tabs.resize(300, 200)
+        self.results_tab = ANTS_Results_Tab(self, ants_controller)
+        self.settings_tab = ANTS_Settings_Tab(self, self.results_tab, ants_controller, tabs, showOverlay, hideOverlay)
+        tabs.resize(300, 200)
+        tabs.addTab(self.settings_tab, "Control Settings")
+        tabs.addTab(self.results_tab, "Results")
 
-        self.tabs.addTab(self.settings_tab, "Control Settings")
-        self.tabs.addTab(self.results_tab, "Results")
-        self.tabs.addTab(self.about_tab, "About")
-        self.tabs.addTab(self.license_tab, "License")
-
-        self.layout.addWidget(self.tabs)
-        self.setLayout(self.layout)
+        self.layout.addWidget(tabs)
 
 class ANTS_Results_Tab(QWidget):
 
@@ -101,18 +94,14 @@ class ANTS_Results_Tab(QWidget):
             border-color: white;
         """)
 
-        self.compliance_label = QLabel("Compliance (%): N/A")
-        self.aggression_label = QLabel("Aggression (%): N/A")
-        self.submission_label = QLabel("Submission (%): N/A")
+        self.results_label = QLabel("N/A")
 
         # The blank graphic box where the plots will be painted
         self.layout.addWidget(self.graphic_label, 0, 0, 5, 5)
 
         # The widgets in the information/run bar on the right side of the GUI
 
-        self.layout.addWidget(self.compliance_label, 3, 6, 1, 1)
-        self.layout.addWidget(self.aggression_label, 4, 6, 1, 1)
-        self.layout.addWidget(self.submission_label, 5, 6, 1, 1)
+        self.layout.addWidget(self.results_label, 3, 6, 1, 1)
 
         self.layout.setColumnStretch(6, 1)
         self.layout.setRowStretch(4, 1)
@@ -121,7 +110,7 @@ class ANTS_Results_Tab(QWidget):
         # four plot types
 
         self.bin_button = QPushButton("Show Bin Distribution", self)
-        self.bin_button.setToolTip('Show the bin probability and treshold data for the run')
+        self.bin_button.setToolTip('Show the bin probability and treshold data')
         self.bin_button.resize(self.bin_button.sizeHint())
         self.bin_button.clicked.connect(self.bin_button_clicked)
         self.layout.addWidget(self.bin_button, 6, 0, 1, 1)
@@ -133,13 +122,13 @@ class ANTS_Results_Tab(QWidget):
         self.layout.addWidget(self.interframe_button, 6, 1, 1, 1)
 
         self.raw_signal_button = QPushButton("Show Raw Signal Data", self)
-        self.raw_signal_button.setToolTip('Show the raw signal Fourier Transform')
+        self.raw_signal_button.setToolTip('Show an extract of the raw signal data')
         self.raw_signal_button.resize(self.raw_signal_button.sizeHint())
         self.raw_signal_button.clicked.connect(self.raw_signal_button_clicked)
         self.layout.addWidget(self.raw_signal_button, 6, 2, 1, 1)
 
-        self.txop_button = QPushButton("TXOP", self)
-        self.txop_button.setToolTip('Show Transmission Opportunity Durations')
+        self.txop_button = QPushButton("Show TXOP Durations", self)
+        self.txop_button.setToolTip('Show the TXOP durations histogram')
         self.txop_button.resize(self.txop_button.sizeHint())
         self.txop_button.clicked.connect(self.txop_button_clicked)
         self.layout.addWidget(self.txop_button, 6, 3, 1, 1)
@@ -166,8 +155,8 @@ class ANTS_Results_Tab(QWidget):
         self.txop_pixmap.load(self.txop_pixmap_path)
         self.graphic_label.setPixmap(self.txop_pixmap)
 
-class ANTS_ControlThread(QThread):
-    signal = pyqtSignal()
+class ANTS_Thread(QThread):
+    signal = pyqtSignal(analyzer.ANTS_Analyzer.Results, str)
 
     def __init__(self, antsController):
         QThread.__init__(self)
@@ -177,8 +166,12 @@ class ANTS_ControlThread(QThread):
         self.wait()
 
     def run(self):
-        self._antsController.run_n_times()
-        self.signal.emit()
+        iq_sample_files = self._antsController.start_usrp_iperf()
+        self.antsAnalyzer = analyzer.ANTS_Analyzer(self._antsController.UUT_type, sample_rate=20e6)
+        for iq_sample_file in iq_sample_files:
+            self.antsAnalyzer.loadIqSamples(iq_sample_file)
+        self.results = self.antsAnalyzer.get_results()
+        self.signal.emit(self.results, self._antsController.data_dir)
 
 # The catch-all tab widget for settings related to ANTS. Data entered here should be passed to the ANTS controller object
 class ANTS_Settings_Tab(QWidget):
@@ -194,7 +187,7 @@ class ANTS_Settings_Tab(QWidget):
 
         # Define tab layout and set column structure
         self.layout = QGridLayout(self)
-        self.setLayout(self.layout)
+        #self.setLayout(self.layout)
         self.layout.setColumnStretch(0, 1)
         self.layout.setColumnStretch(1, 1)
         self.layout.setColumnStretch(2, 1)
@@ -219,17 +212,16 @@ class ANTS_Settings_Tab(QWidget):
         # The checkbox for confirming that automatic network routing should be performed
         self.routing_checkbox = QCheckBox("Perform Auto Routing", self)
         self.routing_checkbox.toggle()
-        self.routing_checkbox.setToolTip("Allow ANTS to perform custom networking setup (requires root permissions). Off by default")
+        self.routing_checkbox.setToolTip("Allow ANTS to perform custom networking setup (requires root permissions).")
         self.routing_checkbox.stateChanged.connect(self.configure_routing)
 
-
-        # Create a text box to take the filename used by the USRP and converter
+        # Create a text box to take the test name used by the USRP and converter
         # tools
-        self.file_name_lineedit = QLineEdit(self)
-        self.file_name_lineedit.textChanged[str].connect(self.on_name_change)
-        self.file_name_lineedit.setToolTip("The filename for the USRP to output the data to")
-        self.file_name_text = "Test Name"
-        self.file_name_label = QLabel(self.file_name_text, self)
+        self.test_name_lineedit = QLineEdit(self)
+        self.test_name_lineedit.textChanged[str].connect(self.on_name_change)
+        self.test_name_lineedit.setToolTip("The test name to output the data to")
+        self.test_name_text = "Test Name"
+        self.test_name_label = QLabel(self.test_name_text, self)
 
         # Run time slider set up
         self.runtime_slider = QSlider(Qt.Horizontal, self)
@@ -243,7 +235,6 @@ class ANTS_Settings_Tab(QWidget):
         self.runtime_text = "Runtime " + str(0.5) + " seconds"
         self.runtime_label = QLabel(self.runtime_text, self)
 
-
         # Text box for specifying the IP address of the access point to be used for testing
         self.network_ap_lineedit = QLineEdit(self)
         self.network_ap_lineedit_label = QLabel("Access Point IP", self)
@@ -252,16 +243,16 @@ class ANTS_Settings_Tab(QWidget):
         self.ants_controller.iperf_ap_addr = '192.168.1.1'
         self.network_ap_lineedit.textChanged[str].connect(self.on_ap_ip)
 
-        # Text box for specifying the IP address of the access point to be used for testing
+        # Text box for specifying the center frequency
         self.center_frequency_lineedit = QLineEdit(self)
         self.center_frequency_lineedit_label = QLabel("Center Frequency (GHz)", self)
         self.center_frequency_lineedit.setText('5.180')
         self.ants_controller.center_frequency = '5.180'
         self.center_frequency_lineedit.textChanged[str].connect(self.on_center_frequency)
 
-        # Specify the iperf type-of-service value (client only)
+        # Combo box to select the SSID
         self.network_WiFi = QComboBox(self)
-        self.network_WiFi_label = QLabel("Wi-Fi Networks", self)
+        self.network_WiFi_label = QLabel("Service Set ID", self)
         self.network_WiFi.activated[str].connect(self.on_network_WiFi_change)
 
         # Specify the itype of the UUT, supervised or supervising
@@ -271,7 +262,7 @@ class ANTS_Settings_Tab(QWidget):
         self.UUT_type.addItem("Supervising")
         self.UUT_type.addItem("Supervised")
         self.ants_controller.UUT_type = "Supervising"
-        print("UUT TYPE IS: SUPERVISING")
+        print("UUT type is: Supervising")
 
         # Set the iperf bandwidth value (client only)
         self.network_bandwidth_slider_label = QLabel(None, self)
@@ -369,8 +360,6 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_run_delay_text = "Run delay: " + str(self.usrp_run_delay_slider.value()) + " seconds"
         self.usrp_run_delay_label.setText(self.usrp_run_delay_text)
 
-        # self.usrp_gridbox.addWidget(self.usrp_sample_rate_label, 0, 0)
-        # self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider, 0, 1)
         self.usrp_gridbox.addWidget(self.usrp_gain_label, 1, 0)
         self.usrp_gridbox.addWidget(self.usrp_gain_slider, 1, 1)
         self.usrp_gridbox.addWidget(self.usrp_run_delay_label, 2, 0)
@@ -382,13 +371,9 @@ class ANTS_Settings_Tab(QWidget):
         self.plotting_groupbox.setLayout(self.plotting_gridbox)
 
         # Create the general (i.e. system-level) settings groupbox
-
         self.general_settings_groupbox = QGroupBox("General Settings")
         self.general_settings_gridbox = QGridLayout(self)
         self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
-
-        # Checkbox to turn on or off extended debug info
-        self.gs_debuginfo_checkbox = QCheckBox("Extended Debug Info",self)
 
         # Text box for specifying the number of sequential test runs to perform
         self.gs_number_of_runs_validator = QIntValidator(self)
@@ -397,15 +382,15 @@ class ANTS_Settings_Tab(QWidget):
         self.gs_number_of_runs_lineedit_label = QLabel("Number of test runs",self)
         self.gs_number_of_runs_lineedit.setValidator(self.gs_number_of_runs_validator)
         self.gs_number_of_runs_lineedit.textChanged[str].connect(self.on_num_runs)
+        self.gs_number_of_runs_lineedit.setText('1')
 
         # Add the general settings tools to the groupbox
-        self.general_settings_gridbox.addWidget(self.file_name_label, 0, 0)
-        self.general_settings_gridbox.addWidget(self.file_name_lineedit, 0, 1)
+        self.general_settings_gridbox.addWidget(self.test_name_label, 0, 0)
+        self.general_settings_gridbox.addWidget(self.test_name_lineedit, 0, 1)
         self.general_settings_gridbox.addWidget(self.runtime_label, 1, 0)
         self.general_settings_gridbox.addWidget(self.runtime_slider, 1, 1)
         self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label, 2, 0)
         self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit, 2, 1)
-        self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox, 3, 0)
         self.general_settings_gridbox.addWidget(self.run_btn, 4, 0)
         self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
 
@@ -445,7 +430,7 @@ class ANTS_Settings_Tab(QWidget):
 
     # Set file name for the test run based on what's in the box
     def on_name_change(self, text):
-        self.ants_controller.file_name = text
+        self.ants_controller.test_name = text
 
     def on_network_WiFi_change(self, text):
         self.ants_controller.essid = text
@@ -518,7 +503,7 @@ class ANTS_Settings_Tab(QWidget):
             return
 
         self.ants_controller.essid = networks[0]
-        print ('NETWORK SELECTED IS:', self.ants_controller.essid)
+        print ('Network selected:', self.ants_controller.essid)
         self.network_WiFi.clear()
         for n in networks:
             self.network_WiFi.addItem(n)
@@ -526,43 +511,38 @@ class ANTS_Settings_Tab(QWidget):
     # Run the test sequence by making calls to the control.py module. run_button_clicked generates QPixmap objects to hold the .png data plots generated with matplotlib
     def run_button_clicked(self):
         self.showOverlay()
-        self.control_thread = ANTS_ControlThread(self.ants_controller)
-        self.control_thread.signal.connect(self.measurement_done)
+        self.control_thread = ANTS_Thread(self.ants_controller)
+        self.control_thread.signal.connect(self.show_results)
         self.control_thread.start()
 
-    def measurement_done(self):
+    def show_results(self, results, data_dir):
         self.hideOverlay()
-        self.ants_controller.plotter.plot_results()
 
-        # Update the statistics labels with the latest test sequence data
-        self.results_tab.compliance_label.setText("Compliance: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.compliance_avg)), self.ants_controller.run_compliance_count))
-        if self.ants_controller.run_aggression_count > 0:
-            self.results_tab.aggression_label.setText("Aggression: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.aggression_avg)), self.ants_controller.run_aggression_count))
-        if self.ants_controller.run_submission_count > 0:
-            self.results_tab.submission_label.setText("Submission: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.submission_avg)), self.ants_controller.run_submission_count))
+        results.plot(data_dir)
+        with open(os.path.join(data_dir, "results_{}.txt".format(results.access_category)), "w") as outfile:
+            outfile.write(results.to_string())
+
+        self.results_tab.results_label.setText(results.to_string())    
 
         # Set up the graphics for the main display
 
-        # The general path for the data files. This is passed to each pixmap for further use
-        self.results_tab.general_pixmap_path = self.ants_controller.data_dir + self.ants_controller.file_name + "_" + self.ants_controller.plotter_ac
-
         # The path for the bin distribution image
-        self.results_tab.bin_pixmap_path = self.results_tab.general_pixmap_path + "_bin_probability.svg"
+        self.results_tab.bin_pixmap_path = os.path.join(data_dir, "bin_probability_{}.svg".format(self.ants_controller.access_category_name))
         self.results_tab.bin_pixmap = QPixmap(self.results_tab.bin_pixmap_path)
 
         # The path for the interframe spacing image
-        self.results_tab.interframe_pixmap_path = self.results_tab.general_pixmap_path + "_interframe_spacing_histogram.svg"
+        self.results_tab.interframe_pixmap_path = os.path.join(data_dir, "interframe_spacing_histogram_{}.svg".format(self.ants_controller.access_category_name))
         self.results_tab.interframe_pixmap = QPixmap(self.results_tab.interframe_pixmap_path)
 
         # The path for the raw signal image
-        self.results_tab.raw_signal_pixmap_path = self.results_tab.general_pixmap_path + "_signal_magnitude_plot.svg"
+        self.results_tab.raw_signal_pixmap_path = os.path.join(data_dir, "signal_magnitude_plot_{}.svg".format(self.ants_controller.access_category_name))
         self.results_tab.raw_signal_pixmap = QPixmap(self.results_tab.raw_signal_pixmap_path)
 
         # The path for the transmission opportunity image
-        self.results_tab.txop_pixmap_path = self.results_tab.general_pixmap_path + "_txop_durations_histogram.svg"
+        self.results_tab.txop_pixmap_path = os.path.join(data_dir, "txop_durations_histogram_{}.svg".format(self.ants_controller.access_category_name))
         self.results_tab.txop_pixmap = QPixmap(self.results_tab.txop_pixmap_path)
 
-        print("Plots are saved as .svg files at {0}.\n".format(self.ants_controller.data_dir))
+        print("Plots are saved as .svg files at {0}.".format(data_dir))
 
         # Set the pixmap window to be a gray background if there is no data from a previous run
         self.results_tab.graphic_label.setStyleSheet("""
@@ -581,70 +561,45 @@ class ANTS_Settings_Tab(QWidget):
         self.ants_controller.configure_routing = False
         self.routing_checkbox.setChecked(False)
 
-class ANTS_About_Tab(QWidget):
-    def __init__(self, tabs_object, ants_controller):
-        super(QWidget, self).__init__(tabs_object)
-        self.ants_controller = ants_controller
-        self.layout = QVBoxLayout(self)
-        self.ants_message = QLabel()
-        self.ants_message.setText(dedent("""\
-            ANTS (the Automated Networking Test Suite) is an application written
-            by the Broadband Networks Laboratory at Carleton University, with the goal of automating and simplifying
-            compliance testing of wireless devices. For more information, or if you have suggestions or bugs to report,
-            visit https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.
-
-            Icon provided by icons8.com"""))
-
-        self.ants_message.setMargin(10)
-        self.ants_message.setWordWrap(1)
-        #self.setCentralWidget(self.ants_message)
-
-        self.layout.addWidget(self.ants_message)
-        self.setLayout(self.layout)
-
-class ANTS_License_Tab(QWidget):
-    def __init__(self, tabs_object, ants_controller):
-        super(QWidget, self).__init__(tabs_object)
-        self.ants_controller = ants_controller
-        self.layout = QVBoxLayout(self)
-        self.license_message = QLabel()
-        self.license_message.setText(dedent("""\
-            MIT License
-
-            Copyright (c) 2018-2019 Carleton University Broadband Networks Laboratory
-
-            Permission is hereby granted, free of charge, to any person obtaining a copy
-            of this software and associated documentation files (the "Software"), to deal
-            in the Software without restriction, including without limitation the rights
-            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-            copies of the Software, and to permit persons to whom the Software is
-            furnished to do so, subject to the following conditions:
-
-            The above copyright notice and this permission notice shall be included in all
-            copies or substantial portions of the Software.
-
-            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-            IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-            FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-            AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-            LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-            OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-            SOFTWARE."""))
-        self.license_message.setMargin(10)
-        self.layout.addWidget(self.license_message)
-        self.setLayout(self.layout)
-
 class Advanced_GUI(QMainWindow):
 
     def __init__(self, ants_controller):
         super().__init__()
 
+        menubar = self.menuBar()
+        fileMenu = menubar.addMenu('&File')
+
+        exitAction = QAction('&Exit', self)        
+        exitAction.setStatusTip('Exit application')
+        exitAction.triggered.connect(self.close)
+        fileMenu.addAction(exitAction)
+
+        analyzeIQSamplesAction = QAction('&Analyze IQ Samples', self)
+        analyzeIQSamplesAction.setStatusTip('Load a set of existing IQ samples from a previous run and analyze the results')
+        analyzeIQSamplesAction.triggered.connect(self.analyzeIQSamples)
+        fileMenu.addAction(analyzeIQSamplesAction)
+        
+        plotIQSamplesFileAction = QAction('&Plot IQ Samples', self)
+        plotIQSamplesFileAction.setStatusTip('Plot existing IQ samples from a previous run')
+        plotIQSamplesFileAction.triggered.connect(self.plotIQSamplesFile)
+        fileMenu.addAction(plotIQSamplesFileAction)
+
+        helpMenu = menubar.addMenu('&Help')
+
+        openLicenseAction = QAction('View &License', self)
+        openLicenseAction.triggered.connect(self.openLicense)
+        helpMenu.addAction(openLicenseAction)
+
+        openAboutAction = QAction('&About', self)
+        openAboutAction.triggered.connect(self.openAbout)
+        helpMenu.addAction(openAboutAction)
+
         # turn off network manager
         try:
-            print("TURNING OFF NETWORK MANAGER")
+            print("Turning off network manager")
             call(['nmcli', 'n', 'off'])
         except FileNotFoundError:
-            print("WARNING: COULD NOT TURN OFF NETWORK MANAGER")
+            print("WARNING: Could not turn off network manager")
             pass
 
         # The ANTS Controller object
@@ -669,6 +624,58 @@ class Advanced_GUI(QMainWindow):
         self.overlay.resize(event.size())
         event.accept()
 
+    def openLicense(self):
+        licenseText = dedent("""\
+            MIT License
+
+            Copyright (c) 2018-2019 Carleton University Broadband Networks Laboratory
+
+            Permission is hereby granted, free of charge, to any person obtaining a copy
+            of this software and associated documentation files (the "Software"), to deal
+            in the Software without restriction, including without limitation the rights
+            to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+            copies of the Software, and to permit persons to whom the Software is
+            furnished to do so, subject to the following conditions:
+
+            The above copyright notice and this permission notice shall be included in all
+            copies or substantial portions of the Software.
+
+            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+            IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+            FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+            AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+            LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+            OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+            SOFTWARE.""")
+        QMessageBox.about(self, 'License', licenseText)
+
+    def openAbout(self):
+        aboutText = dedent("""\
+            ANTS (the Automated Networking Test Suite) is an application written
+            by the Broadband Networks Laboratory at Carleton University, with the goal of automating and simplifying
+            compliance testing of wireless devices. For more information, or if you have suggestions or bugs to report,
+            visit https://github.com/CarletonWirelessLab/ANTS, or contact the author directly.
+
+            Icon provided by icons8.com""")
+        QMessageBox.about(self, 'About', aboutText)    
+
+    def plotIQSamplesFile(self):
+        fileName, _ = QFileDialog.getOpenFileName(self, "Plot IQ Sample File", "", "IQ Samples Files (*.bin);;All Files (*)")
+        if fileName:
+            print("Open {}".format(fileName))
+            iqFile = analyzer.IQSamplesFile(fileName)
+            iqFile.plot()
+
+    def analyzeIQSamples(self):
+        iq_sample_files, _ = QFileDialog.getOpenFileNames(self, "Analyze IQ Sample Files", "IQ Samples Files (*.bin);;All Files (*)")
+        if iq_sample_files and len(iq_sample_files) > 0:
+            antsAnalyzer = analyzer.ANTS_Analyzer(self.ants_controller.UUT_type, sample_rate=20e6)
+            for iq_sample_file in iq_sample_files:
+                antsAnalyzer.loadIqSamples(iq_sample_file)
+            results = antsAnalyzer.get_results()
+            dir = os.path.dirname(iq_sample_files[0])
+            self.table_widget.settings_tab.show_results(results, dir)
+
     # Make sure we get prompted before closing the GUI
     def closeEvent(self, event):
 
@@ -677,12 +684,12 @@ class Advanced_GUI(QMainWindow):
             QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            # turn off network manager
+            # turn on network manager
             try:
-                print("TURNING ON NETWORK MANAGER")
+                print("Turning on network manager")
                 call(['nmcli', 'n', 'on'])
             except FileNotFoundError:
-                print("WARNING: COULD NOT TURN ON NETWORK MANAGER")
+                print("WARNING: Could not turn on network manager")
                 pass
 
             event.accept()
