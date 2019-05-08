@@ -243,16 +243,16 @@ class ANTS_Settings_Tab(QWidget):
         self.ants_controller.iperf_ap_addr = '192.168.1.1'
         self.network_ap_lineedit.textChanged[str].connect(self.on_ap_ip)
 
-        # Text box for specifying the IP address of the access point to be used for testing
+        # Text box for specifying the center frequency
         self.center_frequency_lineedit = QLineEdit(self)
         self.center_frequency_lineedit_label = QLabel("Center Frequency (GHz)", self)
         self.center_frequency_lineedit.setText('5.180')
         self.ants_controller.center_frequency = '5.180'
         self.center_frequency_lineedit.textChanged[str].connect(self.on_center_frequency)
 
-        # Specify the iperf type-of-service value (client only)
+        # Combo box to select the SSID
         self.network_WiFi = QComboBox(self)
-        self.network_WiFi_label = QLabel("Wi-Fi Networks", self)
+        self.network_WiFi_label = QLabel("Service Set ID", self)
         self.network_WiFi.activated[str].connect(self.on_network_WiFi_change)
 
         # Specify the itype of the UUT, supervised or supervising
@@ -262,7 +262,7 @@ class ANTS_Settings_Tab(QWidget):
         self.UUT_type.addItem("Supervising")
         self.UUT_type.addItem("Supervised")
         self.ants_controller.UUT_type = "Supervising"
-        print("UUT TYPE IS: SUPERVISING")
+        print("UUT type is: Supervising")
 
         # Set the iperf bandwidth value (client only)
         self.network_bandwidth_slider_label = QLabel(None, self)
@@ -360,8 +360,6 @@ class ANTS_Settings_Tab(QWidget):
         self.usrp_run_delay_text = "Run delay: " + str(self.usrp_run_delay_slider.value()) + " seconds"
         self.usrp_run_delay_label.setText(self.usrp_run_delay_text)
 
-        # self.usrp_gridbox.addWidget(self.usrp_sample_rate_label, 0, 0)
-        # self.usrp_gridbox.addWidget(self.usrp_sample_rate_slider, 0, 1)
         self.usrp_gridbox.addWidget(self.usrp_gain_label, 1, 0)
         self.usrp_gridbox.addWidget(self.usrp_gain_slider, 1, 1)
         self.usrp_gridbox.addWidget(self.usrp_run_delay_label, 2, 0)
@@ -377,9 +375,6 @@ class ANTS_Settings_Tab(QWidget):
         self.general_settings_gridbox = QGridLayout(self)
         self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
 
-        # Checkbox to turn on or off extended debug info
-        self.gs_debuginfo_checkbox = QCheckBox("Extended Debug Info",self)
-
         # Text box for specifying the number of sequential test runs to perform
         self.gs_number_of_runs_validator = QIntValidator(self)
         self.gs_number_of_runs_lineedit = QLineEdit(self)
@@ -387,6 +382,7 @@ class ANTS_Settings_Tab(QWidget):
         self.gs_number_of_runs_lineedit_label = QLabel("Number of test runs",self)
         self.gs_number_of_runs_lineedit.setValidator(self.gs_number_of_runs_validator)
         self.gs_number_of_runs_lineedit.textChanged[str].connect(self.on_num_runs)
+        self.gs_number_of_runs_lineedit.setText('1')
 
         # Add the general settings tools to the groupbox
         self.general_settings_gridbox.addWidget(self.test_name_label, 0, 0)
@@ -395,7 +391,6 @@ class ANTS_Settings_Tab(QWidget):
         self.general_settings_gridbox.addWidget(self.runtime_slider, 1, 1)
         self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit_label, 2, 0)
         self.general_settings_gridbox.addWidget(self.gs_number_of_runs_lineedit, 2, 1)
-        self.general_settings_gridbox.addWidget(self.gs_debuginfo_checkbox, 3, 0)
         self.general_settings_gridbox.addWidget(self.run_btn, 4, 0)
         self.general_settings_groupbox.setLayout(self.general_settings_gridbox)
 
