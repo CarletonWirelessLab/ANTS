@@ -532,12 +532,7 @@ class ANTS_Settings_Tab(QWidget):
         with open(os.path.join(self.ants_controller.data_dir, "results_{}.txt".format(results.access_category)), "w") as outfile:
             outfile.write(results.to_string())
 
-        # Update the statistics labels with the latest test sequence data
-        self.results_tab.compliance_label.setText("Compliance: {0}% average over {1} runs".format(float("{0:.1f}".format(results.norm_factor)), self.ants_controller.num_runs))
-        if self.ants_controller.run_aggression_count > 0:
-            self.results_tab.aggression_label.setText("Aggression: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.aggression_avg)), self.ants_controller.run_aggression_count))
-        if self.ants_controller.run_submission_count > 0:
-            self.results_tab.submission_label.setText("Submission: {0}% average over {1} runs".format(float("{0:.1f}".format(self.ants_controller.submission_avg)), self.ants_controller.run_submission_count))
+        self.results_tab.compliance_label.setText(results.to_string())    
 
         # Set up the graphics for the main display
 
