@@ -530,7 +530,7 @@ class ANTS_Settings_Tab(QWidget):
         results = self.control_thread.results
         results.plot(self.ants_controller.data_dir)
         with open(os.path.join(self.ants_controller.data_dir, "results_{}.txt".format(results.access_category)), "w") as outfile:
-            outfile.write(results.to_string)
+            outfile.write(results.to_string())
 
         # Update the statistics labels with the latest test sequence data
         self.results_tab.compliance_label.setText("Compliance: {0}% average over {1} runs".format(float("{0:.1f}".format(results.norm_factor)), self.ants_controller.num_runs))
