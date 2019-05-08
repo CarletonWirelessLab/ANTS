@@ -94,18 +94,14 @@ class ANTS_Results_Tab(QWidget):
             border-color: white;
         """)
 
-        self.compliance_label = QLabel("Compliance (%): N/A")
-        self.aggression_label = QLabel("Aggression (%): N/A")
-        self.submission_label = QLabel("Submission (%): N/A")
+        self.results_label = QLabel("N/A")
 
         # The blank graphic box where the plots will be painted
         self.layout.addWidget(self.graphic_label, 0, 0, 5, 5)
 
         # The widgets in the information/run bar on the right side of the GUI
 
-        self.layout.addWidget(self.compliance_label, 3, 6, 1, 1)
-        self.layout.addWidget(self.aggression_label, 4, 6, 1, 1)
-        self.layout.addWidget(self.submission_label, 5, 6, 1, 1)
+        self.layout.addWidget(self.results_label, 3, 6, 1, 1)
 
         self.layout.setColumnStretch(6, 1)
         self.layout.setRowStretch(4, 1)
@@ -114,7 +110,7 @@ class ANTS_Results_Tab(QWidget):
         # four plot types
 
         self.bin_button = QPushButton("Show Bin Distribution", self)
-        self.bin_button.setToolTip('Show the bin probability and treshold data for the run')
+        self.bin_button.setToolTip('Show the bin probability and treshold data')
         self.bin_button.resize(self.bin_button.sizeHint())
         self.bin_button.clicked.connect(self.bin_button_clicked)
         self.layout.addWidget(self.bin_button, 6, 0, 1, 1)
@@ -126,13 +122,13 @@ class ANTS_Results_Tab(QWidget):
         self.layout.addWidget(self.interframe_button, 6, 1, 1, 1)
 
         self.raw_signal_button = QPushButton("Show Raw Signal Data", self)
-        self.raw_signal_button.setToolTip('Show the raw signal Fourier Transform')
+        self.raw_signal_button.setToolTip('Show an extract of the raw signal data')
         self.raw_signal_button.resize(self.raw_signal_button.sizeHint())
         self.raw_signal_button.clicked.connect(self.raw_signal_button_clicked)
         self.layout.addWidget(self.raw_signal_button, 6, 2, 1, 1)
 
-        self.txop_button = QPushButton("TXOP", self)
-        self.txop_button.setToolTip('Show Transmission Opportunity Durations')
+        self.txop_button = QPushButton("Show TXOP Durations", self)
+        self.txop_button.setToolTip('Show the TXOP durations histogram')
         self.txop_button.resize(self.txop_button.sizeHint())
         self.txop_button.clicked.connect(self.txop_button_clicked)
         self.layout.addWidget(self.txop_button, 6, 3, 1, 1)
@@ -532,7 +528,7 @@ class ANTS_Settings_Tab(QWidget):
         with open(os.path.join(self.ants_controller.data_dir, "results_{}.txt".format(results.access_category)), "w") as outfile:
             outfile.write(results.to_string())
 
-        self.results_tab.compliance_label.setText(results.to_string())    
+        self.results_tab.results_label.setText(results.to_string())    
 
         # Set up the graphics for the main display
 

@@ -3,3 +3,4 @@ __pycache__/
 .vscode
 tests
 .DS_Store
+*.svg

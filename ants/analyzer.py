@@ -92,7 +92,9 @@ class ANTS_Analyzer():
             self.number_of_packets = None
             self.txop_durations = None
             self.txop_stats = None
+            self.backoff_stats = None
             self.backoff_bin_probabilities = None
+            self.backoff_exceeds_CW = None
 
             self.access_category = None
             self.txop_limit = None
@@ -100,9 +102,9 @@ class ANTS_Analyzer():
             self.p_max = None
             
             self.txop_factor = None
-            self.kbl = None
+            self.backoff_kullback_leibler_divergence = None
             self.dist_factor = None
-            self.ag_factor = None
+            self.aggressiveness_factor = None
             self.sifs_factor = None
             self.norm_factor = None
             self.geometric_factor = None
@@ -114,18 +116,22 @@ class ANTS_Analyzer():
                 Found {} packets
                 min/mean/max Txop: {:.3f}µs {:.3f}µs {:.3f}µs
                 Txop factor: {:.3f}
-                KBL: {:.3f}
-                DistFactor: {:.3f}
-                AGFactor: {:.3f}
-                SIFSFactor: {:.3f}
-                NF: {:.3f}
-                GF: {:.3f}
+                min/mean/max Backoff: {:.3f}µs {:.3f}µs {:.3f}µs
+                Backoff over CW: {}
+                Backoff Kullback-Leibler Divergence: {:.3f}
+                Backoff KL Factor: {:.3f}
+                Aggressiveness Factor: {:.3f}
+                SIFS Factor: {:.3f}
+                Norm Factor: {:.3f}
+                Geometric Factor: {:.3f}
                 """.format(self.number_of_packets,
                 self.txop_stats.min, self.txop_stats.mean, self.txop_stats.max,
                 self.txop_factor,
-                self.kbl,
+                self.backoff_stats.min, self.backoff_stats.mean, self.backoff_stats.max,
+                self.backoff_exceeds_CW,
+                self.backoff_kullback_leibler_divergence,
                 self.dist_factor,
-                self.ag_factor,
+                self.aggressiveness_factor,
                 self.sifs_factor,
                 self.norm_factor,
                 self.geometric_factor))
@@ -139,12 +145,12 @@ class ANTS_Analyzer():
                 results = results + "Txop duration compliant.\n"        
         
             norm_factor_percent = (1 - self.norm_factor)*100
-            if self.ag_factor > 0:
-                aggression = abs(self.ag_factor)*100
-                results = results + "{} aggressive and {} compliant".format(aggression, norm_factor_percent)
+            if self.aggressiveness_factor > 0:
+                aggression = abs(self.aggressiveness_factor)*100
+                results = results + "{:.3f}% aggressive / {:.3f}% compliant".format(aggression, norm_factor_percent)
             else:
-                submission = abs(self.ag_factor)*100
-                results = results + "{} submissive and {} compliant".format(submission, norm_factor_percent)
+                submission = abs(self.aggressiveness_factor)*100
+                results = results + "{:.3f}% submissive / {:.3f}% compliant".format(submission, norm_factor_percent)
             
             return results
         
@@ -274,9 +280,10 @@ class ANTS_Analyzer():
         print("Found {:d} violating durations (> {:d}ms)".format(len(violating_durations), self.txop_limit))
 
         if self.uut_type == "Supervising" and (self.access_category == "voice" or self.access_category == "video") :
-            correct_back_off = np.concatenate(np.where(self.interframe_spacing > 25))
+            correct_back_off = np.concatenate(np.where(self.interframe_spacing > self.sifs))
         else:
-            correct_back_off = np.concatenate(np.where(self.interframe_spacing > 27))
+            # why +2???
+            correct_back_off = np.concatenate(np.where(self.interframe_spacing > (self.sifs + 2)))
         
         slot_time = 9
         BFmin = self.aifs - slot_time/2
@@ -284,7 +291,8 @@ class ANTS_Analyzer():
         BFmid = (BFmax + BFmin)/2
 
         back_offs = self.interframe_spacing[correct_back_off]
-
+        results.backoff_stats = ANTS_Analyzer.Stats(np.min(back_offs), np.mean(back_offs), np.max(back_offs))
+        results.backoff_exceeds_CW = np.count_nonzero(back_offs > BFmax)
         blen = len(back_offs)
         b = np.asarray(np.zeros(self.n))
         b2 = np.asarray(np.zeros(self.kp1))
@@ -309,22 +317,22 @@ class ANTS_Analyzer():
 
         prob = b/sum(b)
         nz_prob = prob[np.where(prob > 0)]
-        kbl = sum(np.multiply(nz_prob, np.log10(nz_prob/(1/self.n))))
-        dist_factor = 1 - np.exp(-1 * kbl)
+        backoff_kullback_leibler_divergence = sum(np.multiply(nz_prob, np.log10(nz_prob/(1/self.n))))
+        dist_factor = 1 - np.exp(-1 * backoff_kullback_leibler_divergence)
         kk = np.arange((self.n - 1)/2, - (self.n - 1)/2-1, -1)
         accum = sum(np.multiply(b, kk))
         avrg = accum / blen
         mid = (self.n-1)/2
-        ag_factor = avrg/mid
+        aggressiveness_factor = avrg/mid
         SIFSs = self.interframe_spacing[np.where(self.interframe_spacing < 16 + 9/2)]
         SIFSs = SIFSs[np.where(SIFSs > 4)]
         sifs_factor = (np.mean(SIFSs) - 16)/16
 
         # Norm Factor
-        norm_factor = math.sqrt(ag_factor**2 + txop_factor**2 + dist_factor**2 + sifs_factor**2)/2
+        norm_factor = math.sqrt(aggressiveness_factor**2 + txop_factor**2 + dist_factor**2 + sifs_factor**2)/2
         
         # Geometric mean Factor
-        geometric_factor = ((1 - abs(ag_factor)) * (1 - txop_factor) * (1 - dist_factor) * (1 - abs(sifs_factor)))**(1/4)
+        geometric_factor = ((1 - abs(aggressiveness_factor)) * (1 - txop_factor) * (1 - dist_factor) * (1 - abs(sifs_factor)))**(1/4)
 
         # Calculate the observed cumulative probabilities (p)
         e = blen  # total observed periods
@@ -338,9 +346,9 @@ class ANTS_Analyzer():
         results.kp1 = self.kp1
         results.p_max = self.p_max
         results.txop_factor = txop_factor
-        results.kbl = kbl
+        results.backoff_kullback_leibler_divergence = backoff_kullback_leibler_divergence
         results.dist_factor = dist_factor
-        results.ag_factor = ag_factor
+        results.aggressiveness_factor = aggressiveness_factor
         results.sifs_factor = sifs_factor
         results.norm_factor = norm_factor
         results.geometric_factor = geometric_factor
