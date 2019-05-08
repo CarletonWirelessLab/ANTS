@@ -58,7 +58,7 @@ def main():
 	t.start()
 	time.sleep(runFor)
 	writeIq.stop()
-	print("Finished sampling for",runFor,"s")
+	print("Finished sampling for {}s".format(runFor))
 
 	quit()
 

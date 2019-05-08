@@ -171,7 +171,7 @@ class ANTS_Thread(QThread):
 
     def run(self):
         iq_sample_files = self._antsController.start_usrp_iperf()
-        self.antsAnalyzer = analyzer.ANTS_Analyzer(self._antsController.UUT_type, sample_rate=self._antsController.usrp_sample_rate * 1e6)
+        self.antsAnalyzer = analyzer.ANTS_Analyzer(self._antsController.UUT_type, sample_rate=20e6)
         for iq_sample_file in iq_sample_files:
             self.antsAnalyzer.loadIqSamples(iq_sample_file)
         self.results = self.antsAnalyzer.get_results()
