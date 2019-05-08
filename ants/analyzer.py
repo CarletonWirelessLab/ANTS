@@ -3,7 +3,6 @@ import os
 import re
 import sys
 from textwrap import dedent
-
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -106,7 +105,6 @@ class ANTS_Analyzer():
             self.backoff_kullback_leibler_divergence = None
             self.dist_factor = None
             self.aggressiveness_factor = None
-            self.sifs_factor = None
             self.norm_factor = None
             self.geometric_factor = None
 
@@ -142,7 +140,6 @@ class ANTS_Analyzer():
                 self.backoff_kullback_leibler_divergence,
                 self.dist_factor,
                 self.aggressiveness_factor,
-                self.sifs_factor,
                 self.norm_factor,
                 self.geometric_factor))
             if any(self.backoff_bin_probabilities > self.p_max):
@@ -330,13 +327,12 @@ class ANTS_Analyzer():
         aggressiveness_factor = avrg/mid
         SIFSs = self.interframe_spacing[np.where(self.interframe_spacing < 16 + 9/2)]
         SIFSs = SIFSs[np.where(SIFSs > 4)]
-        sifs_factor = (np.mean(SIFSs) - 16)/16
 
         # Norm Factor
-        norm_factor = math.sqrt(aggressiveness_factor**2 + txop_factor**2 + dist_factor**2 + sifs_factor**2)/2
+        norm_factor = math.sqrt(aggressiveness_factor**2 + txop_factor**2 + dist_factor**2 )/2
         
         # Geometric mean Factor
-        geometric_factor = ((1 - abs(aggressiveness_factor)) * (1 - txop_factor) * (1 - dist_factor) * (1 - abs(sifs_factor)))**(1/4)
+        geometric_factor = ((1 - abs(aggressiveness_factor)) * (1 - txop_factor) * (1 - dist_factor) )**(1/3)
 
         # Calculate the observed cumulative probabilities (p)
         e = blen  # total observed periods
@@ -353,7 +349,6 @@ class ANTS_Analyzer():
         results.backoff_kullback_leibler_divergence = backoff_kullback_leibler_divergence
         results.dist_factor = dist_factor
         results.aggressiveness_factor = aggressiveness_factor
-        results.sifs_factor = sifs_factor
         results.norm_factor = norm_factor
         results.geometric_factor = geometric_factor
 
