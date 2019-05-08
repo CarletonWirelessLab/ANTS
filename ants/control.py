@@ -23,7 +23,6 @@ class ANTS_Controller():
         # Class variables used for the subprocesses run, if any, of the tools
         # run when their checkboxes are selected
         self.usrp_proc = None
-        self.plotter_proc = None
         self.iperf_client_proc = None
         self.iperf_server_proc = None
 
