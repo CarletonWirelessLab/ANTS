@@ -126,7 +126,6 @@ class ANTS_Analyzer():
                 Backoff KL Factor: {:.3f}
 
                 Aggressiveness Factor: {:.3f}
-                SIFS Factor: {:.3f}
                 Norm Factor: {:.3f}
                 Geometric Factor: {:.3f}
                 """.format(self.number_of_packets,
@@ -210,6 +209,7 @@ class ANTS_Analyzer():
         self.interframe_spacing = None
 
         self.sifs = 25
+        self.slot = 9
 
     def loadIqSamples(self, iq_samples_file_name, noise_threshold=0.02):
         iqFile = IQSamplesFile(iq_samples_file_name, sample_rate=self.sample_rate, noise_threshold=noise_threshold)
@@ -287,9 +287,8 @@ class ANTS_Analyzer():
         else:
             correct_back_off = np.concatenate(np.where(self.interframe_spacing > (self.sifs + 2)))
         
-        slot_time = 9
-        BFmin = self.aifs - slot_time/2
-        BFmax = self.aifs + slot_time*(self.n-1) + slot_time/2
+        BFmin = self.aifs - self.slot/2
+        BFmax = self.aifs + self.slot*(self.n-1) + self.slot/2
         BFmid = (BFmax + BFmin)/2
 
         back_offs = self.interframe_spacing[correct_back_off]
@@ -305,7 +304,7 @@ class ANTS_Analyzer():
         	elif x >= BFmax:
         		b[self.n-1] = b[self.n-1] + 1
         	else:
-        		index = math.ceil((x-BFmin)/slot_time)-1
+        		index = math.ceil((x-BFmin)/self.slot)-1
         		b[index] = b[index] + 1
 
         	if x < self.mind:
@@ -313,7 +312,7 @@ class ANTS_Analyzer():
         	elif x >= self.maxd:
         		b2[self.kp1-1] = b2[self.kp1-1] + 1
         	else:
-        		index = math.ceil((x-self.mind)/slot_time)
+        		index = math.ceil((x-self.mind)/self.slot)
         		b2[index] = b2[index] + 1
 
         prob = b/sum(b)
@@ -325,8 +324,6 @@ class ANTS_Analyzer():
         avrg = accum / blen
         mid = (self.n-1)/2
         aggressiveness_factor = avrg/mid
-        SIFSs = self.interframe_spacing[np.where(self.interframe_spacing < 16 + 9/2)]
-        SIFSs = SIFSs[np.where(SIFSs > 4)]
 
         # Norm Factor
         norm_factor = math.sqrt(aggressiveness_factor**2 + txop_factor**2 + dist_factor**2 )/2
