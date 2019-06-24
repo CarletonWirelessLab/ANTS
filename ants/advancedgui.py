@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+import os,glob, subprocess
 import math
 from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction
 from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox, QPushButton
@@ -13,6 +13,18 @@ from interfaces_scan import *
 from subprocess import *
 from textwrap import dedent
 
+#class to change working directory, used to find directory that includes svg results
+class cd:
+    def __init__(self, newPath):
+        self.newPath = os.path.expanduser(newPath)
+
+    def __enter__(self):
+        self.savedPath = os.getcwd()
+        os.chdir(self.newPath)
+
+    def __exit__(self, etype, value, traceback):
+        os.chdir(self.savedPath)
+#will change directory to set directory only for that context
 
 class Overlay(QWidget):
 
@@ -144,6 +156,13 @@ class ANTS_Results_Tab(QWidget):
         self.txop_button.clicked.connect(self.txop_button_clicked)
         self.layout.addWidget(self.txop_button, 6, 3, 1, 1)
 
+	#adding a pdf converter button
+        self.convertpdf_button = QPushButton("Convert to PDF", self)
+        self.convertpdf_button.setToolTip('Convert results into a pdf file')
+        self.convertpdf_button.resize(self.convertpdf_button.sizeHint())
+        self.convertpdf_button.clicked.connect(self.convertpdf_button_clicked)
+        self.layout.addWidget(self.convertpdf_button, 6, 4, 1, 1)
+
         self.setLayout(self.layout)
 
     # When the bin distribution button is clicked, display the bin distribution QPixmap contents
@@ -161,10 +180,82 @@ class ANTS_Results_Tab(QWidget):
         self.raw_signal_pixmap.load(self.raw_signal_pixmap_path)
         self.graphic_label.setPixmap(self.raw_signal_pixmap)
 
-    # When the TXOP button is clicked, display the transmission opportunity distribution QPixmap contents
+   # When the TXOP button is clicked, display the transmission opportunity distribution QPixmap contents
     def txop_button_clicked(self):
         self.txop_pixmap.load(self.txop_pixmap_path)
         self.graphic_label.setPixmap(self.txop_pixmap)
+
+   #When the pdf converter button is clicked
+    def convertpdf_button_clicked(self):
+        print("Creating pdf")
+        #For now only goes to specific location holding placement svg test result files
+        #Todo: add way to go to most recent test results or to select which test to produce a report of
+        currentdirectory = os.getcwd()
+        with cd(currentdirectory + "/ants/tests/no_name_2019-05-09_21-49-20"):
+            try:
+
+                myCmd = 'rsvg-convert bin_probability_voice.svg>bin.png'
+                subprocess.call(myCmd, shell=True)
+
+                myCmd = 'rsvg-convert interframe_spacing_histogram_voice.svg>interframe.png'
+                subprocess.call(myCmd, shell=True)
+
+                myCmd = 'rsvg-convert signal_magnitude_plot_voice.svg>signal.png'
+                subprocess.call(myCmd, shell=True)
+
+                myCmd = 'rsvg-convert txop_durations_histogram_voice.svg>txop.png'
+                subprocess.call(myCmd, shell=True)
+
+                content = r'''\documentclass{article}
+                \usepackage{graphicx}
+                \usepackage{verbatim}
+                \usepackage{blindtext}
+                \begin{document}
+                \title{Test Results}
+                \maketitle
+                \begin{figure}[b]
+                \centering
+                \includegraphics[width= 11.5cm]{bin}
+                \caption{Bin Distribution}
+                \end{figure}
+                \begin{figure}[b]
+                \centering
+                \includegraphics[width=11.5cm]{interframe}
+                \caption{Interframe Spacing}
+                \end{figure}
+                \begin{figure}[t]
+                \centering
+                \includegraphics[width=11.5cm]{signal}
+                \caption{Raw Signal Data}
+                \end{figure}
+                \begin{figure}[b]
+                \centering
+                \includegraphics[width=11.5cm]{txop}
+                \caption{TXOP}
+                \end{figure}
+                \verbatiminput{results_voice.txt}
+                \end{document}'''
+
+
+                with open('results.tex', 'w') as f:
+                    f.write(content)
+
+
+                commandLine = subprocess.Popen([ 'pdflatex', '--shell-escape','results.tex'])
+                commandLine.communicate()
+
+                os.unlink('bin.png')#remove png files after making a pdf
+                os.unlink('interframe.png')
+                os.unlink('signal.png')
+                os.unlink('txop.png')
+                os.unlink('results.aux')#need to unlink after finished with the files
+                os.unlink('results.log')
+                os.unlink('results.tex')
+                print("results.pdf created in test folder")
+            except:
+                print("Error creating pdf")
+                pass
+
 
 class ANTS_ControlThread(QThread):
     signal = pyqtSignal()
