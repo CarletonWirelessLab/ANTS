@@ -1,11 +1,11 @@
 #!/usr/bin/python3
-import os,glob, subprocess
+import os,glob, subprocess, sys
 import math
 from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction
 from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox, QPushButton
 from PyQt5.QtWidgets import QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QRadioButton, QTabWidget
-from PyQt5.QtWidgets import QGroupBox
+from PyQt5.QtWidgets import QGroupBox , QFormLayout, QLabel, QDialogButtonBox
 from PyQt5.QtCore import Qt, QRegExp, QSettings, QTimer, QThread, pyqtSignal
 from PyQt5.QtGui import *
 from network_scan import *
@@ -163,6 +163,9 @@ class ANTS_Results_Tab(QWidget):
         self.convertpdf_button.clicked.connect(self.convertpdf_button_clicked)
         self.layout.addWidget(self.convertpdf_button, 6, 4, 1, 1)
 
+    #dialogs for the different view in the popup window
+        self.dialogs = list()
+
         self.setLayout(self.layout)
 
     # When the bin distribution button is clicked, display the bin distribution QPixmap contents
@@ -187,13 +190,62 @@ class ANTS_Results_Tab(QWidget):
 
    #When the pdf converter button is clicked
     def convertpdf_button_clicked(self):
-        print("Creating pdf")
+        print("Opening options window")
+        #text, result = QInputDialog.getText(self , "Input Dialog", "Device Brand:")
+        #if result == True:
+            #print("True")
+        formlayout = PDF_converter_window(self)
+        #formlayout.addRow(self.tr("&Name: "), QLineEdit())
+        self.dialogs.append(formlayout)
+        formlayout.show()
+
+
+class PDF_converter_window(QMainWindow):
+    def __init__(self, parent = None):
+        super(QMainWindow, self).__init__(parent)
+        widget = QWidget(self)
+        self.setCentralWidget(widget)
+
+        self.formGroupBox = QGroupBox("Test Details")
+        layout = QFormLayout()
+        global projectdetails
+        projectdetails = []
+
+        for i in range(5):
+            projectdetails.append(QLineEdit())
+
+        layout.addRow(self.tr("Device Name: "), projectdetails[0])
+        layout.addRow(self.tr("Device Model: "), projectdetails[1])
+        layout.addRow(self.tr("Testing Facility: "), projectdetails[2])
+        layout.addRow(self.tr("Testing Location: "),projectdetails[3])
+        layout.addRow(self.tr("Tester Name: "), projectdetails[4])
+        self.formGroupBox.setLayout(layout)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        mainLayout = QVBoxLayout()
+        mainLayout.addWidget(self.formGroupBox)
+        mainLayout.addWidget(buttonBox)
+        self.setWindowTitle("Test Details")
+        widget.setLayout(mainLayout)
+
+    def accept(self):
+        print("Creating pdf, please wait")
+        #The project details inputed by the user
+        dname = projectdetails[0].text()
+        model = projectdetails[1].text()
+        facility = projectdetails[2].text()
+        location = projectdetails[3].text()
+        author = projectdetails[4].text()
         #For now only goes to specific location holding placement svg test result files
         #Todo: add way to go to most recent test results or to select which test to produce a report of
         currentdirectory = os.getcwd()
         with cd(currentdirectory + "/ants/tests/no_name_2019-05-09_21-49-20"):
             try:
 
+                #uses rsvg to convert svg files to png in order to keep all info since default imagemagick does not convert the files properly
                 myCmd = 'rsvg-convert bin_probability_voice.svg>bin.png'
                 subprocess.call(myCmd, shell=True)
 
@@ -211,7 +263,8 @@ class ANTS_Results_Tab(QWidget):
                 \usepackage{verbatim}
                 \usepackage{blindtext}
                 \begin{document}
-                \title{Test Results}
+                \title{Test Results: ''' + dname + r''': ''' + model +r'''
+                \author{''' + author + r'''\\''' + facility + r''': '''+ location + r'''}}
                 \maketitle
                 \begin{figure}[b]
                 \centering
@@ -236,10 +289,8 @@ class ANTS_Results_Tab(QWidget):
                 \verbatiminput{results_voice.txt}
                 \end{document}'''
 
-
                 with open('results.tex', 'w') as f:
                     f.write(content)
-
 
                 commandLine = subprocess.Popen([ 'pdflatex', '--shell-escape','results.tex'])
                 commandLine.communicate()
@@ -252,9 +303,15 @@ class ANTS_Results_Tab(QWidget):
                 os.unlink('results.log')
                 os.unlink('results.tex')
                 print("results.pdf created in test folder")
+
             except:
                 print("Error creating pdf")
                 pass
+        self.close()
+
+    def reject(self):
+        self.close()
+
 
 
 class ANTS_ControlThread(QThread):
