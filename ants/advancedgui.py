@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import os,glob, subprocess, sys
-import math
+import math, configparser
 from PyQt5.QtWidgets import QWidget, QDialog, QMenuBar, QCheckBox, QAction
 from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox, QPushButton
 from PyQt5.QtWidgets import QMainWindow, QLineEdit, QSlider, QLabel, QGridLayout
@@ -233,15 +233,28 @@ class PDF_converter_window(QMainWindow):
 
     def accept(self):
         print("Creating pdf, please wait")
+        QMessageBox.about(self, "ANTS", "Creating pdf, please wait")
         #The project details inputed by the user
         dname = projectdetails[0].text()
         model = projectdetails[1].text()
         facility = projectdetails[2].text()
         location = projectdetails[3].text()
         author = projectdetails[4].text()
+
         #For now only goes to specific location holding placement svg test result files
         #Todo: add way to go to most recent test results or to select which test to produce a report of
         currentdirectory = os.getcwd()
+
+        #myfile = open(currentdirectory + "/ants/latex.txt")
+        #content = myfile.read(dname, model, author,facility, location)
+        #myfile.close()
+
+        config = configparser.RawConfigParser()
+
+        config.read(currentdirectory + "/ants/latex.ini")
+
+        content = config.get('latex','top') + dname + ":" + model + "\\author{ " + author + "\\\\" + facility + ":"+ location + config['latex']['bottom']
+
         with cd(currentdirectory + "/ants/tests/no_name_2019-05-09_21-49-20"):
             try:
 
@@ -258,39 +271,9 @@ class PDF_converter_window(QMainWindow):
                 myCmd = 'rsvg-convert txop_durations_histogram_voice.svg>txop.png'
                 subprocess.call(myCmd, shell=True)
 
-                content = r'''\documentclass{article}
-                \usepackage{graphicx}
-                \usepackage{verbatim}
-                \usepackage{blindtext}
-                \begin{document}
-                \title{Test Results: ''' + dname + r''': ''' + model +r'''
-                \author{''' + author + r'''\\''' + facility + r''': '''+ location + r'''}}
-                \maketitle
-                \begin{figure}[b]
-                \centering
-                \includegraphics[width= 11.5cm]{bin}
-                \caption{Bin Distribution}
-                \end{figure}
-                \begin{figure}[b]
-                \centering
-                \includegraphics[width=11.5cm]{interframe}
-                \caption{Interframe Spacing}
-                \end{figure}
-                \begin{figure}[t]
-                \centering
-                \includegraphics[width=11.5cm]{signal}
-                \caption{Raw Signal Data}
-                \end{figure}
-                \begin{figure}[b]
-                \centering
-                \includegraphics[width=11.5cm]{txop}
-                \caption{TXOP}
-                \end{figure}
-                \verbatiminput{results_voice.txt}
-                \end{document}'''
-
                 with open('results.tex', 'w') as f:
                     f.write(content)
+                    f.close()
 
                 commandLine = subprocess.Popen([ 'pdflatex', '--shell-escape','results.tex'])
                 commandLine.communicate()
@@ -303,9 +286,11 @@ class PDF_converter_window(QMainWindow):
                 os.unlink('results.log')
                 os.unlink('results.tex')
                 print("results.pdf created in test folder")
+                QMessageBox.about(self, "ANTS","Results succesfully recorded")
 
             except:
                 print("Error creating pdf")
+                QMessageBox.about(self, "ANTS","Error creating pdf")
                 pass
         self.close()
 
